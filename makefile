@@ -1,23 +1,28 @@
-CC=g++
-ODIR=./obj
-CFLAGS=-Wall -Wextra -lm
+#Java compiler , Java Virtual Machine , all .java files,
+#classes contains all .java files but with .class instead
+JAVAC=javac
+JVM=java
+sources = $(wildcard *.java)
+classes = $(sources:.java=.class)
 
+#main entry point (Name of the file containing the main main)
+MAIN = Game
 
+#default entry point
+default: all
 
-default: service
+#builds all files
+all: $(classes)
 
-DEPS = connect.h commons.h
-_OBJ = connect.o main.o
-OBJ = $(patsubst %, $(ODIR)/%,$(_OBJ))
+#removes .class files
+clean :
+	rm -f *.class
 
-$(ODIR)/%.o: %.c $(DEPS)
-	@mkdir -p ./obj
-	@$(CC) -g -c -o $@ $< $(CFLAGS)
+#what happens when trying to make a .class file
+#@ hides the commands from console (they are not printed)
+%.class : %.java
+	@$(JAVAC) $<
 
-service: $(OBJ)
-	@gcc -g -o $@ $^ $(CFLAGS) $(LIBS)
-
-.PHONY: clean
-
-clean:
-	@rm -fr $(ODIR) service *.h.gch
+#make run entry point, basically java MAIN
+run: $(MAIN).class
+@$(JVM) $(MAIN)
