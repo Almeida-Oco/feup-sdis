@@ -6,7 +6,7 @@ sources = $(wildcard *.java)
 classes = $(sources:.java=.class)
 
 #main entry point (Name of the file containing the main main)
-MAIN = Game
+MAIN = main
 
 #default entry point
 default: all
@@ -25,4 +25,4 @@ clean :
 
 #make run entry point, basically java MAIN
 run: $(MAIN).class
-@$(JVM) $(MAIN)
+	@$(JVM) $(MAIN)
