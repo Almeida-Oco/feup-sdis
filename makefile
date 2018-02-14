@@ -16,7 +16,7 @@ all: $(classes)
 
 #removes .class files
 clean :
-	rm -f *.class
+	@rm -f *.class
 
 #what happens when trying to make a .class file
 #@ hides the commands from console (they are not printed)
