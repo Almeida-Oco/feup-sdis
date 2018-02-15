@@ -1,9 +1,8 @@
 import java.io.IOException;
 import java.net.*;
 
-public class Server{
-
-	public static void main(String[] args) throws IOException{
+public class Server {
+	public static void main(String[] args) throws IOException {
 
 		int PORT_NUMB = 4400;
 
@@ -11,7 +10,7 @@ public class Server{
 		System.out.println("Started server on " + Integer.toString(PORT_NUMB));
 
 		byte[] buf = new byte[256];
-		DatagramPacket dp_recived = new DatagramPacket(buf, buf.length); 
+		DatagramPacket dp_recived = new DatagramPacket(buf, buf.length);
 
 		try {
 			while (true) {
