@@ -17,12 +17,12 @@ public class Client {
 		}
 
 		Client client = new Client(args[0], Integer.parseInt(args[1]), args[2], args[3]);
-		if (!sendMsg(client.getMsg())) {
+		if (!client.sendMsg(client.getMsg())) {
 			return;
 		}
 
 		String reply = client.recvMsg();
-		if (reply != NULL) {
+		if (reply != null) {
 			System.out.println("GOT: " + reply);
 		}
 	}
