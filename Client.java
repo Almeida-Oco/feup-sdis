@@ -10,7 +10,6 @@ public class Client {
 	int port_number;
 	DatagramSocket socket;
 
-
 	public static void main(String[] args) throws IOException {
 		if (!argsCorrect(args)) {
 			return;
