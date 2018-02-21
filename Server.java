@@ -36,11 +36,13 @@ public class Server{
 			System.out.println("Got IO ex");
 			return;
 		}
+
 		
-		this.recvMsg();
 		this.setTimer();
 
 		System.out.println("Set up everything");
+
+		this.recvMsg();
 
 	}
 
@@ -58,11 +60,11 @@ public class Server{
 	}
 
 	private DatagramSocket setupUDPMulti(int port_number) {
-		DatagramSocket socket;
+		MulticastSocket socket;
 		try {
-			socket = new DatagramSocket(port_number);
+			socket = new MulticastSocket(port_number);
 		}
-		catch (SocketException err) {
+		catch (IOException err) {
 			System.err.println("Failed to create Multicast UDP socket!\n" + err.getMessage());
 			return null;
 		}
@@ -84,6 +86,7 @@ public class Server{
 			while(true) {
 				System.out.println("Listening to messages");
 				socket.receive(packet);
+				System.out.println("Packet address is :" + packet.getSocketAddress());
 				String str_recv = new String(packet.getData()).trim();
 				System.out.println("Got this: '" + str_recv + "'");
 			}
@@ -100,7 +103,7 @@ public class Server{
 
 		DatagramPacket msgPacket = new DatagramPacket(msg.getBytes(),
 
-		msg.getBytes().length, addr, this.PORT_NUMB);
+		msg.getBytes().length, this.addr, this.PORT_NUMB);
 
 		try{
 			this.socket.send(msgPacket);
@@ -116,10 +119,13 @@ public class Server{
 
 		final Server server_ref = this; 
 
+		System.out.println("Set Timer");
+
 		Runnable task = new Runnable() {
 			public void run() {
 				try {
 					while (true) {
+						System.out.println("Runnable, on while");
 						server_ref.sendMCPort();
 						Thread.sleep(3000L);
 					}
