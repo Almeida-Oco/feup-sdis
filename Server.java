@@ -3,21 +3,15 @@ import java.net.*;
 import java.util.concurrent.*;
 
 public class Server{
-
 	int PORT_NUMB;
 	String MCAST_ADDR;
 	int MCAST_PORT;
-
 	DatagramSocket socket;
-
-	final static String INET_ADDR = "224.0.0.3";
-
 	InetAddress addr;
 
-	//java Server <srvc_port> <mcast_addr> <mcast_port> 
+	//java Server <srvc_port> <mcast_addr> <mcast_port>
 
 	public static void main(String[] args) throws IOException {
-
 		Server server = new Server(Integer.parseInt(args[0]), args[1], Integer.parseInt(args[2]) );
 	}
 
@@ -36,9 +30,7 @@ public class Server{
 			System.out.println("Got IO ex");
 			return;
 		}
-
-		
-		this.setTimer();
+		// this.setTimer();
 
 		System.out.println("Set up everything");
 
@@ -70,7 +62,7 @@ public class Server{
 		}
 
 		try{
-	    this.addr = InetAddress.getByName(INET_ADDR);
+	    this.addr = InetAddress.getByName(this.MCAST_ADDR);
 		}
 		catch(UnknownHostException uh){
 			return socket;
@@ -86,7 +78,6 @@ public class Server{
 			while(true) {
 				System.out.println("Listening to messages");
 				socket.receive(packet);
-				System.out.println("Packet address is :" + packet.getSocketAddress());
 				String str_recv = new String(packet.getData()).trim();
 				System.out.println("Got this: '" + str_recv + "'");
 			}
@@ -117,7 +108,7 @@ public class Server{
 
 	private boolean setTimer(){
 
-		final Server server_ref = this; 
+		final Server server_ref = this;
 
 		System.out.println("Set Timer");
 
@@ -135,10 +126,10 @@ public class Server{
 
 		ScheduledExecutorService scheduler
                             = Executors.newSingleThreadScheduledExecutor();
- 
+
         int delay = 5;
         scheduler.schedule(task, delay, TimeUnit.SECONDS);
-        
+
 		return true;
 	}
 
