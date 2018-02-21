@@ -16,7 +16,7 @@ public class Client {
 			return;
 		}
 
-		Client client = new Client(args[0], Integer.parseInt(args[1]), args[2], args[3]);
+		Client client = UDPmulticastClient(args[0], Integer.parseInt(args[1]), args[2], args[3]);
 		if (!client.sendMsg(client.getMsg())) {
 			return;
 		}
@@ -25,6 +25,7 @@ public class Client {
 		if (reply != null) {
 			System.out.println("GOT: " + reply);
 		}
+		client.closeSocket();
 	}
 
 	private static boolean argsCorrect(String[] args) {
@@ -54,22 +55,61 @@ public class Client {
 		return size > 0;
 	}
 
+	public static Client UDPmulticastClient(String host_name, int port_number, String oper, String opnd) {
+		Client client = new Client(host_name, port_number, oper, opnd);
+
+
+		for (int i = 0; i < 2 && client.socket == null; i++) {
+			try {
+				client.socket = new MulticastSocket();
+			}
+			catch (IOException err) {
+				System.err.println("Failed to create MulticastSocket! Retrying...");
+				return null;
+			}
+		}
+
+		try {
+			((MulticastSocket)client.socket).joinGroup(InetAddress.getByName(client.host_name));
+			((MulticastSocket)client.socket).setTimeToLive(1);
+		}
+		catch (IOException err) {
+			System.err.println("CEnas");
+			return null;
+		}
+		return client;
+	}
+
+	public static Client UDPclient(String host_name, int port_number, String oper, String opnd) {
+		Client client = new Client(host_name, port_number, oper, opnd);
+
+		for (int i = 0; i < 2 && client.socket == null; i++) {
+			try {
+				client.socket = new DatagramSocket();
+			}
+			catch (IOException exception) {
+				System.err.println("Failed to create DatagramSocket! Retrying...");
+				return null;
+			}
+		}
+		return client;
+	}
+
 
 	public Client(String host_name, int port_number, String oper, String opnd) {
-		System.out.println(opnd);
 		this.host_name = host_name;
 		this.port_number = port_number;
 		this.operator = oper;
 		this.operand = opnd;
 		this.socket = null;
+	}
 
-		for (int i = 0; i < 2 && this.socket == null; i++) {
-			try {
-				this.socket = new DatagramSocket();
-			}
-			catch (SocketException exception) {
-				System.err.println("Failed to create DatagramSocket! Retrying...");
-			}
+	public void closeSocket() {
+		try {
+			((MulticastSocket)this.socket).leaveGroup(InetAddress.getByName(this.host_name));
+		}
+		catch (IOException err) {
+			System.err.println("Failed to leave group!\n " + err.getMessage());
 		}
 	}
 
@@ -92,7 +132,9 @@ public class Client {
 
 		for (int i = 0; i < 3; i++) {
 			try {
+				System.out.println("WTF!");
 				this.socket.send(packet);
+				System.out.println("SENT!");
 				sent_message = true;
 				break;
 			}
