@@ -2,135 +2,142 @@ import java.io.IOException;
 import java.net.*;
 import java.util.concurrent.*;
 
-public class Server{
-	int PORT_NUMB;
-	String MCAST_ADDR;
-	int MCAST_PORT;
-	DatagramSocket socket;
-	InetAddress addr;
+public class Server {
+final int DELAY = 5;
+int serv_port;
+DatagramSocket serv_socket;
 
-	//java Server <srvc_port> <mcast_addr> <mcast_port>
+InetAddress mcast_addr;
+int mcast_port;
+MulticastSocket mcast_socket;
+byte[] mcast_msg;
 
-	public static void main(String[] args) throws IOException {
-		Server server = new Server(Integer.parseInt(args[0]), args[1], Integer.parseInt(args[2]) );
-	}
+// java Server <srvc_port> <mcast_addr> <mcast_port>
 
-	public Server(int port_number, String MCAST_ADDR, int MCAST_PORT) {
+public static void main(String[] args) {
+  if (!argsCorrect(args)) {
+    return;
+  }
 
-		this.PORT_NUMB = port_number;
-		this.MCAST_ADDR = MCAST_ADDR;
-		this.MCAST_PORT = MCAST_PORT;
+  Server server = new Server(Integer.parseInt(args[0]));
 
-		this.socket = setupUDPMulti(MCAST_PORT);
+  server.setupMulticast(args[1], Integer.parseInt(args[2]));
+  server.setTimer();
+  server.recvMsg();
+}
 
-		try{
-			((MulticastSocket) this.socket).joinGroup(this.addr);
-		}
-		catch(IOException io){
-			System.out.println("Got IO ex");
-			return;
-		}
-		// this.setTimer();
+private static boolean argsCorrect(String[] args) {
+  int size = args.length;
 
-		System.out.println("Set up everything");
+  if (size == 3) {
+    if (!Client.isInteger(args[0])) {
+      System.err.println("Server port is NaN!");
+      return false;
+    }
+    if (!Client.isInteger(args[2])) {
+      System.err.println("Multicast port is NaN!");
+      return false;
+    }
 
-		this.recvMsg();
+    return true;
+  } else {
+    System.err.println("Usage:\njava Server <srvc_port> <mcast_addr> <mcast_port>");
+    return false;
+  }
+}
 
-	}
+public Server(int port_number) {
+  this.serv_port = port_number;
+  this.serv_socket = null;
+  try {
+    this.serv_socket = new DatagramSocket(this.serv_port);
+    this.mcast_msg = (InetAddress.getLocalHost().getHostAddress() + ":" + this.serv_port).getBytes();
+  }
+  catch (UnknownHostException err) {
+    System.err.println("Failed to get local IP!\n " + err.getMessage());
+    return;
+  }
+  catch (SocketException err) {
+    System.err.println("Failed to create UDP socket!\n " + err.getMessage());
+    return;
+  }
 
-	private static DatagramSocket setupUDP(int port_number) {
-		DatagramSocket socket;
-		try {
-			socket = new DatagramSocket(port_number);
-		}
-		catch (SocketException err) {
-			System.err.println("Failed to create UDP socket!\n" + err.getMessage());
-			return null;
-		}
+  this.mcast_addr = null;
+  this.mcast_port = 0;
+  this.mcast_socket = null;
+}
 
-		return socket;
-	}
+public boolean setupMulticast(String mcast_addr, int mcast_port) {
+  this.mcast_port = mcast_port;
+  try {
+    this.mcast_socket = new MulticastSocket(this.mcast_port);
+    this.mcast_addr = InetAddress.getByName(mcast_addr);
+  }
+  catch (UnknownHostException err) {
+    System.err.println("Failed to find IP of '" + mcast_addr + "'\n " + err.getMessage());
+    return false;
+  }
+  catch (IOException err) {
+    System.err.println("Failed to create Multicast UDP socket!\n " + err.getMessage());
+    return false;
+  }
 
-	private DatagramSocket setupUDPMulti(int port_number) {
-		MulticastSocket socket;
-		try {
-			socket = new MulticastSocket(port_number);
-		}
-		catch (IOException err) {
-			System.err.println("Failed to create Multicast UDP socket!\n" + err.getMessage());
-			return null;
-		}
+  try {
+    this.mcast_socket.joinGroup(this.mcast_addr);
+    this.mcast_socket.setTimeToLive(1);
+  }
+  catch (IOException err) {
+    System.err.println("Failed to join multicast group: '" + this.mcast_addr.getHostAddress() + "'\n " + err.getMessage());
+    return false;
+  }
 
-		try{
-	    this.addr = InetAddress.getByName(this.MCAST_ADDR);
-		}
-		catch(UnknownHostException uh){
-			return socket;
-		}
-		return socket;
-	}
+  return true;
+}
 
-	private void recvMsg() {
-		byte[] buf = new byte[256];
-		DatagramPacket packet = new DatagramPacket(buf, buf.length);
+private void recvMsg() {
+  byte[] buf = new byte[256];
+  DatagramPacket packet = new DatagramPacket(buf, buf.length);
 
-		try {
-			while(true) {
-				System.out.println("Listening to messages");
-				socket.receive(packet);
-				String str_recv = new String(packet.getData()).trim();
-				System.out.println("Got this: '" + str_recv + "'");
-			}
-		}
-		catch (IOException err) {
-			System.err.println("Failed to receive message!\n " + err.getMessage());
-			return;
-		}
-	}
+  System.out.println("Receiving messages");
+  try {
+    while (true) {
+      this.serv_socket.receive(packet);
+      String str_recv = new String(packet.getData()).trim();
+      System.out.println("Got this: '" + str_recv + "'");
+    }
+  }
+  catch (IOException err) {
+    System.err.println("Failed to receive message!\n " + err.getMessage());
+    return;
+  }
+}
 
-	private boolean sendMCPort(){
+private boolean sendServInfo() {
+  DatagramPacket packet = new DatagramPacket(this.mcast_msg, this.mcast_msg.length, this.mcast_addr, this.mcast_port);
 
-		String msg = Integer.toString(this.MCAST_PORT);
+  try {
+    this.serv_socket.send(packet);
+  }
+  catch (IOException err) {
+    System.err.println("Failed to send server info!\n " + err.getMessage());
+    return false;
+  }
+  return true;
+}
 
-		DatagramPacket msgPacket = new DatagramPacket(msg.getBytes(),
+private void setTimer() {
+  Server serv = this;
+  Runnable task = new Runnable() {
+    public void run() {
+      serv.sendServInfo();
+    }
 
-		msg.getBytes().length, this.addr, this.PORT_NUMB);
+  };
 
-		try{
-			this.socket.send(msgPacket);
-			System.out.println("Sendt MC Port");
-			return true;
-		}
-		catch(IOException io){
-			return false;
-		}
-	}
+  ScheduledExecutorService scheduler
+    = Executors.newSingleThreadScheduledExecutor();
 
-	private boolean setTimer(){
-
-		final Server server_ref = this;
-
-		System.out.println("Set Timer");
-
-		Runnable task = new Runnable() {
-			public void run() {
-				try {
-					while (true) {
-						System.out.println("Runnable, on while");
-						server_ref.sendMCPort();
-						Thread.sleep(3000L);
-					}
-				} catch (InterruptedException iex) {}
-			}
-		};
-
-		ScheduledExecutorService scheduler
-                            = Executors.newSingleThreadScheduledExecutor();
-
-        int delay = 5;
-        scheduler.schedule(task, delay, TimeUnit.SECONDS);
-
-		return true;
-	}
+  scheduler.scheduleAtFixedRate(task, 0, DELAY, TimeUnit.SECONDS);
+}
 
 }

@@ -4,173 +4,162 @@ import java.util.concurrent.TimeUnit;
 import java.nio.charset.StandardCharsets;
 
 public class Client {
-	String host_name;
-	String operator;
-	String operand;
-	int port_number;
-	DatagramSocket socket;
+InetAddress mcast_addr;
+int mcast_port;
+MulticastSocket mcast_socket;
 
-	public static void main(String[] args) throws IOException {
-		if (!argsCorrect(args)) {
-			return;
-		}
+InetAddress serv_addr;
+int serv_port;
+DatagramSocket serv_socket;
 
-		Client client = UDPmulticastClient(args[0], Integer.parseInt(args[1]), args[2], args[3]);
-		if (!client.sendMsg(client.getMsg())) {
-			return;
-		}
+byte[] msg;
 
-		String reply = client.recvMsg();
-		if (reply != null) {
-			System.out.println("GOT: " + reply);
-		}
-		client.closeSocket();
-	}
+public static void main(String[] args) throws IOException {
+  if (!argsCorrect(args)) {
+    return;
+  }
+  Client client = new Client(args[2], args[3]);
+  if (!client.setupMulticast(args[0], Integer.parseInt(args[1]))) {
+    return;
+  }
+  System.out.println(client.recvMsg(client.mcast_socket));
 
-	private static boolean argsCorrect(String[] args) {
-		int size = args.length;
-		if (size < 4 || size > 5) {
-			System.err.println("Usage:\n  java Client <host_name> <port_number> <oper> <opnd>*");
-			return false;
-		}
-		else if (!isInteger(args[1])) {
-			System.err.println("Port number NaN!");
-			return false;
-		}
-		if (size == 5) {
-			args[3] += " " + args[4];
-		}
+}
 
-		return true;
-	}
+private static boolean argsCorrect(String[] args) {
+  int size = args.length;
 
-	private static boolean isInteger(String str) {
-		int size = str.length();
-		for (int i = 0; i < size; i++) {
-			if (!Character.isDigit(str.charAt(i)))
-			return false;
-		}
+  if (size < 4 || size > 5) {
+    System.err.println("Usage:\n  java Client <mcast_address> <mcast_port> <oper> <opnd>*");
+    return false;
+  } else if (!isInteger(args[1])) {
+    System.err.println("Port number NaN!");
+    return false;
+  }
+  if (size == 5) {
+    args[3] += " " + args[4];
+  }
 
-		return size > 0;
-	}
+  return true;
+}
 
-	public static Client UDPmulticastClient(String host_name, int port_number, String oper, String opnd) {
-		Client client = new Client(host_name, port_number, oper, opnd);
+public static boolean isInteger(String str) {
+  int size = str.length();
 
+  for (int i = 0; i < size; i++) {
+    if (!Character.isDigit(str.charAt(i))) {
+      return false;
+    }
+  }
 
-		for (int i = 0; i < 2 && client.socket == null; i++) {
-			try {
-				client.socket = new MulticastSocket();
-			}
-			catch (IOException err) {
-				System.err.println("Failed to create MulticastSocket! Retrying...");
-				return null;
-			}
-		}
+  return size > 0;
+}
 
-		try {
-			((MulticastSocket)client.socket).joinGroup(InetAddress.getByName(client.host_name));
-			((MulticastSocket)client.socket).setTimeToLive(1);
-		}
-		catch (IOException err) {
-			System.err.println("CEnas");
-			return null;
-		}
-		return client;
-	}
+public Client(String oper, String opnd) {
+  this.msg = (oper + opnd).getBytes();
+  this.mcast_addr = null;
+  this.mcast_port = 0;
+  this.mcast_socket = null;
+  this.serv_addr = null;
+  this.serv_port = 0;
+  this.serv_socket = null;
+}
 
-	public static Client UDPclient(String host_name, int port_number, String oper, String opnd) {
-		Client client = new Client(host_name, port_number, oper, opnd);
+public boolean setupMulticast(String mcast_addr, int mcast_port) {
+  this.mcast_port = mcast_port;
+  try {
+    this.mcast_socket = new MulticastSocket(this.mcast_port);
+    this.mcast_addr = InetAddress.getByName(mcast_addr);
+  }
+  catch (UnknownHostException err) {
+    System.err.println("Failed to find IP of '" + mcast_addr + "'\n " + err.getMessage());
+    return false;
+  }
+  catch (IOException err) {
+    System.err.println("Failed to create Multicast UDP socket!\n " + err.getMessage());
+    return false;
+  }
 
-		for (int i = 0; i < 2 && client.socket == null; i++) {
-			try {
-				client.socket = new DatagramSocket();
-			}
-			catch (IOException exception) {
-				System.err.println("Failed to create DatagramSocket! Retrying...");
-				return null;
-			}
-		}
-		return client;
-	}
+  try {
+    this.mcast_socket.joinGroup(this.mcast_addr);
+  }
+  catch (IOException err) {
+    System.err.println("Failed to join multicast group: '" + this.mcast_addr.getHostAddress() + "'\n " + err.getMessage());
+    return false;
+  }
+  return true;
+}
 
+public boolean setupConnection(String serv_addr, int serv_port) {
+  this.serv_port = serv_port;
+  try {
+    this.serv_socket = new DatagramSocket(this.serv_port);
+    this.serv_addr = InetAddress.getByName(serv_addr);
+  }
+  catch (UnknownHostException err) {
+    System.err.println("Failed to find IP of '" + serv_addr + "'\n " + err.getMessage());
+    return false;
+  }
+  catch (IOException err) {
+    System.err.println("Failed to create UDP socket!\n " + err.getMessage());
+    return false;
+  }
+  return true;
+}
 
-	public Client(String host_name, int port_number, String oper, String opnd) {
-		this.host_name = host_name;
-		this.port_number = port_number;
-		this.operator = oper;
-		this.operand = opnd;
-		this.socket = null;
-	}
+public boolean sendMsg(DatagramSocket socket, String msg) {
+  byte[] msg_bytes = msg.getBytes();
+  boolean sent_message = false;
+  InetAddress addr;
+  DatagramPacket packet = new DatagramPacket(msg_bytes, msg_bytes.length, this.serv_addr, this.serv_port);
 
-	public void closeSocket() {
-		try {
-			((MulticastSocket)this.socket).leaveGroup(InetAddress.getByName(this.host_name));
-		}
-		catch (IOException err) {
-			System.err.println("Failed to leave group!\n " + err.getMessage());
-		}
-	}
+  for (int i = 0; i < 3; i++) {
+    try {
+      socket.send(packet);
+      System.out.println("SENT! '" + msg + "'");
+      return true;
+    }
+    catch (IOException err) {
+      System.err.println("Failed to send DatagramPacket: " + err.getMessage() + "\nRetrying in 2 sec...");
+      try {
+        TimeUnit.SECONDS.sleep(2);
+      }
+      catch (Throwable err2) {
+        System.err.println("Failed to sleep for 2 sec, exiting...");
+        return false;
+      }
+    }
+  }
 
-	public String getMsg() {
-		return this.operator + " " + this.operand;
-	}
+  return false;
+}
 
-	public boolean sendMsg(String msg) {
-		byte[] msg_bytes = msg.getBytes();
-		boolean sent_message = false;
-		InetAddress addr;
-		try {
-			addr = InetAddress.getByName(this.host_name);
-		}
-		catch (UnknownHostException err) {
-			System.err.println("Failed to get host by name: " + err.getMessage());
-			return false;
-		}
-		DatagramPacket packet = new DatagramPacket(msg_bytes, msg_bytes.length, addr, this.port_number);
+public String recvMsg(DatagramSocket socket) {
+  byte[] buf = new byte[256];
+  DatagramPacket packet = new DatagramPacket(buf, buf.length);
+  boolean received = false;
 
-		for (int i = 0; i < 3; i++) {
-			try {
-				System.out.println("WTF!");
-				this.socket.send(packet);
-				System.out.println("SENT!");
-				sent_message = true;
-				break;
-			}
-			catch (IOException err) {
-				System.err.println("Failed to send DatagramPacket: " + err.getMessage() + "\nRetrying in 2 sec...");
-				try {
-					TimeUnit.SECONDS.sleep(2);
-				}
-				catch (Throwable err2) {
-					System.err.println("Failed to sleep for 2 sec, exiting...");
-					return false;
-				}
-			}
-		}
+  for (int i = 0; i < 2 && !received; i++) {
+    try {
+      socket.receive(packet);
+      received = true;
+    }
+    catch (IOException err) {
+      System.err.println("Failed to receive message: " + err.getMessage() + "\nRetrying...");
+    }
+  }
 
-		return sent_message;
-	}
+  if (!received) {
+    return null;
+  }
 
-	public String recvMsg() {
-		byte[] buf = new byte[256];
-		DatagramPacket packet = new DatagramPacket(buf, buf.length);
-		boolean received = false;
+  return new String(packet.getData(), StandardCharsets.UTF_8);
+}
 
-		for (int i = 0; i < 2 && !received; i++) {
-			try {
-				this.socket.receive(packet);
-				received = true;
-			}
-			catch (IOException err) {
-				System.err.println("Failed to receive message: " + err.getMessage() + "\nRetrying...");
-			}
-		}
+protected void finalize() throws Throwable {
+  this.mcast_socket.leaveGroup(this.mcast_addr);
+  this.mcast_socket.close();
+  this.serv_socket.close();
+}
 
-		if (!received) {
-			return null;
-		}
-
-		return new String(packet.getData(), StandardCharsets.UTF_8);
-	}
 }

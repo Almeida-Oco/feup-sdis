@@ -5,9 +5,6 @@ JVM=java
 sources = $(wildcard *.java)
 classes = $(sources:.java=.class)
 
-#main entry point (Name of the file containing the main main)
-MAIN = main
-
 #default entry point
 default: all
 
@@ -22,7 +19,3 @@ clean :
 #@ hides the commands from console (they are not printed)
 %.class : %.java
 	@$(JAVAC) $<
-
-#make run entry point, basically java MAIN
-run: $(MAIN).class
-	@$(JVM) $(MAIN)
