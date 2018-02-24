@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit;
 import java.nio.charset.StandardCharsets;
 
 public class Client {
+final static int PORT = 8080;
 InetAddress mcast_addr;
 int mcast_port;
 MulticastSocket mcast_socket;
@@ -19,11 +20,10 @@ public static void main(String[] args) throws IOException {
     return;
   }
   Client client = new Client(args[2], args[3]);
-  if (!client.setupMulticast(args[0], Integer.parseInt(args[1]))) {
+  if (!client.setupMulticast(args[0], Integer.parseInt(args[1])) || !client.setupUDP()) {
     return;
   }
-  System.out.println(client.recvMsg(client.mcast_socket));
-
+  client.sendMsg(client.serv_socket, client.msg);
 }
 
 private static boolean argsCorrect(String[] args) {
@@ -56,7 +56,7 @@ public static boolean isInteger(String str) {
 }
 
 public Client(String oper, String opnd) {
-  this.msg = (oper + opnd).getBytes();
+  this.msg = (oper + " " + opnd).getBytes();
   this.mcast_addr = null;
   this.mcast_port = 0;
   this.mcast_socket = null;
@@ -90,10 +90,19 @@ public boolean setupMulticast(String mcast_addr, int mcast_port) {
   return true;
 }
 
-public boolean setupConnection(String serv_addr, int serv_port) {
+public boolean setupUDP() {
+  String[] serv_info = this.recvMsg(this.mcast_socket).trim().split(":");
+  if (serv_info.length != 2) {
+    return false;
+  }
+
+  return this.setupConnection(serv_info[0], Integer.parseInt(serv_info[1]));
+}
+
+private boolean setupConnection(String serv_addr, int serv_port) {
   this.serv_port = serv_port;
   try {
-    this.serv_socket = new DatagramSocket(this.serv_port);
+    this.serv_socket = new DatagramSocket(PORT);
     this.serv_addr = InetAddress.getByName(serv_addr);
   }
   catch (UnknownHostException err) {
@@ -107,16 +116,12 @@ public boolean setupConnection(String serv_addr, int serv_port) {
   return true;
 }
 
-public boolean sendMsg(DatagramSocket socket, String msg) {
-  byte[] msg_bytes = msg.getBytes();
-  boolean sent_message = false;
-  InetAddress addr;
-  DatagramPacket packet = new DatagramPacket(msg_bytes, msg_bytes.length, this.serv_addr, this.serv_port);
+public boolean sendMsg(DatagramSocket socket, byte[] msg) {
+  DatagramPacket packet = new DatagramPacket(msg, msg.length, this.serv_addr, this.serv_port);
 
   for (int i = 0; i < 3; i++) {
     try {
       socket.send(packet);
-      System.out.println("SENT! '" + msg + "'");
       return true;
     }
     catch (IOException err) {
@@ -150,7 +155,7 @@ public String recvMsg(DatagramSocket socket) {
   }
 
   if (!received) {
-    return null;
+    return "";
   }
 
   return new String(packet.getData(), StandardCharsets.UTF_8);
