@@ -1,8 +1,10 @@
 import java.io.IOException;
 import java.net.*;
 import java.util.concurrent.*;
+import java.sql.*;
 
 public class Server {
+Connection db;
 final int DELAY = 5;
 int serv_port;
 DatagramSocket serv_socket;
@@ -65,6 +67,15 @@ public Server(int port_number) {
   this.mcast_addr = null;
   this.mcast_port = 0;
   this.mcast_socket = null;
+
+  try {
+    Class.forName("org.sqlite.JDBC");
+    this.db = DriverManager.getConnection("jdbc:sqlite:plates.db");
+  }
+  catch (Exception err) {
+    System.err.println("Failed to connect to database!\n " + err.getClass() + ": " +  err.getMessage());
+    System.exit(0);
+  }
 }
 
 public boolean setupMulticast(String mcast_addr, int mcast_port) {
@@ -94,21 +105,132 @@ public boolean setupMulticast(String mcast_addr, int mcast_port) {
   return true;
 }
 
-private void recvMsg() {
+public void recvMsg() {
   byte[] buf = new byte[256];
   DatagramPacket packet = new DatagramPacket(buf, buf.length);
 
-  System.out.println("Receiving messages");
   try {
     while (true) {
       this.serv_socket.receive(packet);
-      String str_recv = new String(packet.getData()).trim();
-      System.out.println("Got this: '" + str_recv + "'");
+      this.processMsg(new String(packet.getData()).trim().toUpperCase(), packet.getAddress(), packet.getPort());
     }
   }
   catch (IOException err) {
     System.err.println("Failed to receive message!\n " + err.getMessage());
     return;
+  }
+}
+
+private void processMsg(String msg, InetAddress origin, int port) {
+  String[] info = msg.split(" ");
+  String reply;
+
+  if (info.length < 2) {
+    System.out.println("Got faulty message!\n-> '" + msg + "'");
+    reply = "-1";
+  }
+  if (info[0].equals("REGISTER") && info.length >= 3) {
+    String plate = info[1];
+    String user = "";
+    for (int i = 2; i < info.length; i++) {
+      user += info[i];
+    }
+    reply = this.registerPlate(plate, user);
+  } else if (info[0].equals("LOOKUP") && info.length == 2) {
+    reply = this.lookupPlate(info[1]);
+  } else {
+    System.out.println("Got faulty message!\n-> '" + msg + "'");
+    reply = "-1";
+  }
+
+  this.sendMsg(this.serv_socket, reply.getBytes(), origin, port);
+}
+
+private String registerPlate(String plate, String user) {
+  if (this.insertPlate(plate, user)) {
+    return Long.toString(this.numberOfPlates());
+  } else {
+    return "-1";
+  }
+}
+
+private String lookupPlate(String plate) {
+  String owner;
+
+  if ((owner = this.queryPlate(plate)) != "") {
+    return owner + " " + plate;
+  } else {
+    return "-1";
+  }
+}
+
+public boolean sendMsg(DatagramSocket socket, byte[] msg, InetAddress to, int port) {
+  DatagramPacket packet = new DatagramPacket(msg, msg.length, to, port);
+
+  for (int i = 0; i < 3; i++) {
+    try {
+      socket.send(packet);
+      return true;
+    }
+    catch (IOException err) {
+      System.err.println("Failed to send DatagramPacket: " + err.getMessage() + "\nRetrying in 2 sec...");
+      try {
+        TimeUnit.SECONDS.sleep(2);
+      }
+      catch (Throwable err2) {
+        System.err.println("Failed to sleep for 2 sec, exiting...");
+        return false;
+      }
+    }
+  }
+
+  return false;
+}
+
+private boolean insertPlate(String plate, String owner) {
+  try {
+    Statement stmt = this.db.createStatement();
+    String query = "INSERT INTO UserPlate VALUES (\"" + owner + "\", \"" + plate + "\");";
+
+    stmt.executeUpdate(query);
+    stmt.close();
+    return true;
+  }
+  catch (SQLException err) {
+    System.err.println(err.getCause() + ": " + err.getMessage());
+    return false;
+  }
+}
+
+private String queryPlate(String plate) {
+  try {
+    Statement stmt = this.db.createStatement();
+    String query = "SELECT user FROM UserPlate WHERE UserPlate.plate == \"" + plate + "\"";
+
+    ResultSet res = stmt.executeQuery(query);
+    String user = res.getString("user");
+    stmt.close();
+    return user;
+  }
+  catch (SQLException err) {
+    System.err.println("Failed to query plate!\n " + err.getMessage());
+    return "";
+  }
+}
+
+private long numberOfPlates() {
+  try {
+    Statement stmt = this.db.createStatement();
+    String query = "SELECT count(user) FROM UserPlate";
+
+    ResultSet res = stmt.executeQuery(query);
+    int amount = res.getInt("count(user)");
+    stmt.close();
+    return amount;
+  }
+  catch (SQLException err) {
+    System.err.println("Failed to query plate!\n " + err.getMessage());
+    return -1;
   }
 }
 

@@ -24,6 +24,7 @@ public static void main(String[] args) throws IOException {
     return;
   }
   client.sendMsg(client.serv_socket, client.msg);
+  System.out.println(client.recvMsg(client.serv_socket));
 }
 
 private static boolean argsCorrect(String[] args) {
@@ -37,6 +38,10 @@ private static boolean argsCorrect(String[] args) {
     return false;
   }
   if (size == 5) {
+    if (args[4].length() > 255) {
+      System.err.println("Owner name too big!");
+      return false;
+    }
     args[3] += " " + args[4];
   }
 
@@ -56,7 +61,7 @@ public static boolean isInteger(String str) {
 }
 
 public Client(String oper, String opnd) {
-  this.msg = (oper + " " + opnd).getBytes();
+  this.msg = (oper.toUpperCase() + " " + opnd.toUpperCase()).getBytes();
   this.mcast_addr = null;
   this.mcast_port = 0;
   this.mcast_socket = null;
@@ -153,7 +158,6 @@ public String recvMsg(DatagramSocket socket) {
       System.err.println("Failed to receive message: " + err.getMessage() + "\nRetrying...");
     }
   }
-
   if (!received) {
     return "";
   }
