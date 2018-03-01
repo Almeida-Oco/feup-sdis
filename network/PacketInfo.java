@@ -5,7 +5,7 @@ import java.util.regex.Matcher;
 
 public class PacketInfo {
   private static final Pattern msg_pattern =
-    Pattern.compile(" *(?<msgT>\\w+) +(?<version>\\d.\\d) +(?<senderID>\\d+) +(?<fileID>.{64}) +(?<chunkN>\\d{1,6}) +(?<Rdegree>\\d) *\r\n\r\n(?<data>.{0,64000})\r\n");
+    Pattern.compile(" *(?<msgT>\\w+) +(?<version>\\d.\\d) +(?<senderID>\\d+) +(?<fileID>.{64}) +(?<chunkN>\\d{1,6}) +(?<Rdegree>\\d) *\r\n\r\n(?<data>.{0,64000})");
   final String CRLF = "\r\n";
 
   String msg_type;
@@ -15,28 +15,19 @@ public class PacketInfo {
   int chunk_n;
   char r_degree;
 
-  String data;
+  public String data;
 
   PacketInfo() {
-    this.msg_type = "";
-    this.version = "";
-    this.file_id = "";
+    this.msg_type = null;
+    this.version = null;
+    this.file_id = null;
     this.sender_id = -1;
     this.chunk_n = -1;
     this.r_degree = '\0';
+    this.data = null;
   }
 
-
-  private String headerToString() {
-    return this.msg_type + " " +
-    this.version + " " +
-    this.file_id + " " +
-    Integer.toString(this.sender_id) + " " +
-    Integer.toString(this.chunk_n) + " " +
-    r_degree + " " + this.CRLF + this.CRLF;
-  }
-
-  public static PacketInfo fromString(String str) {
+  public static PacketInfo fromString(CharSequence str) {
     Matcher match = PacketInfo.msg_pattern.matcher(str);
     PacketInfo packet = new PacketInfo();
 
@@ -67,10 +58,26 @@ public class PacketInfo {
     }
   }
 
+
+
   public String toString() {
-    return this.headerToString() + this.data + this.CRLF;
+    return this.headerToString() + this.data;
   }
 
+  private String headerToString() {
+    return this.msg_type + " " +
+    this.version + " " +
+    this.file_id + " " +
+    Integer.toString(this.sender_id) + " " +
+    Integer.toString(this.chunk_n) + " " +
+    r_degree + " " + this.CRLF + this.CRLF;
+  }
+
+
+  public boolean isReady() {
+    return (this.msg_type == null || this.version == null || this.file_id == null ||
+            this.sender_id == -1 || this.chunk_n == -1 || this.r_degree == '\0' || this.data == null);
+  }
 
   public void set_msg_type(String type) {
     // TODO check if type is correct
@@ -100,4 +107,15 @@ public class PacketInfo {
   public void set_data(String data) {
     this.data = data;
   }
+
+  public void resetPacket() {
+    this.msg_type = null;
+    this.version = null;
+    this.file_id = null;
+    this.sender_id = -1;
+    this.chunk_n = -1;
+    this.r_degree = '\0';
+    this.data = null;
+  }
+
 }
