@@ -1,5 +1,6 @@
 package files;
 
+//Maybe this wont be needed after all
 class FileInfo {
   String file_name;
   byte version; /// Two numbered byte, unit value represents minor version, decimal value the major version
