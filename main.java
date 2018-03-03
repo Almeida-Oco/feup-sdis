@@ -27,7 +27,7 @@ class main {
 
     if ((version = extractVersion(args[0])) == -1 ||
         (serv_id = extractServID(args[1])) == -1 ||
-        (ap = extractAP(args[2]))) {
+        (ap = extractAP(args[2])) == null) {
       return;
     }
     major_v = (byte)(version / 10);
