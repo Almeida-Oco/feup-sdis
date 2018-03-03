@@ -5,17 +5,19 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.io.IOException;
+import java.net.UnknownHostException;
+import java.lang.SecurityException;
 
-class Net_IO {
-  final int TTL = 1;
+public class Net_IO {
+  final int TTL      = 1;
   final int BUF_SIZE = 70000;
 
   DatagramPacket packet;
   MulticastSocket mcast_socket;
   int mcast_port;
 
-  Net_IO(InetAddress addr, int port) {
-    this.packet = new DatagramPacket(new byte[BUF_SIZE], BUF_SIZE);
+  public Net_IO(String addr, int port) {
+    this.packet     = new DatagramPacket(new byte[BUF_SIZE], BUF_SIZE);
     this.mcast_port = port;
     try {
       this.mcast_socket = new MulticastSocket(port);
@@ -27,12 +29,20 @@ class Net_IO {
     }
 
     try {
-      this.mcast_socket.joinGroup(addr);
+      this.mcast_socket.joinGroup(InetAddress.getByName(addr));
       this.mcast_socket.setTimeToLive(TTL);
     }
+    catch (UnknownHostException err) {
+      System.err.println("No host found associated with IP '" + addr + "'\n " + err.getMessage());
+      this.mcast_socket = null; //On fail this is set to null
+    }
+    catch (SecurityException err) {
+      System.err.println("Not allowed to execute checkConnect method!\n " + err.getMessage());
+      this.mcast_socket = null; //On fail this is set to null
+    }
     catch (IOException err) {
-      System.err.println("Failed to join Multicast group: '" + addr.getHostAddress() + "'\n " + err.getMessage());
-      this.mcast_socket = null;
+      System.err.println("Failed to join Multicast group: '" + addr + "'\n " + err.getMessage());
+      this.mcast_socket = null; //On fail this is set to null
     }
   }
 

@@ -2,7 +2,7 @@
 #classes contains all .java files but with .class instead
 JAVAC=javac
 JVM=java
-sources = $(wildcard */*.java)
+sources = $(wildcard */*.java *.java)
 classes = $(sources:.java=.class)
 
 #default entry point
