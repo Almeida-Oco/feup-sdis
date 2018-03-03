@@ -14,7 +14,7 @@ public class File_IO {
 
   //TODO value of hashmap will be a vector with a FileInfo for every replication
   // Not sure if this is needed though, for now it is not being used
-  private static HashMap <String, FileInfo> file_table = new HashMap <String, FileInfo>();
+  private static HashMap<String, FileInfo> file_table = new HashMap<String, FileInfo>();
 
   public static byte[] readChunk(String file_name) {
     try {
@@ -30,7 +30,7 @@ public class File_IO {
     }
   }
 
-  public static Vector <byte[]> readFile(String file_name) {
+  public static Vector<FileChunk> readFile(String file_name) {
     File            file = new File(file_name);
     int             chunk_n;
     FileInputStream reader;
@@ -39,18 +39,15 @@ public class File_IO {
       return null;
     }
 
-    Vector <byte[]> chunks = new Vector <byte[]>(chunk_n);
+    Vector<FileChunk> chunks = new Vector<byte[]>(chunk_n);
     for (int i = 0; i < chunk_n; i++) {
       byte[] buf = new byte[MAX_CHUNK_SIZE];
       int    ret = File_IO.readFromFile(reader, buf);
       if (ret == -1) {
         return null;
       }
-      else if (ret == 0) { //In case file is multiple of 64000
-        chunks.add(new byte[0]);
-      }
-      else {
-        chunks.add(buf);
+      else { //ret == 0 means its the last chunk with size 0
+        chunks.add(new FileChunk((ret == 0) ? new byte[0] : buf, i));
       }
     }
     return chunks;
@@ -78,10 +75,12 @@ public class File_IO {
       System.err.println("File '" + file.getName() + "' does not exist!");
       return -1;
     }
+
     if (file.isDirectory()) {
       System.err.println("File '" + file.getName() + "' is a directory!");
       return -1;
     }
+
     long file_size;
     if ((file_size = file.length()) == 0L) {
       System.err.println("Cannot get length from a system-dependent entity!");
