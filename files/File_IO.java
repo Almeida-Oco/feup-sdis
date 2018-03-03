@@ -12,17 +12,18 @@ public class File_IO {
   private final static int MAX_CHUNK_SIZE = 64000;
   private final static int MAX_N_CHUNKS   = 999999;
 
-  //TODO value of hashmap will be a vector with a FileInfo for every replication
+
+  //value of hashmap will be a vector with a FileInfo for every replication
   // Not sure if this is needed though, for now it is not being used
   private static HashMap<String, FileInfo> file_table = new HashMap<String, FileInfo>();
 
-  public static byte[] readChunk(String file_name) {
+  public static FileChunk readChunk(String file_name) {
     try {
       FileInputStream reader = new FileInputStream(file_name);
       byte[]          buf    = new byte[MAX_CHUNK_SIZE];
 
       reader.read(buf);
-      return buf;
+      return new FileChunk(file_name, buf);
     }
     catch (IOException err) {
       System.err.println("Failed to read chunk from stream!\n " + err.getMessage());
@@ -39,15 +40,16 @@ public class File_IO {
       return null;
     }
 
-    Vector<FileChunk> chunks = new Vector<byte[]>(chunk_n);
+    Vector<FileChunk> chunks = new Vector<FileChunk>(chunk_n);
     for (int i = 0; i < chunk_n; i++) {
       byte[] buf = new byte[MAX_CHUNK_SIZE];
       int    ret = File_IO.readFromFile(reader, buf);
+
       if (ret == -1) {
         return null;
       }
       else { //ret == 0 means its the last chunk with size 0
-        chunks.add(new FileChunk((ret == 0) ? new byte[0] : buf, i));
+        chunks.add(new FileChunk((ret == 0) ? new byte[0] : buf));
       }
     }
     return chunks;
@@ -88,10 +90,10 @@ public class File_IO {
     }
 
     if (file_size % File_IO.MAX_CHUNK_SIZE == 0) {
-      return (int)(Math.ceil(file_size / File_IO.MAX_CHUNK_SIZE) + 1);
+      return (int)(Math.ceil(file_size * 1.0 / File_IO.MAX_CHUNK_SIZE) + 1);
     }
     else {
-      return (int)(Math.ceil(file_size / File_IO.MAX_CHUNK_SIZE));
+      return (int)(Math.ceil(file_size * 1.0 / File_IO.MAX_CHUNK_SIZE));
     }
   }
 

@@ -1,19 +1,32 @@
 package files;
 
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class FileChunk {
   String chunk_id;
   byte[] chunk_data;
-  byte chunk_number;
 
 
-  FileChunk(byte[] data, byte number) {
-    MessageDigest intestine = MessageDigest.getInstance("SHA-256");
+  FileChunk(byte[] data) {
+    MessageDigest intestine;
 
-    this.chunk_id     = new String(intestine.digest(data));
-    this.chunk_data   = data;
-    this.chunk_number = number;
+    try {
+      intestine = MessageDigest.getInstance("SHA-256");
+    }
+    catch (NoSuchAlgorithmException err) {
+      System.err.println("Failed to find encryption algorithm!\n " + err.getMessage() + "\n  How the frick is this possible?");
+      intestine = null;
+      System.exit(0);
+    }
+
+    this.chunk_id   = new String(intestine.digest(data));
+    this.chunk_data = data;
+  }
+
+  FileChunk(String id, byte[] data) {
+    this.chunk_id   = id;
+    this.chunk_data = data;
   }
 
   public String get_id() {
@@ -22,9 +35,5 @@ public class FileChunk {
 
   public byte[] get_data() {
     return this.chunk_data;
-  }
-
-  public byte get_chunk_number() {
-    return this.chunk_number;
   }
 }
