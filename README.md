@@ -1,3 +1,12 @@
+# feup-sdis
 
-## Dependencies
-* This project uses [sqlite-jdbc](https://bitbucket.org/xerial/sqlite-jdbc), which needs to be added to the environmental variable 'CLASSPATH' in order for the project to compile successfully
+# Packages
+Currently the project has 2 major packages, network and files.
+
+## Network
+Implements the protocol specified by the teacher.
+
+Responsible for sending and receiving messages from the network.
+
+## Files
+Handles all operations related to the local file system.
