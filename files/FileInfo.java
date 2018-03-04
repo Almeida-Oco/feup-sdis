@@ -1,13 +1,17 @@
 package files;
 
 //Maybe this wont be needed after all
-class FileInfo {
+public class FileInfo {
   String file_name;
-  byte version; /// Two numbered byte, unit value represents minor version, decimal value the major version
+  Vector<FileChunk> chunks;
 
-  FileInfo(String name, byte ver) {
+  FileInfo(String name, int chunk_number) {
     this.file_name = name;
-    this.version   = ver;
+    this.chunks    = Vector<FileChunk>(chunk_number);
+  }
+
+  void addChunk(FileChunk chunk) {
+    this.chunk.push(chunk);
   }
 
   public boolean equals(Object obj) {
@@ -21,5 +25,9 @@ class FileInfo {
 
   public String getName() {
     return this.file_name;
+  }
+
+  public Vector<FileChunk> getChunks() {
+    return this.chunks;
   }
 }

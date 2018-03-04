@@ -1,7 +1,6 @@
 package files;
 
-import java.util.HashMap;
-import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.File;
@@ -13,9 +12,19 @@ public class File_IO {
   private final static int MAX_N_CHUNKS   = 999999;
 
 
-  //value of hashmap will be a vector with a FileInfo for every replication
-  // Not sure if this is needed though, for now it is not being used
-  private static HashMap<String, FileInfo> file_table = new HashMap<String, FileInfo>();
+  //Contains the local files which were sent for backup
+  private static ConcurrentHashMap<String, FileInfo> file_table = new ConcurrentHashMap<String, FileInfo>();
+
+  public static void addFile(FileInfo file) {
+    file_table.put(file.getName(), file);
+  }
+
+  public static FileInfo getFileInfo(String file_name) {
+    if (file_name == null) {
+      return null;
+    }
+    return file_table.get(file_name);
+  }
 
   public static FileChunk readChunk(String file_name) {
     try {
@@ -31,16 +40,16 @@ public class File_IO {
     }
   }
 
-  public static Vector<FileChunk> readFile(String file_name) {
-    File            file = new File(file_name);
+  public static FileInfo readFile(String file_name) {
+    File            fd = new File(file_name);
     int             chunk_n;
     FileInputStream reader;
 
-    if ((chunk_n = File_IO.numberOfChunks(file)) == -1 || (reader = File_IO.openFile(file)) == null) {
+    if ((chunk_n = File_IO.numberOfChunks(fd)) == -1 || (reader = File_IO.openFile(fd)) == null) {
       return null;
     }
 
-    Vector<FileChunk> chunks = new Vector<FileChunk>(chunk_n);
+    FileInfo file = new FileInfo(file_name, chunk_n);
     for (int i = 0; i < chunk_n; i++) {
       byte[] buf = new byte[MAX_CHUNK_SIZE];
       int    ret = File_IO.readFromFile(reader, buf);
@@ -49,10 +58,10 @@ public class File_IO {
         return null;
       }
       else { //ret == 0 means its the last chunk with size 0
-        chunks.add(new FileChunk((ret == 0) ? new byte[0] : buf));
+        file.addChunk(new FileChunk((ret == 0) ? new byte[0] : buf));
       }
     }
-    return chunks;
+    return file;
   }
 
   public static boolean storeFile(String file_name, byte[] data, byte version) {
