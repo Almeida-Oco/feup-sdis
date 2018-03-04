@@ -22,20 +22,20 @@ public class User_IO extends Thread {
   Scanner reader;
   SynchronousQueue<String> task_queue;
 
+  public static void main(String[] args) {
+    User_IO input = new User_IO(null);
+
+    input.run();
+  }
 
   public User_IO(SynchronousQueue<String> queue) {
     this.task_queue = queue;
     this.reader     = new Scanner(System.in);
   }
 
-  private void print(String information) {
-    System.out.println("\n" + information + "\n > ");
-  }
-
   private String readLine() {
     try {
       String line = this.reader.nextLine();
-      System.out.println(" > ");
       return line;
     }
     catch (NoSuchElementException err) {
@@ -51,58 +51,60 @@ public class User_IO extends Thread {
   public void run() {
     String response = "", line;
 
-    System.out.println("Welcome to the p2p backup system!\nType 'help' for possible commands\nEnjoy\n\n > ");
-    while (!response.equalsIgnoreCase("exit")) {
+    System.out.print("Welcome to the p2p backup system!\nType 'help' for possible commands\nEnjoy :-)\n\n > ");
+
+    while (response == null || !response.equalsIgnoreCase("EXIT!")) {
       if ((line = this.readLine()) != null) {
+        response = this.processInput(line);
+        System.out.println("  RESPONSE = " + response);
+
+        /// response contains the string to send to the other threads
+
+        System.out.print(" > ");
       }
     }
   }
 
-  private boolean processInput(String line) {
+  private String processInput(String line) {
     Scanner in = new Scanner(line);
 
     if (!in.hasNext()) {
-      return false;
+      return null;
     }
     String command = in.next();
     if (command.equals("help")) {
       this.printHelp();
-      return false;
+      return null;
     }
     else if (command.equals("exit")) {
-      line = "EXIT!";
-      return true;
+      return "EXIT!";
     }
     else if (command.equals("status")) {
-      line = "STATUS";
-      return true;
+      return "STATUS";
     }
     else if (command.equals("backup")) {
-      line = this.processBackup(in);
-      return true;
+      return this.processBackup(in);
     }
     else if (command.equals("recover")) {
-      line = this.processRecover(in);
-      return true;
+      return this.processRecover(in);
     }
     else if (command.equals("remove")) {
-      line = this.processRemove(in);
-      return true;
+      return this.processRemove(in);
     }
     else if (command.equals("set_space")) {
-      line = this.processSpace(in);
-      return true;
+      return this.processSpace(in);
     }
     System.out.println("Unknown command!");
-    this.printHelp();
-    return false;
+    return null;
   }
 
   private String processBackup(Scanner args) {
-    if (!args.hasNext()) {
-      System.out.println("No file name found!");
-      this.printBackupHelp();
-      return null;
+    if (args.) {
+      if (!args.hasNext()) {
+        System.out.println("No file name found!");
+        this.printBackupHelp();
+        return null;
+      }
     }
     String file_name = args.next();
     if (!args.hasNextInt()) {
@@ -153,7 +155,19 @@ public class User_IO extends Thread {
   }
 
   private String processSpace(Scanner args) {
-    return null;
+    if (!args.hasNext()) {
+      System.out.println("No space amount found!");
+      this.printSpaceHelp();
+      return null;
+    }
+    String amount_str = args.next();
+    long   amount     = this.extractSpace(amount_str);
+    if (amount == -1) {
+      this.printSpaceHelp();
+      return null;
+    }
+
+    return "SPACE " + amount;
   }
 
   private void printHelp() {
@@ -172,41 +186,96 @@ public class User_IO extends Thread {
                  exit_name    = "  exit",
                  exit_desc    = "        Stops the program exectution\n";
 
-    System.out.println("\nUsage: <command> [<args>...]\n\nCommands:\n"
-                       + BOLD + backup_name + PLAIN + backup_desc
-                       + BOLD + recover_name + PLAIN + recover_desc
-                       + BOLD + remove_name + PLAIN + remove_desc
-                       + BOLD + space_name + PLAIN + space_desc
-                       + BOLD + status_name + PLAIN + status_desc
-                       + BOLD + help_name + PLAIN + help_desc
-                       + BOLD + exit_name + PLAIN + exit_desc
-                       + "\n > ");
+    System.out.print("\nUsage: <command> [<args>...]\n\nCommands:\n"
+                     + BOLD + backup_name + PLAIN + backup_desc
+                     + BOLD + recover_name + PLAIN + recover_desc
+                     + BOLD + remove_name + PLAIN + remove_desc
+                     + BOLD + space_name + PLAIN + space_desc
+                     + BOLD + status_name + PLAIN + status_desc
+                     + BOLD + help_name + PLAIN + help_desc
+                     + BOLD + exit_name + PLAIN + exit_desc
+                     + "\n");
   }
 
   private void printBackupHelp() {
-    System.out.println("\nUsage: backup <file_name> <rep_degree>\n\n"
-                       + BOLD + "  file_name   " + PLAIN + "Path to the file to backup\n"
-                       + BOLD + "  rep_degree  " + PLAIN + "Number of nodes that will store the file\n"
-                       + "\n > ");
+    System.out.print("\nUsage: backup <file_name> <rep_degree>\n\n"
+                     + BOLD + "  file_name   " + PLAIN + "Path to the file to backup\n"
+                     + BOLD + "  rep_degree  " + PLAIN + "Number of nodes that will store the file\n"
+                     + "\n");
   }
 
   private void printRecoverHelp() {
-    System.out.println("\nUsage: recover <file_name>\n\n"
-                       + BOLD + "  file_name   " + PLAIN + "Path to the file to recover\n"
-                       + "\n > ");
+    System.out.print("\nUsage: recover <file_name>\n\n"
+                     + BOLD + "  file_name   " + PLAIN + "Path to the file to recover\n"
+                     + "\n");
   }
 
   private void printRemoveHelp() {
-    System.out.println("\nUsage: remove <file_name>\n\n"
-                       + BOLD + "  file_name   " + PLAIN + "Path to the file to backup\n"
-                       + "\n > ");
+    System.out.print("\nUsage: remove <file_name>\n\n"
+                     + BOLD + "  file_name   " + PLAIN + "Path to the file to backup\n"
+                     + "\n");
   }
 
   private void printSpaceHelp() {
-    System.out.println("\nUsage: set_space <amount>[magnitude]\n\n"
-                       + BOLD + "  amount      " + PLAIN + "Amount of space to assign to the service\n"
-                       + BOLD + "  magnitude   " + PLAIN + "'GB', 'MB' or 'KB' (Default = 'KB') \n"
-                       + "\n > ");
+    System.out.print("\nUsage: set_space <amount>[magnitude]\n\n"
+                     + BOLD + "  amount      " + PLAIN + "Amount of space to assign to the service\n"
+                     + BOLD + "  magnitude   " + PLAIN + "'GB', 'MB' or 'KB' (Default = 'KB') \n"
+                     + "\n");
+  }
+
+  public long extractSpace(String txt) {
+    long    multiplier = 1;
+    int     size       = txt.length();
+    boolean has_mult   = false;
+    long    number     = 0;
+
+    for (int i = size - 1; i >= 0; i--) {
+      char chr       = txt.charAt(i);
+      int  num_value = Character.getNumericValue(chr);
+      if (chr >= '0' && chr <= '9') {
+        number += num_value * Math.pow(10, (has_mult ? size - i - 3 : size - i));
+      }
+      else if (chr == 'B' && number == 0) {
+        has_mult = true;
+        char mult = txt.charAt(--i);
+        multiplier = (mult == 'G' ? 1048576 : (mult == 'M' ? 1024 : (mult == 'K' ? 1 : -1)));
+        if (multiplier == -1) {
+          System.out.println("Unknown magnitude " + mult + chr);
+          return -1;
+        }
+      }
+      else {
+        System.out.println("Malformed space value!");
+        return -1;
+      }
+    }
+    System.out.println("Number = " + number + "\n Mult = " + multiplier);
+    return number * multiplier;
+  }
+
+  private boolean isNumber(String txt) {
+    for (int i = 0; i < txt.length(); i++) {
+      if (!(txt.charAt(i) >= '0' && txt.charAt(i) <= '9')) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private long stringToMult(String mult) {
+    if (mult.equals("GB")) {
+      return 1048576;
+    }
+    else if (mult.equals("MB")) {
+      return 1024;
+    }
+    else if (mult.equals("KB")) {
+      return 1;
+    }
+    else {
+      System.out.println("Unknown magnitude '" + mult + "'");
+      return -1;
+    }
   }
 
   @Override
