@@ -1,6 +1,7 @@
 package files;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Vector;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.File;
@@ -99,6 +100,32 @@ public class File_IO {
     File f = new File(file_name);
 
     return f.exists() && !f.isDirectory();
+  }
+
+  public static boolean eraseFile(String file_name) {
+    FileInfo file   = file_table.get(file_name);
+    boolean  erased = true;
+
+    Vector<FileChunk> chunks = file.getChunks();
+    int size = chunks.size();
+    for (int i = 0; i < size; i++) {
+      FileChunk chunk = chunks.get(i);
+      erased = erased && eraseChunk(file_name + chunk.getChunkN());
+    }
+
+    return erased;
+  }
+
+  public static boolean eraseChunk(String chunk_id) {
+    File chunk = new File(chunk_id);
+
+    try {
+      return chunk.delete();
+    }
+    catch (SecurityException err) {
+      System.err.println("Failed to delete chunk '" + chunk_id + "'\n - " + err.getMessage());
+      return false;
+    }
   }
 
   private static int numberOfChunks(File file) {

@@ -93,4 +93,8 @@ public class FileInfo {
 
     return null;
   }
+
+  public Vector<FileChunk> getChunks() {
+    return this.chunks;
+  }
 }

@@ -1,9 +1,6 @@
 package controller.handler;
 
-import network.*;
 import files.*;
-import java.nio.charset.StandardCharsets;
-import java.util.Random;
 
 class ChunkHandler extends Handler {
   String file_id;
