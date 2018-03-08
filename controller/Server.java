@@ -219,7 +219,13 @@ class Server {
     LinkedBlockingQueue<Runnable> queue      = new LinkedBlockingQueue<Runnable>(MAX_TASKS);
     ThreadPoolExecutor            task_queue = new ThreadPoolExecutor(cores - 1, cores - 1, 0, TimeUnit.SECONDS, queue);
 
-    NetworkListener listener = new NetworkListener(mc, mdr, mdb, task_queue);
-    listener.run();
+    for (int i = 2; i < Runtime.getRuntime().availableProcessors(); i++) {
+      task_queue.prestartCoreThread();
+    }
+
+    MCListener  mc_listener  = new MCListener(mc, mdr, mdb, task_queue);
+    MDBListener mdb_listener = new MDBListener(mc, mdr, mdb, task_queue);
+    mc_listener.run();
+    mdb_listener.run();
   }
 }

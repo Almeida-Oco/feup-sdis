@@ -1,11 +1,13 @@
 package controller.handler;
 
-import files.File_IO;
+import files.*;
+import network.*;
 
 class StoredHandler extends Handler {
   String file_id;
   int chunk_n;
-  StoredHandler(PacketInfo packet) {
+  StoredHandler(PacketInfo packet, Net_IO mc, Net_IO mdr, Net_IO mdb) {
+    super(mc, mdr, mdb);
     this.file_id = packet.getFileID();
     this.chunk_n = packet.getChunkN();
   }

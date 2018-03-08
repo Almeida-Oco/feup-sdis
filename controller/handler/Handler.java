@@ -3,10 +3,12 @@ package controller.handler;
 import network.*;
 import files.*;
 import controller.ApplicationInfo;
+
 import java.net.InetAddress;
+import java.util.concurrent.ThreadPoolExecutor;
 
 // TODO is message
-public abstract class Handler implements Runnable {
+public abstract class Handler extends Thread {
   public static ApplicationInfo app_info;
   Net_IO mc, mdr, mdb;
 
@@ -19,17 +21,17 @@ public abstract class Handler implements Runnable {
     this.mdb = mdb;
   }
 
-  public static Handler newHandler(PacketInfo packet, Net_IO mc, Net_IO mdr, Net_IO mdb) {
+  public static Handler newHandler(PacketInfo packet, Net_IO mc, Net_IO mdr, Net_IO mdb, ThreadPoolExecutor queue) {
     String type = packet.getType();
 
     if (type.equals("PUTCHUNK")) {
       return new PutchunkHandler(packet, mc, mdr, mdb);
     }
     else if (type.equals("GETCHUNK")) {
-      return new GetchunkHandler(packet, mc, mdr, mdb);
+      return new GetchunkHandler(packet, mc, mdr, mdb, queue);
     }
     else if (type.equals("STORED")) {
-      return new StoredHandler(packet);
+      return new StoredHandler(packet, mc, mdr, mdb);
     }
     else {
       System.err.println("Unknown type '" + type + "'");

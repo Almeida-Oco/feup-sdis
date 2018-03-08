@@ -17,7 +17,7 @@ public class FileChunk implements Comparable<FileChunk> {
     this.actual_rep = 0;
   }
 
-  FileChunk(byte[] data, int size, int chunk_n) {
+  public FileChunk(byte[] data, int size, int chunk_n) {
     this.chunk_data = data;
     this.chunk_size = size;
     this.chunk_n    = chunk_n;

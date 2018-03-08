@@ -22,7 +22,7 @@ class PutchunkHandler extends Handler {
   }
 
   public void run() {
-    File_IO.storeChunk(this.file_id, this.chunk_n, data.getBytes());
+    File_IO.storeChunk(this.file_id, new FileChunk(this.data.getBytes(), this.data.length(), this.chunk_n));
     PacketInfo packet = new PacketInfo(this.sender_addr, this.sender_port);
 
     packet.setType("STORED");
@@ -31,8 +31,12 @@ class PutchunkHandler extends Handler {
     packet.setChunkN(this.chunk_n);
     packet.setData(this.data);
     Random rand = new Random();
-
-    Thread.sleep(rand.nextInt(401)); //TODO use ScheduledExecutorService?
-    mc.sendMsg(packet);
+    try {
+      Thread.sleep(rand.nextInt(401)); //TODO use ScheduledExecutorService?
+    }
+    catch (InterruptedException err) {
+      System.out.println("PutchunkHandler failed to sleep!\n - " + err.getMessage());
+    }
+    this.mc.sendMsg(packet);
   }
 }
