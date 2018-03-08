@@ -1,8 +1,8 @@
-package handler;
+package controller.handler;
 
 import network.*;
 import files.*;
-import java.util.StandardCharsets;
+import java.nio.charset.StandardCharsets;
 
 class GetchunkHandler extends Handler {
   byte version;

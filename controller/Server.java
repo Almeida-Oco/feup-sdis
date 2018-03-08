@@ -1,13 +1,18 @@
+package controller;
+
 import network.*;
 import files.*;
-import controller.*;
+import controller.handler.Handler;
 
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
-class main {
+class Server {
+  private static final String PLAIN            = "\033[0;0m";
+  private static final String BOLD             = "\033[0;1m";
   private static final int cores               = Runtime.getRuntime().availableProcessors();
   private static final int MAX_TASKS           = 100;
   private static final Pattern channel_pattern =
@@ -17,10 +22,11 @@ class main {
     byte   major_v, minor_v;
     int    serv_id;
     String ap;
-    Net_IO mc, mdb, mdr;
+    Net_IO mc = null, mdb = null, mdr = null;
     byte   version;
 
-    if ((version = extractVersion(args[0])) == -1 ||
+    if (!argsValid(args) ||
+        (version = extractVersion(args[0])) == -1 ||
         (serv_id = extractServID(args[1])) == -1 ||
         (ap = extractAP(args[2])) == null) {
       return;
@@ -46,6 +52,47 @@ class main {
     startProgram(app_info, mc, mdr, mdb);
   }
 
+  private static boolean argsValid(String[] args) {
+    if (args.length != 6) {
+      return printUsage();
+    }
+
+    return true;
+  }
+
+  private static boolean printUsage() {
+    final String prot_name = "  version          ",
+                 prot_desc = "Protocol version to use ( [0-9].[0-9] )\n",
+                 id_name   = "  server id        ",
+                 id_desc   = "ID to assign to the server ( [0-9]+ )\n",
+                 ap_name   = "  access point     ",
+                 ap_desc   = "Service access point to use\n",
+                 mc_name   = "  MC               ",
+                 mc_desc   = "Name of the multicast control channel to use ( <ip>?:?<port> )\n",
+                 mdr_name  = "  MDR              ",
+                 mdr_desc  = "Name of the multicast data recovery channel to use ( <ip>?:?<port> )\n",
+                 mdb_name  = "  MDB              ",
+                 mdb_desc  = "Name of the multicast data channel to use ( <ip>?:?<port> )\n",
+                 ip_name   = "  ip        ",
+                 ip_desc   = "Standard IPv4 address (If missing 127.0.0.1 will be used)\n",
+                 port_name = "  port      ",
+                 port_desc = "Port number to use for the service";
+
+
+    System.err.print("Usage:\n  java Server <version> <server id> <access point> <MC> <MDR> <MDB>\n\n");
+    System.err.print("Arguments:\n" +
+                     BOLD + prot_name + PLAIN + prot_desc +
+                     BOLD + id_name + PLAIN + id_desc +
+                     BOLD + ap_name + PLAIN + ap_desc +
+                     BOLD + mc_name + PLAIN + mc_desc +
+                     BOLD + mdr_name + PLAIN + mdr_desc +
+                     BOLD + mdb_name + PLAIN + mdb_desc + "\n\n");
+    System.err.print("Options:\n" +
+                     BOLD + ip_name + PLAIN + ip_desc +
+                     BOLD + port_name + PLAIN + port_desc + "\n\n");
+    return false;
+  }
+
   private static byte extractVersion(String version) {
     byte major, minor;
 
@@ -59,7 +106,7 @@ class main {
       minor = Byte.valueOf(String.valueOf(version.charAt(2)));
     }
     catch (NumberFormatException err) {
-      System.err.println("Version number NaN!\n " + err.getMessage());
+      System.err.println("Version number NaN!\n - " + err.getMessage());
       return -1;
     }
     catch (IndexOutOfBoundsException err) {
@@ -79,7 +126,7 @@ class main {
       return id;
     }
     catch (NumberFormatException err) {
-      System.err.println("Server ID argument NaN!\n " + err.getMessage());
+      System.err.println("Server ID argument NaN!\n - " + err.getMessage());
       return -1;
     }
   }
@@ -88,7 +135,7 @@ class main {
     if (ap.compareToIgnoreCase("UDP") != 0 &&
         ap.compareToIgnoreCase("TCP") != 0 &&
         ap.compareToIgnoreCase("RMI") != 0) {
-      System.err.println("Access point argument not correct!\n Got '" + ap + "', expected either UDP, TCP or RMI");
+      System.err.println("Access point argument not correct!\n - Got '" + ap + "', expected either UDP, TCP or RMI");
       return null;
     }
 
@@ -96,7 +143,7 @@ class main {
   }
 
   private static Net_IO extractChannel(String mc_info) {
-    Matcher matcher = main.channel_pattern.matcher(mc_info);
+    Matcher matcher = channel_pattern.matcher(mc_info);
     String  ip;
     int     port;
     Net_IO  channel;
@@ -105,12 +152,11 @@ class main {
       System.err.println("Specified ip:port does not match expected pattern!");
       return null;
     }
-    System.out.println("Matched!");
 
     if ((ip = extractIP(matcher)) == null || (port = extractPort(matcher)) == -1) {
       return null;
     }
-    System.out.println("" + ip + " : " + port);
+
     channel = new Net_IO(ip, port);
     if (!channel.isReady()) {
       return null;
@@ -155,12 +201,12 @@ class main {
         return port;
       }
       else {
-        System.err.println("Invalid port number: " + port + "\n Port should be between [0, 65535]");
+        System.err.println("Invalid port number: " + port + "\n - Port should be between [0, 65535]");
         return -1;
       }
     }
     catch (NumberFormatException err) {
-      System.err.println("Port argument is not a valid port!\n " + err.getMessage());
+      System.err.println("Port argument is not a valid port!\n - " + err.getMessage());
       return -1;
     }
     catch (IllegalArgumentException err) {
@@ -169,8 +215,11 @@ class main {
     }
   }
 
-  private static startProgram(ApplicationInfo info, Net_io mc, Net_IO mdr, Net_IO mdb) {
-    LinkedBlockingQueue<Runnable> queue      = new LinkedBlockingQueue<PacketInfo>(Runnable);
+  private static void startProgram(ApplicationInfo info, Net_IO mc, Net_IO mdr, Net_IO mdb) {
+    LinkedBlockingQueue<Runnable> queue      = new LinkedBlockingQueue<Runnable>(MAX_TASKS);
     ThreadPoolExecutor            task_queue = new ThreadPoolExecutor(cores - 1, cores - 1, 0, TimeUnit.SECONDS, queue);
+
+    NetworkListener listener = new NetworkListener(mc, mdr, mdb, task_queue);
+    listener.run();
   }
 }

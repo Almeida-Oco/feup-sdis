@@ -23,7 +23,7 @@ public class Net_IO {
       this.mcast_socket = new MulticastSocket(port);
     }
     catch (IOException err) {
-      System.err.println("Failed to create Multicast Socket!\n " + err.getMessage());
+      System.err.println("Failed to create Multicast Socket!\n - " + err.getMessage());
       this.mcast_socket = null;
       return;
     }
@@ -33,15 +33,15 @@ public class Net_IO {
       this.mcast_socket.setTimeToLive(TTL);
     }
     catch (UnknownHostException err) {
-      System.err.println("No host found associated with IP '" + addr + "'\n " + err.getMessage());
+      System.err.println("No host found associated with IP '" + addr + "'\n - " + err.getMessage());
       this.mcast_socket = null; //On fail this is set to null
     }
     catch (SecurityException err) {
-      System.err.println("Not allowed to execute checkConnect method!\n " + err.getMessage());
+      System.err.println("Not allowed to execute checkConnect method!\n - " + err.getMessage());
       this.mcast_socket = null; //On fail this is set to null
     }
     catch (IOException err) {
-      System.err.println("Failed to join Multicast group: '" + addr + "'\n " + err.getMessage());
+      System.err.println("Failed to join Multicast group: '" + addr + "'\n - " + err.getMessage());
       this.mcast_socket = null; //On fail this is set to null
     }
   }
@@ -56,7 +56,7 @@ public class Net_IO {
       this.mcast_socket.receive(this.packet);
     }
     catch (IOException err) {
-      System.err.println("Failed to receive message!\n " + err.getMessage());
+      System.err.println("Failed to receive message!\n - " + err.getMessage());
       return null;
     }
     System.out.println("Data size = " + this.packet.getLength());
@@ -77,7 +77,7 @@ public class Net_IO {
       return true;
     }
     catch (IOException err) {
-      System.err.println("Failed to send DatagramPacket!\n " + err.getMessage());
+      System.err.println("Failed to send DatagramPacket!\n - " + err.getMessage());
       return false;
     }
   }

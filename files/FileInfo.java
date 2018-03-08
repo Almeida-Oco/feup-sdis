@@ -6,25 +6,33 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class FileInfo {
+  private final static int MAX_CHUNK_SIZE = 64000;
   String file_name;
   String file_id;
   String metadata;
   Vector<FileChunk> chunks;
 
   FileInfo(File fd, int chunk_number) {
-    long metadata_size = fd.getAbsolutePath().length() + Long.toString(fd.lastModified()).length() + fd.length();
+    String abs_path   = fd.getAbsolutePath(),
+           last_mod   = Long.toString(fd.lastModified());
+    int metadata_size = abs_path.length() + last_mod.length() + 2 * MAX_CHUNK_SIZE;
 
     //TODO calculate metadata_size differently
     this.metadata  = new String(new byte[metadata_size]);
-    this.metadata += fd.getAbsolutePath() + Long.toString(fd.lastModified());
-    this.file_name = fd.getAbsolutePath();
+    this.metadata += abs_path + last_mod;
+    this.file_name = abs_path;
     this.chunks    = new Vector<FileChunk>(chunk_number);
   }
 
   void addChunk(FileChunk chunk) {
+    if (this.chunks.size() == 0) { //Use first chunk as hash
+      this.metadata += new String(chunk.getData());
+    }
+
     this.chunks.add(chunk);
 
-    if (chunk.isFinalChunk()) {
+    if (chunk.isFinalChunk()) { //Use last chunk as hash
+      this.metadata += new String(chunk.getData());
       this.setFileID();
     }
   }
@@ -36,7 +44,7 @@ public class FileInfo {
       intestine = MessageDigest.getInstance("SHA-256");
     }
     catch (NoSuchAlgorithmException err) {
-      System.err.println("Failed to find encryption algorithm!\n " + err.getMessage() + "\n  How the frick is this possible?");
+      System.err.println("Failed to find encryption algorithm!\n - " + err.getMessage() + "\n - How the frick is this possible?");
       intestine = null;
       System.exit(0);
     }

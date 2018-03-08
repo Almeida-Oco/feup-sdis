@@ -1,8 +1,11 @@
-package handler;
+package controller.handler;
 
 import network.*;
 import files.*;
+import controller.ApplicationInfo;
+import java.net.InetAddress;
 
+// TODO is message
 public abstract class Handler implements Runnable {
   public static ApplicationInfo app_info;
   Net_IO mc, mdr, mdb;

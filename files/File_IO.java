@@ -35,7 +35,7 @@ public class File_IO {
       return new FileChunk(buf, (bytes_read == -1) ? 0 : bytes_read);
     }
     catch (IOException err) {
-      System.err.println("Failed to read chunk from stream!\n " + err.getMessage());
+      System.err.println("Failed to read chunk from stream!\n - " + err.getMessage());
       return null;
     }
   }
@@ -72,11 +72,11 @@ public class File_IO {
       return true;
     }
     catch (FileNotFoundException err) {
-      System.err.println("Failed to open descriptor to file '" + file_name + "'\n " + err.getCause() + ": " + err.getMessage());
+      System.err.println("Failed to open descriptor to file '" + file_name + "'\n - " + err.getCause() + ": " + err.getMessage());
       return false;
     }
     catch (IOException err) {
-      System.err.println("Failed to write data to file '" + file_name + "'\n " + err.getMessage());
+      System.err.println("Failed to write data to file '" + file_name + "'\n - " + err.getMessage());
       return false;
     }
   }
@@ -115,11 +115,11 @@ public class File_IO {
       return stream;
     }
     catch (FileNotFoundException err) {
-      System.err.println("Failed to open file '" + f_name + "'\n " + err.getMessage());
+      System.err.println("Failed to open file '" + f_name + "'\n - " + err.getMessage());
       return null;
     }
     catch (SecurityException err) {
-      System.err.println("Access denied to file '" + f_name + "'\n " + err.getMessage());
+      System.err.println("Access denied to file '" + f_name + "'\n - " + err.getMessage());
       return null;
     }
   }
@@ -130,7 +130,7 @@ public class File_IO {
       return bytes_read == -1 ? 0 : bytes_read;
     }
     catch (IOException err) {
-      System.err.println("Failed to read file from stream!\n " + err.getMessage());
+      System.err.println("Failed to read file from stream!\n - " + err.getMessage());
       return -1;
     }
   }

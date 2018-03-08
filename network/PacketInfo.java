@@ -71,11 +71,11 @@ public class PacketInfo {
       return true;
     }
     catch (IllegalArgumentException err) {
-      System.err.println("No capturing group in matcher!\n " + err.getCause() + " -> " + err.getMessage());
+      System.err.println("No capturing group in matcher!\n - " + err.getCause() + " -> " + err.getMessage());
       return false;
     }
     catch (IllegalStateException err) {
-      System.err.println("Match failed or not done yet!\n " + err.getMessage());
+      System.err.println("Match failed or not done yet!\n - " + err.getMessage());
       return false;
     }
   }
