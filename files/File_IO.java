@@ -106,14 +106,18 @@ public class File_IO {
     FileInfo file   = file_table.get(file_name);
     boolean  erased = true;
 
-    Vector<FileChunk> chunks = file.getChunks();
-    int size = chunks.size();
-    for (int i = 0; i < size; i++) {
-      FileChunk chunk = chunks.get(i);
-      erased = erased && eraseChunk(file_name + chunk.getChunkN());
+    if (file != null) {
+      Vector<FileChunk> chunks = file.getChunks();
+      int size = chunks.size();
+      for (int i = 0; i < size; i++) {
+        FileChunk chunk = chunks.get(i);
+        erased = erased && eraseChunk(file_name + chunk.getChunkN());
+      }
+      file_table.remove(file_name);
+      return erased;
     }
 
-    return erased;
+    return false;
   }
 
   public static boolean eraseChunk(String chunk_id) {
