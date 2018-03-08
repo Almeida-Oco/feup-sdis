@@ -2,23 +2,14 @@ package network;
 
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.net.InetAddress;
+import java.net.DatagramPacket;
+import java.nio.charset.StandardCharsets;
+
 
 public class PacketInfo {
   private static final Pattern MSG_PAT = Pattern.compile(" *(?<msgT>\\w+) +(?<version>\\d.\\d) +(?<senderID>\\d+) +(?<fileID>.{64})( +(?<chunkN1>\\d{1,6}) +(?<Rdegree>\\d)| +(?<chunkN2>\\d{1,6}))? *\r\n\r\n(?<data>.{0,64000})?", Pattern.CASE_INSENSITIVE);
-
-  // private static final Pattern PUTCHUNK_PAT =
-  //   Pattern.compile(" *PUTCHUNK +(?<version>\\d.\\d) +(?<senderID>\\d+) +(?<fileID>.{64}) +(?<chunkN>\\d{1,6}) +(?<Rdegree>\\d) *\r\n\r\n(?<data>.{0,64000})", Pattern.CASE_INSENSITIVE);
-  // private static final Pattern STORED_PAT =
-  //   Pattern.compile(" *STORED +(?<version>\\d.\\d) +(?<senderID>\\d+) +(?<fileID>.{64}) +(?<chunkN>\\d{1,6}) *\r\n\r\n", Pattern.CASE_INSENSITIVE);
-  // private static final Pattern GETCHUNK_PAT =
-  //   Pattern.compile(" *GETCHUNK +(?<version>\\d.\\d) +(?<senderID>\\d+) +(?<fileID>.{64}) +(?<chunkN>\\d{1,6}) *\r\n\r\n", Pattern.CASE_INSENSITIVE);
-  // private static final Pattern CHUNK_PAT =
-  //   Pattern.compile(" *CHUNK +(?<version>\\d.\\d) +(?<senderID>\\d+) +(?<fileID>.{64}) +(?<chunkN>\\d{1,6}) *\r\n\r\n(?<data>.{0,64000})", Pattern.CASE_INSENSITIVE);
-  // private static final Pattern DELETE_PAT =
-  //   Pattern.compile(" *DELETE +(?<version>\\d.\\d) +(?<senderID>\\d+) +(?<fileID>.{64}) *\r\n\r\n", Pattern.CASE_INSENSITIVE);
-  // private static final Pattern REMOVED_PAT =
-  //   Pattern.compile(" *REMOVED +(?<version>\\d.\\d) +(?<senderID>\\d+) +(?<fileID>.{64}) +(?<chunkN>\\d{1,6}) *\r\n\r\n", Pattern.CASE_INSENSITIVE);
-  private static final String CRLF = "\r\n";
+  private static final String CRLF     = "\r\n";
 
   String msg_type;
   String version;
@@ -28,11 +19,13 @@ public class PacketInfo {
   byte r_degree;
   String data;
 
+  InetAddress addr;
+  int port;
 
   public static void main(String[] args) {
   }
 
-  PacketInfo() {
+  public PacketInfo() {
     this.msg_type = null;
 
     this.version   = null;
@@ -41,12 +34,16 @@ public class PacketInfo {
     this.chunk_n   = -1;
     this.r_degree  = -1;
     this.data      = null;
+    this.addr      = null;
+    this.port      = -1;
   }
 
-  public static PacketInfo fromString(CharSequence str) {
-    Matcher    match  = PacketInfo.MSG_PAT.matcher(str);
+  public static PacketInfo fromPacket(DatagramPacket dgram_packet) {
+    Matcher    match  = PacketInfo.MSG_PAT.matcher(new String(dgram_packet.getData(), StandardCharsets.US_ASCII));
     PacketInfo packet = new PacketInfo();
 
+    packet.setAddress(dgram_packet.getAddress());
+    packet.setPort(dgram_packet.getPort());
     if (match.matches() && !packet.fromMatcher(match)) { //TODO should fromMatcher return a PacketInfo?
       return null;
     }
@@ -116,43 +113,87 @@ public class PacketInfo {
             is_delete   = this.msg_type.equalsIgnoreCase("DELETE"),
             is_chunk    = this.msg_type.equalsIgnoreCase("CHUNK");
 
-    return
-      (is_putchunk || is_stored || is_removed || is_getchunk || is_delete || is_chunk) &&                                                                          // Check message type
-      (this.version != null) &&                                                                                                                                    // Check version
-      (this.file_id != null) &&                                                                                                                                    // Check file_id
-      (this.sender_id != -1) &&                                                                                                                                    // Check sender id
-      ((this.chunk_n != -1 && (is_putchunk || is_stored || is_getchunk || is_removed || is_chunk)) || (this.chunk_n == -1 && (is_delete))) &&                      // Check chunk number
-      ((this.r_degree != -1 && is_putchunk) || (this.r_degree == -1 && (is_stored || is_getchunk || is_removed || is_delete || is_chunk))) &&                      // Check replication degree
-      ((this.data != null&& (is_putchunk || is_chunk)) || ((this.data == null || this.data.equals("")) && (is_stored || is_getchunk || is_removed || is_delete))); // Check data
+    return this.addr != null&&
+           this.port != -1 &&
+           (is_putchunk || is_stored || is_removed || is_getchunk || is_delete || is_chunk) &&                                                                          // Check message type
+           (this.version != null) &&                                                                                                                                    // Check version
+           (this.file_id != null) &&                                                                                                                                    // Check file_id
+           (this.sender_id != -1) &&                                                                                                                                    // Check sender id
+           ((this.chunk_n != -1 && (is_putchunk || is_stored || is_getchunk || is_removed || is_chunk)) || (this.chunk_n == -1 && (is_delete))) &&                      // Check chunk number
+           ((this.r_degree != -1 && is_putchunk) || (this.r_degree == -1 && (is_stored || is_getchunk || is_removed || is_delete || is_chunk))) &&                      // Check replication degree
+           ((this.data != null&& (is_putchunk || is_chunk)) || ((this.data == null || this.data.equals("")) && (is_stored || is_getchunk || is_removed || is_delete))); // Check data
   }
 
-  public void set_msg_type(String type) {
+  public void setType(String type) {
     // TODO check if type is correct
     this.msg_type = type;
   }
 
-  public void set_version(byte major, byte minor) {
+  public void setVersion(byte major, byte minor) {
     this.version = Byte.toString(major) + "." + Byte.toString(minor);
   }
 
-  public void set_file_id(String id) {
+  public void setVersion(byte ver) {
+    this.version = Byte.toString((byte)(ver / 10)) + "." + Byte.toString((byte)(ver % 10));
+  }
+
+  public void setFileID(String id) {
     this.file_id = id;
   }
 
-  public void set_sender_id(int id) {
+  public void setSenderID(int id) {
     this.sender_id = id;
   }
 
-  public void set_chunk_n(int n) {
+  public void setChunkN(int n) {
     this.chunk_n = n;
   }
 
-  public void set_r_degree(byte degree) {
+  public void setRDegree(byte degree) {
     this.r_degree = degree;
   }
 
-  public void set_data(String data) {
+  public void setData(String data) {
     this.data = data;
+  }
+
+  public void setAddress(InetAddress addr) {
+    this.addr = addr;
+  }
+
+  public void setPort(int port) {
+    this.port = port;
+  }
+
+  public String getType() {
+    return this.msg_type;
+  }
+
+  public String getFileID() {
+    return this.file_id;
+  }
+
+  public byte getVersion() {
+    char chr1 = this.version.charAt(0),
+         chr2 = this.version.charAt(2);
+
+    return (byte)(Character.getNumericValue(chr1) * 10 + Character.getNumericValue(chr2));
+  }
+
+  public int getChunkN() {
+    return this.chunk_n;
+  }
+
+  public String getData() {
+    return this.data;
+  }
+
+  public InetAddress getAddress() {
+    return this.addr;
+  }
+
+  public int getPort() {
+    return this.port;
   }
 
   public void resetPacket() {

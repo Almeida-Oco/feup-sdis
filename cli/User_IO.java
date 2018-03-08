@@ -15,7 +15,7 @@ import java.util.NoSuchElementException;
 /// help
 
 
-public class User_IO extends Thread {
+public class User_IO {
   private static final String PLAIN = "\033[0;0m";
   private static final String BOLD  = "\033[0;1m";
 
@@ -33,7 +33,7 @@ public class User_IO extends Thread {
     this.reader     = new Scanner(System.in);
   }
 
-  private String readLine() {
+  public String readLine() {
     try {
       String line = this.reader.nextLine();
       return line;
@@ -99,7 +99,7 @@ public class User_IO extends Thread {
   }
 
   private String processBackup(Scanner args) {
-    if (args.) {
+    if (args.hasNext()) {
       if (!args.hasNext()) {
         System.out.println("No file name found!");
         this.printBackupHelp();
@@ -119,7 +119,7 @@ public class User_IO extends Thread {
       this.printBackupHelp();
       return null;
     }
-    return "BACKUP " + file_name + " " + rep_degree;
+    return "BACKUP" + " " + file_name + " " + rep_degree;
   }
 
   private String processRecover(Scanner args) {

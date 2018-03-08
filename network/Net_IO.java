@@ -59,19 +59,19 @@ public class Net_IO {
       System.err.println("Failed to receive message!\n " + err.getMessage());
       return null;
     }
-
-    return PacketInfo.fromString(new String(this.packet.getData(), StandardCharsets.US_ASCII));
+    System.out.println("Data size = " + this.packet.getLength());
+    return PacketInfo.fromPacket(this.packet);
   }
 
-  public boolean sendMsg(PacketInfo packet, InetAddress addr, int port) {
+  public boolean sendMsg(PacketInfo packet) {
     if (!packet.isReady()) {
       System.err.println("Tried to send not ready packet!");
       return false;
     }
 
     this.packet.setData(packet.toString().getBytes());
-    this.packet.setAddress(addr);
-    this.packet.setPort(port);
+    this.packet.setAddress(packet.getAddress());
+    this.packet.setPort(packet.getPort());
     try {
       this.mcast_socket.send(this.packet);
       return true;

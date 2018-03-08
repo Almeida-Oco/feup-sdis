@@ -28,11 +28,11 @@ public class File_IO {
 
   public static FileChunk readChunk(String file_name) {
     try {
-      FileInputStream reader = new FileInputStream(file_name);
-      byte[]          buf    = new byte[MAX_CHUNK_SIZE];
+      FileInputStream reader     = new FileInputStream(file_name);
+      byte[]          buf        = new byte[MAX_CHUNK_SIZE];
+      int             bytes_read = reader.read(buf);
 
-      reader.read(buf);
-      return new FileChunk(file_name, buf);
+      return new FileChunk(buf, (bytes_read == -1) ? 0 : bytes_read);
     }
     catch (IOException err) {
       System.err.println("Failed to read chunk from stream!\n " + err.getMessage());
@@ -42,29 +42,29 @@ public class File_IO {
 
   public static FileInfo readFile(String file_name) {
     File            fd = new File(file_name);
-    int             chunk_n;
+    int             chunk_n, bytes_read;
     FileInputStream reader;
 
     if ((chunk_n = File_IO.numberOfChunks(fd)) == -1 || (reader = File_IO.openFile(fd)) == null) {
       return null;
     }
 
-    FileInfo file = new FileInfo(file_name, chunk_n);
+    FileInfo file = new FileInfo(fd, chunk_n);
     for (int i = 0; i < chunk_n; i++) {
       byte[] buf = new byte[MAX_CHUNK_SIZE];
-      int    ret = File_IO.readFromFile(reader, buf);
+      bytes_read = File_IO.readFromFile(reader, buf);
 
-      if (ret == -1) {
+      if (bytes_read == -1) {
         return null;
       }
-      else { //ret == 0 means its the last chunk with size 0
-        file.addChunk(new FileChunk((ret == 0) ? new byte[0] : buf));
+      else { //bytes_read == 0 means its the last chunk with size 0
+        file.addChunk(new FileChunk((bytes_read == 0) ? new byte[0] : buf, bytes_read));
       }
     }
     return file;
   }
 
-  public static boolean storeFile(String file_name, byte[] data, byte version) {
+  public static boolean storeFile(String file_name, byte[] data) {
     try {
       FileOutputStream writer = new FileOutputStream(file_name);
       writer.write(data);
@@ -127,7 +127,7 @@ public class File_IO {
   private static int readFromFile(FileInputStream stream, byte[] buf) {
     try {
       int bytes_read = stream.read(buf);
-      return bytes_read == -1 ? 0 : bytes_read + 1;
+      return bytes_read == -1 ? 0 : bytes_read;
     }
     catch (IOException err) {
       System.err.println("Failed to read file from stream!\n " + err.getMessage());

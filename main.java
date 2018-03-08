@@ -1,22 +1,16 @@
 import network.*;
 import files.*;
-import cli.*;
+import controller.*;
 
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.LinkedBlockingQueue;
 
 class main {
-  // byte major_v;
-  // byte minor_v;
-  // int serv_id;
-  // String ap;
-
-  // Net_IO mc;
-  // Net_IO mdb;
-  // Net_IO mdr;
-
-
-  private static final Pattern ip_port_pattern =
+  private static final int cores               = Runtime.getRuntime().availableProcessors();
+  private static final int MAX_TASKS           = 100;
+  private static final Pattern channel_pattern =
     Pattern.compile(" *((?<ip1>\\d{1,4}).(?<ip2>\\d{1,4}).(?<ip3>\\d{1,4}).(?<ip4>\\d{1,4}))?:?(?<port>\\d{1,7}) *");
 
   public static void main(String[] args) {
@@ -46,6 +40,10 @@ class main {
       System.err.println("Failed to initialize Multicast Data Recovery Channel");
       return;
     }
+
+    ApplicationInfo app_info = new ApplicationInfo(serv_id, ap, version);
+    Handler.app_info = app_info;
+    startProgram(app_info, mc, mdr, mdb);
   }
 
   private static byte extractVersion(String version) {
@@ -98,7 +96,7 @@ class main {
   }
 
   private static Net_IO extractChannel(String mc_info) {
-    Matcher matcher = main.ip_port_pattern.matcher(mc_info);
+    Matcher matcher = main.channel_pattern.matcher(mc_info);
     String  ip;
     int     port;
     Net_IO  channel;
@@ -169,5 +167,10 @@ class main {
       System.err.println("No port specified for protocol!");
       return -1;
     }
+  }
+
+  private static startProgram(ApplicationInfo info, Net_io mc, Net_IO mdr, Net_IO mdb) {
+    LinkedBlockingQueue<Runnable> queue      = new LinkedBlockingQueue<PacketInfo>(Runnable);
+    ThreadPoolExecutor            task_queue = new ThreadPoolExecutor(cores - 1, cores - 1, 0, TimeUnit.SECONDS, queue);
   }
 }
