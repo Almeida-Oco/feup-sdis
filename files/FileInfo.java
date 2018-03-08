@@ -74,12 +74,23 @@ public class FileInfo {
   }
 
   public FileChunk getChunk(int chunk_n) {
-    try {
-      return this.chunks.get(chunk_n);
+    int low = 0, high = this.chunks.size(), mid, number;
+
+    while (low <= high) {
+      mid    = (low + high) / 2;
+      number = this.chunks.get(mid).getChunkN();
+
+      if (number > chunk_n) {
+        high = mid - 1;
+      }
+      else if (number < chunk_n) {
+        low = mid + 1;
+      }
+      else {
+        return this.chunks.get(mid);
+      }
     }
-    catch (ArrayIndexOutOfBoundsException err) {
-      System.err.println("File '" + this.file_id + "' has no chunk #" + chunk_n);
-      return null;
-    }
+
+    return null;
   }
 }

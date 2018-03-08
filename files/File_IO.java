@@ -41,20 +41,10 @@ public class File_IO {
     return file_table.get(file_name);
   }
 
-  public static FileChunk readChunk(String file_id, int chunk_n) {
-    String file_name = file_id + chunk_n;
+  public static FileChunk getChunk(String file_id, int chunk_n) {
+    FileInfo file = file_table.get(file_id);
 
-    try {
-      FileInputStream reader     = new FileInputStream(file_name);
-      byte[]          buf        = new byte[MAX_CHUNK_SIZE];
-      int             bytes_read = reader.read(buf);
-
-      return new FileChunk(buf, (bytes_read == -1) ? 0 : bytes_read, chunk_n);
-    }
-    catch (IOException err) {
-      System.err.println("Failed to read chunk from stream!\n - " + err.getMessage());
-      return null;
-    }
+    return file.getChunk(chunk_n);
   }
 
   public static FileInfo readFile(String file_name, int rep_degree) {

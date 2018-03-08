@@ -3,6 +3,7 @@ package controller.handler;
 import network.*;
 import files.*;
 import java.net.InetAddress;
+import java.util.Random;
 
 class PutchunkHandler extends Handler {
   byte version;
@@ -21,7 +22,7 @@ class PutchunkHandler extends Handler {
   }
 
   public void run() {
-    File_IO.storeFile(this.file_id + this.chunk_n, data.getBytes());
+    File_IO.storeChunk(this.file_id, this.chunk_n, data.getBytes());
     PacketInfo packet = new PacketInfo(this.sender_addr, this.sender_port);
 
     packet.setType("STORED");
@@ -29,7 +30,9 @@ class PutchunkHandler extends Handler {
     packet.setFileID(this.file_id);
     packet.setChunkN(this.chunk_n);
     packet.setData(this.data);
+    Random rand = new Random();
 
+    Thread.sleep(rand.nextInt(401)); //TODO use ScheduledExecutorService?
     mc.sendMsg(packet);
   }
 }

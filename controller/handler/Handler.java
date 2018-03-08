@@ -28,6 +28,9 @@ public abstract class Handler implements Runnable {
     else if (type.equals("GETCHUNK")) {
       return new GetchunkHandler(packet, mc, mdr, mdb);
     }
+    else if (type.equals("STORED")) {
+      return new StoredHandler(packet);
+    }
     else {
       System.err.println("Unknown type '" + type + "'");
       return null;

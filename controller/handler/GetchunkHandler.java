@@ -20,7 +20,7 @@ class GetchunkHandler extends Handler {
   }
 
   public void run() {
-    FileChunk chunk = File_IO.readChunk(this.file_id + this.chunk_n);
+    FileChunk chunk = File_IO.getChunk(this.file_id + this.chunk_n);
 
     if (chunk != null) {
       PacketInfo packet = new PacketInfo(this.sender_addr, this.sender_port);
