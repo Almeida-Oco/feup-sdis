@@ -58,4 +58,14 @@ public class FileInfo {
   public Vector<FileChunk> getChunks() {
     return this.chunks;
   }
+
+  public FileChunk getChunk(int chunk_n) {
+    try {
+      return this.chunks.get(chunk_n);
+    }
+    catch (ArrayIndexOutOfBoundsException err) {
+      System.err.println("File '" + this.file_id + "' has no chunk #" + chunk_n);
+      return null;
+    }
+  }
 }

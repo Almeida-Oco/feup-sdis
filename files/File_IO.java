@@ -15,6 +15,21 @@ public class File_IO {
   //Contains the local files which were sent for backup
   private static ConcurrentHashMap<String, FileInfo> file_table = new ConcurrentHashMap<String, FileInfo>();
 
+  public static void incReplication(String file_id, int chunk_n) {
+    FileInfo file = file_table.get(file_id);
+
+    if (file == null) {
+      System.err.println("File '" + file_id + "' not in database!");
+      return;
+    }
+
+    FileChunk chunk = file.getChunk(chunk_n);
+    if (chunk == null) {
+      return;
+    }
+    chunk.incActualRep();
+  }
+
   public static void addFile(FileInfo file) {
     file_table.put(file.getName(), file);
   }
@@ -40,7 +55,7 @@ public class File_IO {
     }
   }
 
-  public static FileInfo readFile(String file_name) {
+  public static FileInfo readFile(String file_name, int rep_degree) {
     File            fd = new File(file_name);
     int             chunk_n, bytes_read;
     FileInputStream reader;
@@ -58,7 +73,7 @@ public class File_IO {
         return null;
       }
       else { //bytes_read == 0 means its the last chunk with size 0
-        file.addChunk(new FileChunk((bytes_read == 0) ? new byte[0] : buf, bytes_read));
+        file.addChunk(new FileChunk((bytes_read == 0) ? new byte[0] : buf, bytes_read, rep_degree));
       }
     }
     return file;

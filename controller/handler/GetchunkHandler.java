@@ -3,6 +3,7 @@ package controller.handler;
 import network.*;
 import files.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Random;
 
 class GetchunkHandler extends Handler {
   byte version;
@@ -29,6 +30,9 @@ class GetchunkHandler extends Handler {
       packet.setFileID(this.file_id);
       packet.setChunkN(this.chunk_n);
       packet.setData(new String(chunk.getData(), StandardCharsets.US_ASCII));
+      Random rand = new Random();
+
+      Thread.sleep(rand.nextInt(401)); //TODO use ScheduledExecutorService?
 
       mdr.sendMsg(packet);
     }
