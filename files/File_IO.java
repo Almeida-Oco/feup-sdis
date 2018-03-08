@@ -95,6 +95,12 @@ public class File_IO {
     }
   }
 
+  public static boolean fileExists(String file_name) {
+    File f = new File(file_name);
+
+    return f.exists() && !f.isDirectory();
+  }
+
   private static int numberOfChunks(File file) {
     if (!file.exists()) {
       System.err.println("File '" + file.getName() + "' does not exist!");
