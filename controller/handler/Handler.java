@@ -1,11 +1,14 @@
-package controller;
+package handler;
 
 import network.*;
 import files.*;
 
-abstract class Handler implements Runnable {
+public abstract class Handler implements Runnable {
   public static ApplicationInfo app_info;
   Net_IO mc, mdr, mdb;
+
+  InetAddress sender_addr;
+  int sender_port;
 
   protected Handler(Net_IO mc, Net_IO mdr, Net_IO mdb) {
     this.mc  = mc;
@@ -19,8 +22,11 @@ abstract class Handler implements Runnable {
     if (type.equals("PUTCHUNK")) {
       return new PutchunkHandler(packet, mc, mdr, mdb);
     }
+    else if (type.equals("GETCHUNK")) {
+      return new GetchunkHandler(packet, mc, mdr, mdb);
+    }
     else {
-      System.out.println("TYPE = " + type);
+      System.err.println("Unknown type '" + type + "'");
       return null;
     }
   }

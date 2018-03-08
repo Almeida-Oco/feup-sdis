@@ -65,7 +65,7 @@ public class Net_IO {
 
   public boolean sendMsg(PacketInfo packet) {
     if (!packet.isReady()) {
-      System.err.println("Tried to send not ready packet!");
+      System.err.println("Packet is not ready to be sent!");
       return false;
     }
 

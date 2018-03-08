@@ -25,7 +25,7 @@ public class PacketInfo {
   public static void main(String[] args) {
   }
 
-  public PacketInfo() {
+  public PacketInfo(InetAddress addr, int port) {
     this.msg_type = null;
 
     this.version   = null;
@@ -34,20 +34,20 @@ public class PacketInfo {
     this.chunk_n   = -1;
     this.r_degree  = -1;
     this.data      = null;
-    this.addr      = null;
-    this.port      = -1;
+    this.addr      = addr;
+    this.port      = port;
   }
 
-  public static PacketInfo fromPacket(DatagramPacket dgram_packet) {
-    Matcher    match  = PacketInfo.MSG_PAT.matcher(new String(dgram_packet.getData(), StandardCharsets.US_ASCII));
-    PacketInfo packet = new PacketInfo();
+  public static PacketInfo fromPacket(DatagramPacket packet) {
+    Matcher    match      = PacketInfo.MSG_PAT.matcher(new String(packet.getData(), StandardCharsets.US_ASCII));
+    PacketInfo new_packet = new PacketInfo(packet.getAddress(), packet.getPort());
 
-    packet.setAddress(dgram_packet.getAddress());
-    packet.setPort(dgram_packet.getPort());
-    if (match.matches() && !packet.fromMatcher(match)) { //TODO should fromMatcher return a PacketInfo?
+    new_packet.setAddress(packet.getAddress());
+    new_packet.setPort(packet.getPort());
+    if (match.matches() && !new_packet.fromMatcher(match)) { //TODO should fromMatcher return a PacketInfo?
       return null;
     }
-    return packet;
+    return new_packet;
   }
 
   private boolean fromMatcher(Matcher matcher) {

@@ -1,4 +1,4 @@
-package controller;
+package handler;
 
 import network.*;
 import files.*;
@@ -9,9 +9,6 @@ class PutchunkHandler extends Handler {
   String file_id;
   int chunk_n;
   String data;
-
-  InetAddress sender_addr;
-  int sender_port;
 
   PutchunkHandler(PacketInfo packet, Net_IO mc, Net_IO mdr, Net_IO mdb) {
     super(mc, mdr, mdb);
@@ -25,15 +22,14 @@ class PutchunkHandler extends Handler {
 
   public void run() {
     File_IO.storeFile(this.file_id + this.chunk_n, data.getBytes());
-    PacketInfo stored_packet = new PacketInfo();
+    PacketInfo packet = new PacketInfo(this.sender_addr, this.sender_port);
 
-    stored_packet.setVersion(this.version);
-    stored_packet.setFileID(this.file_id);
-    stored_packet.setChunkN(this.chunk_n);
-    stored_packet.setData(this.data);
-    stored_packet.setAddress(this.sender_addr);
-    stored_packet.setPort(this.sender_port);
+    packet.setType("STORED");
+    packet.setVersion(this.version);
+    packet.setFileID(this.file_id);
+    packet.setChunkN(this.chunk_n);
+    packet.setData(this.data);
 
-    mc.sendMsg(stored_packet);
+    mc.sendMsg(packet);
   }
 }
