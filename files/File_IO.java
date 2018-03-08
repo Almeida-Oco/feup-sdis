@@ -41,13 +41,15 @@ public class File_IO {
     return file_table.get(file_name);
   }
 
-  public static FileChunk readChunk(String file_name) {
+  public static FileChunk readChunk(String file_id, int chunk_n) {
+    String file_name = file_id + chunk_n;
+
     try {
       FileInputStream reader     = new FileInputStream(file_name);
       byte[]          buf        = new byte[MAX_CHUNK_SIZE];
       int             bytes_read = reader.read(buf);
 
-      return new FileChunk(buf, (bytes_read == -1) ? 0 : bytes_read);
+      return new FileChunk(buf, (bytes_read == -1) ? 0 : bytes_read, chunk_n);
     }
     catch (IOException err) {
       System.err.println("Failed to read chunk from stream!\n - " + err.getMessage());
@@ -73,25 +75,32 @@ public class File_IO {
         return null;
       }
       else { //bytes_read == 0 means its the last chunk with size 0
-        file.addChunk(new FileChunk((bytes_read == 0) ? new byte[0] : buf, bytes_read, rep_degree));
+        file.addChunk(new FileChunk(buf, bytes_read, rep_degree, i));
       }
     }
     return file;
   }
 
-  public static boolean storeFile(String file_name, byte[] data) {
+  public static boolean storeChunk(String file_id, FileChunk chunk) {
+    String chunk_name = file_id + chunk.getChunkN();
+
+    //TODO need to store file_chunk in table
     try {
-      FileOutputStream writer = new FileOutputStream(file_name);
-      writer.write(data);
+      FileOutputStream writer = new FileOutputStream(chunk_name);
+      writer.write(chunk.getData());
+      FileInfo file = file_table.putIfAbsent(file_id, new FileInfo(file_id, chunk));
+      if (file != null) {
+        file.addChunk(chunk);
+      }
 
       return true;
     }
     catch (FileNotFoundException err) {
-      System.err.println("Failed to open descriptor to file '" + file_name + "'\n - " + err.getCause() + ": " + err.getMessage());
+      System.err.println("Failed to open descriptor to file '" + chunk_name + "'\n - " + err.getCause() + ": " + err.getMessage());
       return false;
     }
     catch (IOException err) {
-      System.err.println("Failed to write data to file '" + file_name + "'\n - " + err.getMessage());
+      System.err.println("Failed to write data to file '" + chunk_name + "'\n - " + err.getMessage());
       return false;
     }
   }

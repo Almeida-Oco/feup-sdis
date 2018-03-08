@@ -1,15 +1,16 @@
 package files;
 
 import java.util.Vector;
+import java.util.Collections;
 import java.io.File;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class FileInfo {
   private final static int MAX_CHUNK_SIZE = 64000;
-  String file_name;
+  String file_name; //Used only for hashing purposes
   String file_id;
-  String metadata;
+  String metadata;  //Used only for hashing purposes
   Vector<FileChunk> chunks;
 
   FileInfo(File fd, int chunk_number) {
@@ -22,14 +23,31 @@ public class FileInfo {
     this.metadata += abs_path + last_mod;
     this.file_name = abs_path;
     this.chunks    = new Vector<FileChunk>(chunk_number);
+    this.file_id   = null;
+  }
+
+  FileInfo(String file_id, FileChunk chunk) {
+    this.file_id   = file_id;
+    this.metadata  = null;
+    this.file_name = null;
+    this.chunks    = new Vector<FileChunk>();
+    this.chunks.add(chunk);
   }
 
   void addChunk(FileChunk chunk) {
+    int index = Collections.binarySearch(this.chunks, chunk);
+
+    if (this.file_id == null) { // Still reading from file
+      this.tryHash(chunk);
+    }
+
+    this.chunks.add(index, chunk);
+  }
+
+  private void tryHash(FileChunk chunk) {
     if (this.chunks.size() == 0) { //Use first chunk as hash
       this.metadata += new String(chunk.getData());
     }
-
-    this.chunks.add(chunk);
 
     if (chunk.isFinalChunk()) { //Use last chunk as hash
       this.metadata += new String(chunk.getData());
@@ -53,10 +71,6 @@ public class FileInfo {
 
   public String getName() {
     return this.file_name;
-  }
-
-  public Vector<FileChunk> getChunks() {
-    return this.chunks;
   }
 
   public FileChunk getChunk(int chunk_n) {
