@@ -1,5 +1,6 @@
-package controller.handler;
+package controller.server;
 
+import network.PacketInfo;
 import files.*;
 
 class ChunkHandler extends Handler {
@@ -15,11 +16,17 @@ class ChunkHandler extends Handler {
     this.data    = packet.getData();
   }
 
+  PacketInfo listen(PacketInfo packet) {
+    return null;
+  }
+
   public void run() {
     if (!File_IO.fileExists(this.file_id + this.chunk_n)) {
       File_IO.storeChunk(this.file_id,
                          new FileChunk(this.data.getBytes(), this.data.length(), this.chunk_n));
     }
-    System.out.println("Duplicate CHUNK message!");
+    else {
+      System.out.println("Duplicate CHUNK message!");
+    }
   }
 }

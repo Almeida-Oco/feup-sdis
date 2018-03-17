@@ -7,6 +7,9 @@ class DeleteHandler extends Handler {
     this.file_id = packet.getFileID();
   }
 
+  public void signal(PacketInfo packet) {
+  }
+
   public void run() {
     File_IO.eraseFile(this.file_id);
   }

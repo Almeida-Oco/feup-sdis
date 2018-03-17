@@ -1,14 +1,14 @@
-package controller;
+package controller.listener;
 
 import network.*;
-import controller.handler.Handler;
+import controller.server.Handler;
 import java.util.concurrent.ThreadPoolExecutor;
 
 public class MCListener implements Runnable {
   Net_IO mc, mdr, mdb;
   ThreadPoolExecutor task_queue;
 
-  MCListener(Net_IO mc, Net_IO mdr, Net_IO mdb, ThreadPoolExecutor queue) {
+  public MCListener(Net_IO mc, Net_IO mdb, Net_IO mdr, ThreadPoolExecutor queue) {
     this.mc         = mc;
     this.mdr        = mdr;
     this.mdb        = mdb;
@@ -23,7 +23,8 @@ public class MCListener implements Runnable {
     do {
       if ((packet = this.mc.recvMsg()) != null) {
         System.out.println("LOG: mc::recvMsg() -> " + packet.getType());
-        this.task_queue.execute(Handler.newHandler(packet, mc, mdr, mdb, this.task_queue));
+        Handler task = Handler.newHandler(packet, mc, mdr, mdb);
+        this.task_queue.execute(task);
       }
     } while (txt == null || !txt.equals("EXIT"));
 

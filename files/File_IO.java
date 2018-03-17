@@ -158,12 +158,10 @@ public class File_IO {
   }
 
   private static FileInputStream openFile(File file) {
-    FileInputStream stream;
-    String          f_name = file.getName();
+    String f_name = file.getName();
 
     try {
-      stream = new FileInputStream(file);
-      return stream;
+      return new FileInputStream(file);
     }
     catch (FileNotFoundException err) {
       System.err.println("Failed to open file '" + f_name + "'\n - " + err.getMessage());

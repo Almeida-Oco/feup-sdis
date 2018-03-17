@@ -1,4 +1,4 @@
-package controller.handler;
+package controller.server;
 
 import network.*;
 import files.*;
@@ -21,14 +21,16 @@ public abstract class Handler extends Thread {
     this.mdb = mdb;
   }
 
-  public static Handler newHandler(PacketInfo packet, Net_IO mc, Net_IO mdr, Net_IO mdb, ThreadPoolExecutor queue) {
+  abstract PacketInfo listen();
+
+  public static Handler newHandler(PacketInfo packet, Net_IO mc, Net_IO mdr, Net_IO mdb) {
     String type = packet.getType();
 
     if (type.equals("PUTCHUNK")) {
       return new PutchunkHandler(packet, mc, mdr, mdb);
     }
     else if (type.equals("GETCHUNK")) {
-      return new GetchunkHandler(packet, mc, mdr, mdb, queue);
+      return new GetchunkHandler(packet, mc, mdr, mdb);
     }
     else if (type.equals("STORED")) {
       return new StoredHandler(packet, mc, mdr, mdb);

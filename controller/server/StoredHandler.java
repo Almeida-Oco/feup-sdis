@@ -1,7 +1,8 @@
-package controller.handler;
+package controller.server;
 
 import files.*;
-import network.*;
+import network.PacketInfo;
+import network.Net_IO;
 
 class StoredHandler extends Handler {
   String file_id;
@@ -10,6 +11,10 @@ class StoredHandler extends Handler {
     super(mc, mdr, mdb);
     this.file_id = packet.getFileID();
     this.chunk_n = packet.getChunkN();
+  }
+
+  PacketInfo listen() {
+    return null;
   }
 
   public void run() {

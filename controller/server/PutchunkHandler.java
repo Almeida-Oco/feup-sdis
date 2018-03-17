@@ -1,6 +1,7 @@
-package controller.handler;
+package controller.server;
 
-import network.*;
+import network.Net_IO;
+import network.PacketInfo;
 import files.*;
 import java.net.InetAddress;
 import java.util.Random;
@@ -19,6 +20,10 @@ class PutchunkHandler extends Handler {
     this.data        = packet.getData();
     this.sender_addr = packet.getAddress();
     this.sender_port = packet.getPort();
+  }
+
+  PacketInfo listen() {
+    return null;
   }
 
   public void run() {

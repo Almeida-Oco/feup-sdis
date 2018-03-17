@@ -22,9 +22,6 @@ public class PacketInfo {
   InetAddress addr;
   int port;
 
-  public static void main(String[] args) {
-  }
-
   public PacketInfo(InetAddress addr, int port) {
     this.msg_type = null;
 
@@ -38,12 +35,22 @@ public class PacketInfo {
     this.port      = port;
   }
 
+  public static PacketInfo packetWith(String msg_type, String file_id, int chunk_n) {
+    PacketInfo packet = new PacketInfo(null, 0);
+
+    packet.msg_type = msg_type;
+    packet.file_id  = file_id;
+    packet.chunk_n  = chunk_n;
+
+    return packet;
+  }
+
   public static PacketInfo fromPacket(DatagramPacket packet) {
     Matcher    match      = PacketInfo.MSG_PAT.matcher(new String(packet.getData(), StandardCharsets.US_ASCII));
     PacketInfo new_packet = new PacketInfo(packet.getAddress(), packet.getPort());
 
-    new_packet.setAddress(packet.getAddress());
-    new_packet.setPort(packet.getPort());
+    new_packet.addr = packet.getAddress();
+    new_packet.port = packet.getPort();
     if (match.matches() && !new_packet.fromMatcher(match)) { //TODO should fromMatcher return a PacketInfo?
       return null;
     }
@@ -204,5 +211,16 @@ public class PacketInfo {
     this.chunk_n   = -1;
     this.r_degree  = '\0';
     this.data      = null;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj instanceof PacketInfo) {
+      PacketInfo packet = (PacketInfo)obj;
+      return this.msg_type.equals(packet.msg_type) &&
+             this.file_id.equals(packet.file_id) &&
+             this.chunk_n == packet.chunk_n;
+    }
+    return false;
   }
 }
