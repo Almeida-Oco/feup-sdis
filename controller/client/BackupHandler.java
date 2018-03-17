@@ -1,10 +1,14 @@
 package controller.client;
 
-import java.rmi.Remote;
 import network.*;
 import files.*;
+import controller.Handler;
+import controller.Pair;
 
-class BackupHandler implements Remote, Runnable {
+
+import java.rmi.Remote;
+
+class BackupHandler extends Handler implements Remote {
   String file_name;
   int rep_degree;
   Net_IO mc, mdb;
@@ -17,6 +21,21 @@ class BackupHandler implements Remote, Runnable {
     this.run();
   }
 
+  @Override
+  public void signal(String file_id) {
+  }
+
+  @Override
+  public Pair<String, Handler> register() {
+    return null;
+  }
+
+  @Override
+  public String signalType() {
+    return null;
+  }
+
+  @Override
   public void run() {
     FileInfo file = File_IO.readFile(this.file_name, this.rep_degree);
     String   id   = file.getID();

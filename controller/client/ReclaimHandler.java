@@ -1,9 +1,13 @@
 package controller.client;
 
-import java.rmi.Remote;
 import network.Net_IO;
+import controller.Handler;
+import controller.Pair;
 
-class ReclaimHandler implements Remote, Runnable {
+
+import java.rmi.Remote;
+
+class ReclaimHandler extends Handler implements Remote {
   int space;
   Net_IO mc, mdb;
 
@@ -14,6 +18,21 @@ class ReclaimHandler implements Remote, Runnable {
     this.run();
   }
 
+  @Override
+  public void signal(String file_id) {
+  }
+
+  @Override
+  public Pair<String, Handler> register() {
+    return null;
+  }
+
+  @Override
+  public String signalType() {
+    return null;
+  }
+
+  @Override
   public void run() {
     System.out.println("GOT RECLAIM MSG!");
   }

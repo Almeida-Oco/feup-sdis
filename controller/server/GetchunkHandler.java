@@ -2,13 +2,15 @@ package controller.server;
 
 import network.PacketInfo;
 import controller.Pair;
+import controller.Handler;
 import network.Net_IO;
 import files.*;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
 import java.util.concurrent.ThreadPoolExecutor;
 
-class GetchunkHandler extends Handler {
+public class GetchunkHandler extends Handler {
   boolean got_chunk = false;
   byte version;
   String file_id;
@@ -17,7 +19,7 @@ class GetchunkHandler extends Handler {
 
   //TODO should I just store the packet then initialize?
   // How much overhead is added with these initializations?
-  GetchunkHandler(PacketInfo packet, Net_IO mdr) {
+  public GetchunkHandler(PacketInfo packet, Net_IO mdr) {
     super();
     this.mdr     = mdr;
     this.version = packet.getVersion();

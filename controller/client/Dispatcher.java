@@ -5,7 +5,7 @@ import java.rmi.RemoteException;
 import controller.ApplicationInfo;
 import network.Net_IO;
 
-public class Handler implements HandlerInterface {
+public class Dispatcher implements HandlerInterface {
   Net_IO mc, mdb, mdr;
   private BackupHandler backup;
   private RestoreHandler restore;
@@ -13,7 +13,7 @@ public class Handler implements HandlerInterface {
   private ReclaimHandler reclaim;
   private StateHandler state;
 
-  public Handler(Net_IO mc, Net_IO mdb, Net_IO mdr) {
+  public Dispatcher(Net_IO mc, Net_IO mdb, Net_IO mdr) {
     this.mc      = mc;
     this.mdr     = mdr;
     this.mdb     = mdb;

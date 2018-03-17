@@ -3,18 +3,20 @@ package controller.server;
 import network.Net_IO;
 import network.PacketInfo;
 import controller.Pair;
+import controller.Handler;
 import files.*;
+
 import java.net.InetAddress;
 import java.util.Random;
 
-class PutchunkHandler extends Handler {
+public class PutchunkHandler extends Handler {
   byte version;
   String file_id;
   int chunk_n;
   String data;
   Net_IO mc;
 
-  PutchunkHandler(PacketInfo packet, Net_IO mc) {
+  public PutchunkHandler(PacketInfo packet, Net_IO mc) {
     super();
     this.mc          = mc;
     this.version     = packet.getVersion();

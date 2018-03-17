@@ -1,17 +1,18 @@
-package controller.server;
+package controller;
 
 import network.*;
 import files.*;
 import controller.ApplicationInfo;
 import controller.Pair;
+import controller.server.*;
 
 import java.net.InetAddress;
 import java.util.concurrent.ThreadPoolExecutor;
 
 // TODO is message
-public abstract class Handler extends Thread {
-  InetAddress sender_addr;
-  int sender_port;
+public abstract class Handler implements Runnable {
+  public InetAddress sender_addr;
+  public int sender_port;
 
   protected Handler() {
     this.sender_addr = null;
