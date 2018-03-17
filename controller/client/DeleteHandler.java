@@ -1,12 +1,18 @@
 package controller.client;
 
 import network.*;
+import files.FileInfo;
+import files.File_IO;
 import controller.Handler;
 import controller.listener.Listener;
 import controller.Pair;
 
-
 import java.rmi.Remote;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 class DeleteHandler extends Handler implements Remote {
   String file_name;
@@ -34,6 +40,24 @@ class DeleteHandler extends Handler implements Remote {
 
   @Override
   public void run() {
-    System.out.println("GOT DELETE MSG!");
+    FileInfo      file   = File_IO.getFileInfo(this.file_name);
+    String        id     = file.getID();
+    AtomicInteger count  = new AtomicInteger(0);
+    PacketInfo    packet = new PacketInfo(this.mc.getChannel().getAddr(), this.mc.getChannel().getPort());
+
+    packet.setType("DELETE");
+    packet.setFileID(id);
+
+    ScheduledExecutorService schedulor = Executors.newScheduledThreadPool(1);
+    ScheduledFuture          future    = schedulor.scheduleAtFixedRate(()->{
+      this.mc.getChannel().sendMsg(packet);
+      count.incrementAndGet();
+      File_IO.eraseFile(this.file_name);
+    }, 0, 2, TimeUnit.SECONDS);
+
+    while (count.get() < 5) {
+    }
+
+    future.cancel(false);
   }
 }

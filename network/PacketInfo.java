@@ -1,5 +1,7 @@
 package network;
 
+import controller.ApplicationInfo;
+
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.net.InetAddress;
@@ -24,10 +26,11 @@ public class PacketInfo {
 
   public PacketInfo(InetAddress addr, int port) {
     this.msg_type = null;
+    byte ver = ApplicationInfo.getVersion();
 
-    this.version   = null;
+    this.version   = Byte.toString((byte)(ver / 10)) + "." + Byte.toString((byte)(ver % 10));
+    this.sender_id = ApplicationInfo.getServID();
     this.file_id   = null;
-    this.sender_id = -1;
     this.chunk_n   = -1;
     this.r_degree  = -1;
     this.data      = null;
@@ -37,10 +40,13 @@ public class PacketInfo {
 
   public static PacketInfo packetWith(String msg_type, String file_id, int chunk_n) {
     PacketInfo packet = new PacketInfo(null, -1);
+    byte       ver    = ApplicationInfo.getVersion();
 
-    packet.msg_type = msg_type;
-    packet.file_id  = file_id;
-    packet.chunk_n  = chunk_n;
+    packet.version   = Byte.toString((byte)(ver / 10)) + "." + Byte.toString((byte)(ver % 10));
+    packet.sender_id = ApplicationInfo.getServID();
+    packet.msg_type  = msg_type;
+    packet.file_id   = file_id;
+    packet.chunk_n   = chunk_n;
 
     return packet;
   }

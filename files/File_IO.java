@@ -102,7 +102,7 @@ public class File_IO {
     return f.exists() && !f.isDirectory();
   }
 
-  public static boolean eraseFile(String file_name) {
+  public static boolean eraseChunksOf(String file_name) {
     FileInfo file   = file_table.get(file_name);
     boolean  erased = true;
 
@@ -112,12 +112,21 @@ public class File_IO {
       for (int i = 0; i < size; i++) {
         FileChunk chunk = chunks.get(i);
         erased = erased && eraseChunk(file_name + chunk.getChunkN());
+        if (erased) {
+          file.eraseChunk(chunk);
+        }
       }
       file_table.remove(file_name);
       return erased;
     }
 
-    return false;
+    return true;
+  }
+
+  public static boolean eraseFile(String file_name) {
+    File file = new File(file_name);
+
+    return file.delete();
   }
 
   public static boolean eraseChunk(String chunk_id) {

@@ -44,6 +44,12 @@ public class FileInfo {
     this.chunks.add(index, chunk);
   }
 
+  void eraseChunk(FileChunk chunk) {
+    int index = Collections.binarySearch(this.chunks, chunk);
+
+    this.chunks.remove(index);
+  }
+
   private void tryHash(FileChunk chunk) {
     if (this.chunks.size() == 0) { //Use first chunk as hash
       this.metadata += new String(chunk.getData());
