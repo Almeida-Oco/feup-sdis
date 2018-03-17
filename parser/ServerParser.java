@@ -6,7 +6,7 @@ import controller.ApplicationInfo;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
-public class ArgParser {
+public class ServerParser {
   private static final String regex    = " *((?<ip1>\\d{1,4}).(?<ip2>\\d{1,4}).(?<ip3>\\d{1,4}).(?<ip4>\\d{1,4}))?:?(?<port>\\d{1,7}) *";
   private static final Pattern pattern = Pattern.compile(regex);
 
@@ -16,7 +16,8 @@ public class ArgParser {
     String ap;
     Net_IO mc = null, mdb = null, mdr = null;
 
-    if ((version = extractVersion(args[0])) == -1 ||
+    if (args.length != 6 ||
+        (version = extractVersion(args[0])) == -1 ||
         (serv_id = extractServID(args[1])) == -1 ||
         (ap = extractAP(args[2])) == null) {
       return false;

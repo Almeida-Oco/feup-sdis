@@ -1,8 +1,9 @@
 package controller;
 
-import parser.ArgParser;
+import parser.ServerParser;
 import cli.User_IO;
-import controller.server.Handler;
+import controller.client.HandlerInterface;
+import controller.client.Handler;
 import controller.ApplicationInfo;
 import controller.listener.*;
 
@@ -11,27 +12,22 @@ import java.util.regex.Matcher;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.rmi.registry.Registry;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
 
 class Server {
-  private static final int cores               = Runtime.getRuntime().availableProcessors();
-  private static final int MAX_TASKS           = 100;
-  private static final Pattern channel_pattern =
-    Pattern.compile(" *((?<ip1>\\d{1,4}).(?<ip2>\\d{1,4}).(?<ip3>\\d{1,4}).(?<ip4>\\d{1,4}))?:?(?<port>\\d{1,7}) *");
+  private static final int cores     = Runtime.getRuntime().availableProcessors();
+  private static final int MAX_TASKS = 100;
 
   public static void main(String[] args) {
-    if (!argsValid(args) || !ArgParser.parseArgs(args)) {
+    if (!ServerParser.parseArgs(args)) {
+      User_IO.serverUsage();
       return;
     }
 
     startProgram();
-  }
-
-  private static boolean argsValid(String[] args) {
-    if (args.length != 6) {
-      return User_IO.printUsage();
-    }
-
-    return true;
   }
 
   private static void startProgram() {
@@ -51,7 +47,29 @@ class Server {
                                                ApplicationInfo.getMDR(),
                                                task_queue);
 
+    if (!registerClient(ApplicationInfo.getServID())) {
+      return;
+    }
+
     mc_listener.run();
     mdb_listener.run();
+  }
+
+  private static boolean registerClient(int id) {
+    try {
+      System.out.println("Registering: " + id);
+      Registry         registry = LocateRegistry.createRegistry(8000);
+      Handler          handler  = new Handler();
+      HandlerInterface stub     = (HandlerInterface)UnicastRemoteObject.exportObject(handler, 8080);
+
+      System.out.println("IM HERE");
+      registry.rebind("" + id, stub);
+    }
+    catch (RemoteException err) {
+      System.err.println("Failed to register client handler!\n - " + err.getMessage());
+      return false;
+    }
+
+    return true;
   }
 }

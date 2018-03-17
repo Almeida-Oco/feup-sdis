@@ -3,30 +3,38 @@ package controller.client;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
-public class Handler implements Remote {
+public class Handler implements HandlerInterface {
   private BackupHandler backup;
   private RestoreHandler restore;
   private DeleteHandler delete;
   private ReclaimHandler reclaim;
   private StateHandler state;
 
-  public void backup(String file_name) {
-    this.backup.backup(file_name);
+  public Handler() {
+    this.backup  = new BackupHandler();
+    this.restore = new RestoreHandler();
+    this.delete  = new DeleteHandler();
+    this.reclaim = new ReclaimHandler();
+    this.state   = new StateHandler();
   }
 
-  public void restore(String file_name) {
-    this.restore.restore(file_name);
+  public void backup(String file_name, int rep_degree) throws RemoteException {
+    this.backup.run();
   }
 
-  public void delete(String file_name) {
-    this.delete.delete(file_name);
+  public void restore(String file_name) throws RemoteException {
+    this.restore.run();
   }
 
-  public void reclaim(String file_name) {
-    this.reclaim.reclaim(file_name);
+  public void delete(String file_name) throws RemoteException {
+    this.delete.run();
   }
 
-  public void state(String file_name) {
-    this.state.state(file_name);
+  public void reclaim(String file_name) throws RemoteException {
+    this.reclaim.run();
+  }
+
+  public void state() throws RemoteException {
+    this.state.run();
   }
 }

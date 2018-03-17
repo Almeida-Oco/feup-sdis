@@ -1,6 +1,7 @@
 package controller.server;
 
 import network.PacketInfo;
+import network.Net_IO;
 import files.*;
 
 class ChunkHandler extends Handler {
@@ -11,8 +12,9 @@ class ChunkHandler extends Handler {
 
 
   ChunkHandler(PacketInfo packet) {
+    super();
     this.file_id = packet.getFileID();
-    this.chunk_n = packet.getChunk();
+    this.chunk_n = packet.getChunkN();
     this.data    = packet.getData();
   }
 

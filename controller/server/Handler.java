@@ -9,7 +9,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 // TODO is message
 public abstract class Handler extends Thread {
-  public static ApplicationInfo app_info;
   Net_IO mc, mdr, mdb;
 
   InetAddress sender_addr;
@@ -21,7 +20,13 @@ public abstract class Handler extends Thread {
     this.mdb = mdb;
   }
 
-  abstract PacketInfo listen();
+  protected Handler() {
+    this.mc          = null;
+    this.mdr         = null;
+    this.mdb         = null;
+    this.sender_addr = null;
+    this.sender_port = 0;
+  }
 
   public static Handler newHandler(PacketInfo packet, Net_IO mc, Net_IO mdr, Net_IO mdb) {
     String type = packet.getType();
