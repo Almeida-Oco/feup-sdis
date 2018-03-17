@@ -12,12 +12,10 @@ public class Net_IO {
   final int TTL      = 1;
   final int BUF_SIZE = 70000;
 
-  DatagramPacket packet;
   MulticastSocket mcast_socket;
   int mcast_port;
 
   public Net_IO(String addr, int port) {
-    this.packet     = new DatagramPacket(new byte[BUF_SIZE], BUF_SIZE);
     this.mcast_port = port;
     try {
       this.mcast_socket = new MulticastSocket(port);
@@ -50,17 +48,16 @@ public class Net_IO {
     return this.mcast_socket != null;
   }
 
-  //TODO should we create a new PacketInfo each time we receive?
   public PacketInfo recvMsg() {
     try {
-      this.mcast_socket.receive(this.packet);
+      DatagramPacket packet = new DatagramPacket(new byte[BUF_SIZE], BUF_SIZE);
+      this.mcast_socket.receive(packet);
+      return PacketInfo.fromPacket(packet);
     }
     catch (IOException err) {
       System.err.println("Failed to receive message!\n - " + err.getMessage());
       return null;
     }
-    System.out.println("Data size = " + this.packet.getLength());
-    return PacketInfo.fromPacket(this.packet);
   }
 
   public boolean sendMsg(PacketInfo packet) {
