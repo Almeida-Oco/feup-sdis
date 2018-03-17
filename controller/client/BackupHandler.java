@@ -27,8 +27,8 @@ class BackupHandler extends Handler implements Remote {
 
   //TODO missing saving the peer that responded
   @Override
-  public void signal(String file_id) {
-    this.signals.signalValue(file_id);
+  public void signal(PacketInfo packet) {
+    this.signals.signalValue(packet.getFileID() + "#" + packet.getChunkN());
   }
 
   @Override
@@ -44,7 +44,6 @@ class BackupHandler extends Handler implements Remote {
   @Override
   public void run() {
     FileInfo   file   = File_IO.readFile(this.file_name, this.rep_degree);
-    String     id     = file.getID();
     PacketInfo packet = new PacketInfo(this.mdb.getChannel().getAddr(), this.mdb.getChannel().getPort());
 
     packet.setRDegree(this.rep_degree);
@@ -62,6 +61,7 @@ class BackupHandler extends Handler implements Remote {
       }
     }
 
+    File_IO.addFile(file);
     this.curr_packet = null;
     System.out.println("BACKUP");
   }

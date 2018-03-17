@@ -53,7 +53,7 @@ public class File_IO {
     int             chunk_n, bytes_read;
     FileInputStream reader;
 
-    if ((chunk_n = File_IO.numberOfChunks(fd)) == -1 || (reader = File_IO.openFile(fd)) == null) {
+    if ((chunk_n = File_IO.numberOfChunks(fd)) == -1 || (reader = File_IO.openFileReader(fd)) == null) {
       return null;
     }
 
@@ -132,6 +132,27 @@ public class File_IO {
     }
   }
 
+  public static boolean restoreFile(String file_name, Vector<FileChunk> chunks) {
+    chunks.sort(null);
+    FileOutputStream out;
+    if ((out = openFileWriter(file_name)) == null) {
+      return false;
+    }
+
+
+    try {
+      for (FileChunk chunk : chunks) {
+        out.write(chunk.getData());
+      }
+      out.close();
+    }
+    catch (IOException err) {
+      System.err.println("Failed to write to FD of '" + file_name + "'\n - " + err.getMessage());
+      return false;
+    }
+    return true;
+  }
+
   private static int numberOfChunks(File file) {
     if (!file.exists()) {
       System.err.println("File '" + file.getName() + "' does not exist!");
@@ -157,7 +178,7 @@ public class File_IO {
     }
   }
 
-  private static FileInputStream openFile(File file) {
+  private static FileInputStream openFileReader(File file) {
     String f_name = file.getName();
 
     try {
@@ -169,6 +190,20 @@ public class File_IO {
     }
     catch (SecurityException err) {
       System.err.println("Access denied to file '" + f_name + "'\n - " + err.getMessage());
+      return null;
+    }
+  }
+
+  private static FileOutputStream openFileWriter(String file_name) {
+    try {
+      return new FileOutputStream(file_name);
+    }
+    catch (FileNotFoundException err) {
+      System.err.println("Failed to create file '" + file_name + "'\n - " + err.getMessage());
+      return null;
+    }
+    catch (SecurityException err) {
+      System.err.println("Access denied to file '" + file_name + "'\n - " + err.getMessage());
       return null;
     }
   }

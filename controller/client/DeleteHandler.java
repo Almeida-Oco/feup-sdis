@@ -1,6 +1,6 @@
 package controller.client;
 
-import network.Net_IO;
+import network.*;
 import controller.Handler;
 import controller.listener.Listener;
 import controller.Pair;
@@ -19,7 +19,7 @@ class DeleteHandler extends Handler implements Remote {
   }
 
   @Override
-  public void signal(String file_id) {
+  public void signal(PacketInfo packet) {
   }
 
   @Override

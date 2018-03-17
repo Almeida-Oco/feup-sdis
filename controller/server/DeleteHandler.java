@@ -14,7 +14,7 @@ public class DeleteHandler extends Handler {
   }
 
   @Override
-  public void signal(String file_id) {
+  public void signal(PacketInfo packet) {
   }
 
   @Override

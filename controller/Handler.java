@@ -19,7 +19,7 @@ public abstract class Handler implements Runnable {
     this.sender_port = 0;
   }
 
-  public abstract void signal(String file_id);
+  public abstract void signal(PacketInfo packet);
 
   public abstract Pair<String, Handler> register();
 

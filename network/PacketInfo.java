@@ -89,7 +89,7 @@ public class PacketInfo {
 
   public String toString() {
     boolean is_putchunk = this.msg_type.equalsIgnoreCase("PUTCHUNK"),
-            is_chunk    = this.msg_type.equalsIgnoreCase("CHUNK");
+        is_chunk        = this.msg_type.equalsIgnoreCase("CHUNK");
 
     if (!this.isReady()) {
       return null;
@@ -99,8 +99,8 @@ public class PacketInfo {
   }
 
   private String headerToString() {
-    boolean is_delete   = this.msg_type.equalsIgnoreCase("DELETE"),
-            is_putchunk = this.msg_type.equalsIgnoreCase("PUTCHUNK");
+    boolean is_delete = this.msg_type.equalsIgnoreCase("DELETE"),
+        is_putchunk   = this.msg_type.equalsIgnoreCase("PUTCHUNK");
 
 
     return this.msg_type + " "
@@ -114,11 +114,11 @@ public class PacketInfo {
 
   public boolean isReady() {
     boolean is_putchunk = this.msg_type.equalsIgnoreCase("PUTCHUNK"),
-            is_stored   = this.msg_type.equalsIgnoreCase("STORED"),
-            is_removed  = this.msg_type.equalsIgnoreCase("REMOVED"),
-            is_getchunk = this.msg_type.equalsIgnoreCase("GETCHUNK"),
-            is_delete   = this.msg_type.equalsIgnoreCase("DELETE"),
-            is_chunk    = this.msg_type.equalsIgnoreCase("CHUNK");
+        is_stored       = this.msg_type.equalsIgnoreCase("STORED"),
+        is_removed      = this.msg_type.equalsIgnoreCase("REMOVED"),
+        is_getchunk     = this.msg_type.equalsIgnoreCase("GETCHUNK"),
+        is_delete       = this.msg_type.equalsIgnoreCase("DELETE"),
+        is_chunk        = this.msg_type.equalsIgnoreCase("CHUNK");
 
     return this.addr != null&&
            this.port != -1 &&
@@ -182,7 +182,7 @@ public class PacketInfo {
 
   public byte getVersion() {
     char chr1 = this.version.charAt(0),
-         chr2 = this.version.charAt(2);
+        chr2  = this.version.charAt(2);
 
     return (byte)(Character.getNumericValue(chr1) * 10 + Character.getNumericValue(chr2));
   }

@@ -15,7 +15,7 @@ public class FileInfo {
 
   FileInfo(File fd, int chunk_number) {
     String abs_path   = fd.getAbsolutePath(),
-           last_mod   = Long.toString(fd.lastModified());
+        last_mod      = Long.toString(fd.lastModified());
     int metadata_size = abs_path.length() + last_mod.length() + 2 * MAX_CHUNK_SIZE;
 
     //TODO calculate metadata_size differently
@@ -96,6 +96,10 @@ public class FileInfo {
     }
 
     return null;
+  }
+
+  public int chunkNumber() {
+    return this.chunks.size();
   }
 
   public Vector<FileChunk> getChunks() {

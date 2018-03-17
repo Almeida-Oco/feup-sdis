@@ -1,5 +1,6 @@
 package controller.client;
 
+import network.PacketInfo;
 import controller.Handler;
 import controller.Pair;
 
@@ -8,7 +9,7 @@ import java.rmi.Remote;
 
 class StateHandler extends Handler implements Remote {
   @Override
-  public void signal(String file_id) {
+  public void signal(PacketInfo packet) {
   }
 
   @Override

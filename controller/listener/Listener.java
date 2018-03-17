@@ -42,18 +42,18 @@ public class Listener implements Runnable {
       this.task_queue.execute(task);
     }
     else {
-      this.signal(packet.getType(), packet.getFileID(), packet.getChunkN());
+      this.signal(packet);
     }
   }
 
-  private void signal(String type, String file_name, int chunk_n) {
-    String file_id = file_name + "#" + chunk_n;
+  private void signal(PacketInfo packet) {
+    String file_id = packet.getFileID() + "#" + packet.getChunkN();
 
-    ConcurrentHashMap<String, Handler> chunks = this.signals.get(type);
+    ConcurrentHashMap<String, Handler> chunks = this.signals.get(packet.getType());
     if (chunks != null) {
       Handler task = chunks.get(file_id);
       if (task != null) {
-        task.signal(file_id);
+        task.signal(packet);
       }
     }
   }
@@ -62,6 +62,7 @@ public class Listener implements Runnable {
     return this.channel;
   }
 
+  // TODO no need to receive just the task, add remaining parameters
   public void registerForSignal(Handler task) {
     Pair<String, Handler> input = task.register();
     if (input != null) {

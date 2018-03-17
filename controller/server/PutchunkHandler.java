@@ -1,7 +1,6 @@
 package controller.server;
 
-import network.Net_IO;
-import network.PacketInfo;
+import network.*;
 import controller.Pair;
 import controller.Handler;
 import files.*;
@@ -28,7 +27,7 @@ public class PutchunkHandler extends Handler {
   }
 
   @Override
-  public void signal(String file_id) {
+  public void signal(PacketInfo packet) {
   }
 
   @Override

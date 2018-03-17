@@ -3,7 +3,7 @@ package controller.server;
 import network.PacketInfo;
 import controller.Pair;
 import controller.Handler;
-import network.Net_IO;
+import network.*;
 import files.*;
 
 import java.nio.charset.StandardCharsets;
@@ -28,7 +28,7 @@ public class GetchunkHandler extends Handler {
   }
 
   @Override
-  public void signal(String file_id) {
+  public void signal(PacketInfo packet) {
     synchronized (this) {
       this.got_chunk = true;
     }
