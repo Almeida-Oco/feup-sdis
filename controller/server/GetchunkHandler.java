@@ -1,6 +1,7 @@
 package controller.server;
 
 import network.PacketInfo;
+import controller.Pair;
 import network.Net_IO;
 import files.*;
 import java.nio.charset.StandardCharsets;
@@ -12,11 +13,13 @@ class GetchunkHandler extends Handler {
   byte version;
   String file_id;
   int chunk_n;
+  Net_IO mdr;
 
   //TODO should I just store the packet then initialize?
   // How much overhead is added with these initializations?
-  GetchunkHandler(PacketInfo packet, Net_IO mc, Net_IO mdr, Net_IO mdb) {
-    super(mc, mdr, mdb);
+  GetchunkHandler(PacketInfo packet, Net_IO mdr) {
+    super();
+    this.mdr     = mdr;
     this.version = packet.getVersion();
     this.file_id = packet.getFileID();
     this.chunk_n = packet.getChunkN();
@@ -52,7 +55,13 @@ class GetchunkHandler extends Handler {
       packet.setData(chunk.getData());
       Random rand = new Random();
 
-      // Thread.sleep(rand.nextInt(401)); //TODO use ScheduledExecutorService?
+      try {
+        Thread.sleep(rand.nextInt(401)); //TODO use ScheduledExecutorService?
+      }
+      catch (InterruptedException err) {
+        System.out.println("Getchunk failed to sleep!\n - " + err.getMessage());
+      }
+
       synchronized (this) {
         if (!this.got_chunk) {
           mdr.sendMsg(packet);

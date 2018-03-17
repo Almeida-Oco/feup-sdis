@@ -2,6 +2,7 @@ package controller.server;
 
 import network.Net_IO;
 import network.PacketInfo;
+import controller.Pair;
 import files.*;
 import java.net.InetAddress;
 import java.util.Random;
@@ -11,9 +12,11 @@ class PutchunkHandler extends Handler {
   String file_id;
   int chunk_n;
   String data;
+  Net_IO mc;
 
-  PutchunkHandler(PacketInfo packet, Net_IO mc, Net_IO mdr, Net_IO mdb) {
-    super(mc, mdr, mdb);
+  PutchunkHandler(PacketInfo packet, Net_IO mc) {
+    super();
+    this.mc          = mc;
     this.version     = packet.getVersion();
     this.file_id     = packet.getFileID();
     this.chunk_n     = packet.getChunkN();
@@ -23,7 +26,7 @@ class PutchunkHandler extends Handler {
   }
 
   @Override
-  public void signal(String file_id, int chunk_n) {
+  public void signal(String file_id) {
   }
 
   @Override

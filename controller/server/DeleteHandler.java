@@ -2,6 +2,7 @@ package controller.server;
 
 import files.*;
 import network.PacketInfo;
+import controller.Pair;
 
 class DeleteHandler extends Handler {
   String file_id;
@@ -12,7 +13,7 @@ class DeleteHandler extends Handler {
   }
 
   @Override
-  public void signal(String file_id, int chunk_n) {
+  public void signal(String file_id) {
   }
 
   @Override

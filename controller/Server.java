@@ -6,7 +6,7 @@ import network.Net_IO;
 import controller.client.HandlerInterface;
 import controller.client.Handler;
 import controller.ApplicationInfo;
-import controller.listener.*;
+import controller.listener.Listener;
 
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -39,9 +39,9 @@ class Server {
       task_queue.prestartCoreThread();
     }
 
-    Net_IO      mc = ApplicationInfo.getMC(), mdb = ApplicationInfo.getMDB(), mdr = ApplicationInfo.getMDR();
-    MCListener  mc_listener  = new MCListener(mc, mdb, mdr, task_queue);
-    MDBListener mdb_listener = new MDBListener(mc, mdb, mdr, task_queue);
+    Net_IO   mc = ApplicationInfo.getMC(), mdb = ApplicationInfo.getMDB(), mdr = ApplicationInfo.getMDR();
+    Listener mc_listener  = new Listener(mc, task_queue);
+    Listener mdb_listener = new Listener(mdb, task_queue);
 
     if (!registerClient(ApplicationInfo.getServID(), mc, mdb, mdr)) {
       return;

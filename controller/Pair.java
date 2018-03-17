@@ -1,8 +1,6 @@
 package controller;
 
-
-
-class Pair<A, B> {
+public class Pair<A, B> {
   private A st;
   private B nd;
 
