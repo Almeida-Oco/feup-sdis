@@ -3,10 +3,10 @@ package controller.server;
 import files.*;
 import network.PacketInfo;
 
-class DeleteHandler extends Handler {
+class RemovedHandler extends Handler {
   String file_id;
 
-  DeleteHandler(PacketInfo packet) {
+  RemovedHandler(PacketInfo packet) {
     super();
     this.file_id = packet.getFileID();
   }

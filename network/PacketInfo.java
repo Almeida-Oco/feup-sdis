@@ -8,7 +8,7 @@ import java.nio.charset.StandardCharsets;
 
 
 public class PacketInfo {
-  private static final Pattern MSG_PAT = Pattern.compile(" *(?<msgT>\\w+) +(?<version>\\d.\\d) +(?<senderID>\\d+) +(?<fileID>.{64})( +(?<chunkN1>\\d{1,6}) +(?<Rdegree>\\d)| +(?<chunkN2>\\d{1,6}))? *\r\n\r\n(?<data>.{0,64000})?", Pattern.CASE_INSENSITIVE);
+  private static final Pattern MSG_PAT = Pattern.compile(" *(?<msgT>\\w+) +(?<version>\\d.\\d) +(?<senderID>\\d+) +(?<fileID>.{64})( +(?<chunkN1>\\d{1,6}) +(?<Rdegree>\\d)| +(?<chunkN2>\\d{1,6}))? *\r\n.*\r\n(?<data>.{0,64000})?", Pattern.CASE_INSENSITIVE);
   private static final String CRLF     = "\r\n";
 
   String msg_type;
@@ -16,7 +16,7 @@ public class PacketInfo {
   String file_id;
   int sender_id;
   int chunk_n;
-  byte r_degree;
+  int r_degree;
   String data;
 
   InetAddress addr;
@@ -36,7 +36,7 @@ public class PacketInfo {
   }
 
   public static PacketInfo packetWith(String msg_type, String file_id, int chunk_n) {
-    PacketInfo packet = new PacketInfo(null, 0);
+    PacketInfo packet = new PacketInfo(null, -1);
 
     packet.msg_type = msg_type;
     packet.file_id  = file_id;
@@ -68,7 +68,7 @@ public class PacketInfo {
 
       if ((chunk_n = matcher.group("chunkN1")) != null) {
         this.chunk_n  = Integer.parseInt(chunk_n);
-        this.r_degree = Byte.parseByte(matcher.group("Rdegree"));
+        this.r_degree = Integer.parseInt(matcher.group("Rdegree"));
       }
       else if ((chunk_n = matcher.group("chunkN2")) != null) {
         this.chunk_n = Integer.parseInt(chunk_n);
@@ -136,10 +136,6 @@ public class PacketInfo {
     this.msg_type = type;
   }
 
-  public void setVersion(byte major, byte minor) {
-    this.version = Byte.toString(major) + "." + Byte.toString(minor);
-  }
-
   public void setVersion(byte ver) {
     this.version = Byte.toString((byte)(ver / 10)) + "." + Byte.toString((byte)(ver % 10));
   }
@@ -156,12 +152,16 @@ public class PacketInfo {
     this.chunk_n = n;
   }
 
-  public void setRDegree(byte degree) {
+  public void setRDegree(int degree) {
     this.r_degree = degree;
   }
 
   public void setData(String data) {
     this.data = data;
+  }
+
+  public void setData(byte[] data) {
+    this.data = new String(data, StandardCharsets.US_ASCII);
   }
 
   public void setAddress(InetAddress addr) {

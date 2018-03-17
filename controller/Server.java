@@ -2,6 +2,7 @@ package controller;
 
 import parser.ServerParser;
 import cli.User_IO;
+import network.Net_IO;
 import controller.client.HandlerInterface;
 import controller.client.Handler;
 import controller.ApplicationInfo;
@@ -38,16 +39,11 @@ class Server {
       task_queue.prestartCoreThread();
     }
 
-    MCListener mc_listener = new MCListener(ApplicationInfo.getMC(),
-                                            ApplicationInfo.getMDB(),
-                                            ApplicationInfo.getMDR(),
-                                            task_queue);
-    MDBListener mdb_listener = new MDBListener(ApplicationInfo.getMC(),
-                                               ApplicationInfo.getMDB(),
-                                               ApplicationInfo.getMDR(),
-                                               task_queue);
+    Net_IO      mc = ApplicationInfo.getMC(), mdb = ApplicationInfo.getMDB(), mdr = ApplicationInfo.getMDR();
+    MCListener  mc_listener  = new MCListener(mc, mdb, mdr, task_queue);
+    MDBListener mdb_listener = new MDBListener(mc, mdb, mdr, task_queue);
 
-    if (!registerClient(ApplicationInfo.getServID())) {
+    if (!registerClient(ApplicationInfo.getServID(), mc, mdb, mdr)) {
       return;
     }
 
@@ -55,11 +51,11 @@ class Server {
     mdb_listener.run();
   }
 
-  private static boolean registerClient(int id) {
+  private static boolean registerClient(int id, Net_IO mc, Net_IO mdb, Net_IO mdr) {
     try {
       System.out.println("Registering: " + id);
       Registry         registry = LocateRegistry.createRegistry(8000);
-      Handler          handler  = new Handler();
+      Handler          handler  = new Handler(mc, mdb, mdr);
       HandlerInterface stub     = (HandlerInterface)UnicastRemoteObject.exportObject(handler, 8080);
 
       System.out.println("IM HERE");

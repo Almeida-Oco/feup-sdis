@@ -12,20 +12,31 @@ class GetchunkHandler extends Handler {
   byte version;
   String file_id;
   int chunk_n;
-  PacketInfo curr_packet;
-
-  PacketInfo listen() {
-    return PacketInfo.packetWith("CHUNK", this.file_id, this.chunk_n);
-  }
 
   //TODO should I just store the packet then initialize?
   // How much overhead is added with these initializations?
   GetchunkHandler(PacketInfo packet, Net_IO mc, Net_IO mdr, Net_IO mdb) {
     super(mc, mdr, mdb);
-    this.version     = packet.getVersion();
-    this.file_id     = packet.getFileID();
-    this.chunk_n     = packet.getChunkN();
-    this.curr_packet = packet;
+    this.version = packet.getVersion();
+    this.file_id = packet.getFileID();
+    this.chunk_n = packet.getChunkN();
+  }
+
+  @Override
+  public void signal(String file_id) {
+    synchronized (this) {
+      this.got_chunk = true;
+    }
+  }
+
+  @Override
+  public Pair<String, Handler> register() {
+    return new Pair<String, Handler>(this.file_id + "#" + this.chunk_n, this);
+  }
+
+  @Override
+  public String signalType() {
+    return "CHUNK";
   }
 
   public void run() {
@@ -38,7 +49,7 @@ class GetchunkHandler extends Handler {
       packet.setVersion(this.version);
       packet.setFileID(this.file_id);
       packet.setChunkN(this.chunk_n);
-      packet.setData(new String(chunk.getData(), StandardCharsets.US_ASCII));
+      packet.setData(chunk.getData());
       Random rand = new Random();
 
       // Thread.sleep(rand.nextInt(401)); //TODO use ScheduledExecutorService?

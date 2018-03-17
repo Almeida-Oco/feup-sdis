@@ -13,6 +13,7 @@ public class Net_IO {
   final int BUF_SIZE = 70000;
 
   MulticastSocket mcast_socket;
+  InetAddress mcast_addr;
   int mcast_port;
 
   public Net_IO(String addr, int port) {
@@ -27,7 +28,8 @@ public class Net_IO {
     }
 
     try {
-      this.mcast_socket.joinGroup(InetAddress.getByName(addr));
+      this.mcast_addr = InetAddress.getByName(addr);
+      this.mcast_socket.joinGroup(this.mcast_addr);
       this.mcast_socket.setTimeToLive(TTL);
     }
     catch (UnknownHostException err) {
@@ -42,6 +44,14 @@ public class Net_IO {
       System.err.println("Failed to join Multicast group: '" + addr + "'\n - " + err.getMessage());
       this.mcast_socket = null; //On fail this is set to null
     }
+  }
+
+  public InetAddress getAddr() {
+    return this.mcast_addr;
+  }
+
+  public int getPort() {
+    return this.mcast_port;
   }
 
   public boolean isReady() {
@@ -66,11 +76,12 @@ public class Net_IO {
       return false;
     }
 
-    this.packet.setData(packet.toString().getBytes());
-    this.packet.setAddress(packet.getAddress());
-    this.packet.setPort(packet.getPort());
+    DatagramPacket dgram_packet = new DatagramPacket(new byte[BUF_SIZE], BUF_SIZE);
+    dgram_packet.setData(packet.toString().getBytes());
+    dgram_packet.setAddress(packet.getAddress());
+    dgram_packet.setPort(packet.getPort());
     try {
-      this.mcast_socket.send(this.packet);
+      this.mcast_socket.send(dgram_packet);
       return true;
     }
     catch (IOException err) {

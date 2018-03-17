@@ -73,6 +73,10 @@ public class FileInfo {
     return this.file_name;
   }
 
+  public String getID() {
+    return this.file_id;
+  }
+
   public FileChunk getChunk(int chunk_n) {
     int low = 0, high = this.chunks.size(), mid, number;
 

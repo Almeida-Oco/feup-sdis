@@ -28,6 +28,12 @@ public abstract class Handler extends Thread {
     this.sender_port = 0;
   }
 
+  public abstract void signal(String file_id);
+
+  public abstract Pair<String, Handler> register();
+
+  public abstract String signalType();
+
   public static Handler newHandler(PacketInfo packet, Net_IO mc, Net_IO mdr, Net_IO mdb) {
     String type = packet.getType();
 
@@ -37,12 +43,12 @@ public abstract class Handler extends Thread {
     else if (type.equals("GETCHUNK")) {
       return new GetchunkHandler(packet, mc, mdr, mdb);
     }
-    else if (type.equals("STORED")) {
-      return new StoredHandler(packet, mc, mdr, mdb);
+    else if (type.equals("DELETE")) {
+      return new DeleteHandler(packet, mc, mdr, mdb);
     }
-    else {
-      System.err.println("Unknown type '" + type + "'");
-      return null;
+    else if (type.equals("REMOVED")) {
+      return new RemovedHandler(packet, mc, mdr, mdb);
     }
+    return null;
   }
 }

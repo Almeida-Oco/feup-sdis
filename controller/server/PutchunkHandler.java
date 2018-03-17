@@ -22,7 +22,17 @@ class PutchunkHandler extends Handler {
     this.sender_port = packet.getPort();
   }
 
-  PacketInfo listen() {
+  @Override
+  public void signal(String file_id, int chunk_n) {
+  }
+
+  @Override
+  public Pair<String, Handler> register() {
+    return null;
+  }
+
+  @Override
+  public String signalType() {
     return null;
   }
 
