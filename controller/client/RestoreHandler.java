@@ -2,15 +2,16 @@ package controller.client;
 
 import network.Net_IO;
 import controller.Handler;
+import controller.listener.Listener;
 import controller.Pair;
 
 import java.rmi.Remote;
 
 class RestoreHandler extends Handler implements Remote {
   String file_name;
-  Net_IO mc, mdr;
+  Listener mc, mdr;
 
-  void start(String file_name, Net_IO mc, Net_IO mdr) {
+  void start(String file_name, Listener mc, Listener mdr) {
     this.file_name = file_name;
     this.mc        = mc;
     this.mdr       = mdr;

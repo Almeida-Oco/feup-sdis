@@ -2,7 +2,7 @@ package controller.listener;
 
 import network.Net_IO;
 import network.PacketInfo;
-import controller.server.Handler;
+import controller.Handler;
 import controller.Pair;
 
 import java.util.concurrent.ThreadPoolExecutor;
@@ -56,6 +56,10 @@ public class Listener implements Runnable {
         task.signal(file_id);
       }
     }
+  }
+
+  public Net_IO getChannel() {
+    return this.channel;
   }
 
   public void registerForSignal(Handler task) {

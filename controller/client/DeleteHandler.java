@@ -2,6 +2,7 @@ package controller.client;
 
 import network.Net_IO;
 import controller.Handler;
+import controller.listener.Listener;
 import controller.Pair;
 
 
@@ -9,9 +10,9 @@ import java.rmi.Remote;
 
 class DeleteHandler extends Handler implements Remote {
   String file_name;
-  Net_IO mc;
+  Listener mc;
 
-  void start(String f_name, Net_IO mc) {
+  void start(String f_name, Listener mc) {
     this.file_name = f_name;
     this.mc        = mc;
     this.run();

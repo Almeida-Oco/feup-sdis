@@ -3,17 +3,17 @@ package controller.client;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import controller.ApplicationInfo;
-import network.Net_IO;
+import controller.listener.Listener;
 
 public class Dispatcher implements HandlerInterface {
-  Net_IO mc, mdb, mdr;
+  Listener mc, mdb, mdr;
   private BackupHandler backup;
   private RestoreHandler restore;
   private DeleteHandler delete;
   private ReclaimHandler reclaim;
   private StateHandler state;
 
-  public Dispatcher(Net_IO mc, Net_IO mdb, Net_IO mdr) {
+  public Dispatcher(Listener mc, Listener mdb, Listener mdr) {
     this.mc      = mc;
     this.mdr     = mdr;
     this.mdb     = mdb;

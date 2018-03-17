@@ -2,9 +2,8 @@ package controller;
 
 import parser.ServerParser;
 import cli.User_IO;
-import network.Net_IO;
 import controller.client.HandlerInterface;
-import controller.client.Handler;
+import controller.client.Dispatcher;
 import controller.ApplicationInfo;
 import controller.listener.Listener;
 
@@ -39,11 +38,11 @@ class Server {
       task_queue.prestartCoreThread();
     }
 
-    Net_IO   mc = ApplicationInfo.getMC(), mdb = ApplicationInfo.getMDB(), mdr = ApplicationInfo.getMDR();
-    Listener mc_listener  = new Listener(mc, task_queue);
-    Listener mdb_listener = new Listener(mdb, task_queue);
+    Listener mc_listener  = new Listener(ApplicationInfo.getMC(), task_queue);
+    Listener mdb_listener = new Listener(ApplicationInfo.getMDB(), task_queue);
+    Listener mdr_listener = new Listener(ApplicationInfo.getMDR(), task_queue);
 
-    if (!registerClient(ApplicationInfo.getServID(), mc, mdb, mdr)) {
+    if (!registerClient(ApplicationInfo.getServID(), mc_listener, mdb_listener, mdr_listener)) {
       return;
     }
 
@@ -51,11 +50,11 @@ class Server {
     mdb_listener.run();
   }
 
-  private static boolean registerClient(int id, Net_IO mc, Net_IO mdb, Net_IO mdr) {
+  private static boolean registerClient(int id, Listener mc, Listener mdb, Listener mdr) {
     try {
       System.out.println("Registering: " + id);
       Registry         registry = LocateRegistry.createRegistry(8000);
-      Handler          handler  = new Handler(mc, mdb, mdr);
+      Dispatcher       handler  = new Dispatcher(mc, mdb, mdr);
       HandlerInterface stub     = (HandlerInterface)UnicastRemoteObject.exportObject(handler, 8080);
 
       System.out.println("IM HERE");

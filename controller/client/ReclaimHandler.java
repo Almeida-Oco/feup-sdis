@@ -2,6 +2,7 @@ package controller.client;
 
 import network.Net_IO;
 import controller.Handler;
+import controller.listener.Listener;
 import controller.Pair;
 
 
@@ -9,9 +10,9 @@ import java.rmi.Remote;
 
 class ReclaimHandler extends Handler implements Remote {
   int space;
-  Net_IO mc, mdb;
+  Listener mc, mdb;
 
-  void start(int space, Net_IO mc, Net_IO mdb) {
+  void start(int space, Listener mc, Listener mdb) {
     this.space = space;
     this.mc    = mc;
     this.mdb   = mdb;
