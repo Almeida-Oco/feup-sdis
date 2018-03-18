@@ -75,7 +75,7 @@ public class User_IO {
     files.getFiles().forEach((file_name, info)->{
       System.out.println(BOLD + file_name + PLAIN);
       info.forEach((number, size)->{
-        System.out.println(BOLD + "  #" + number + PLAIN + " - (" + size + "KB)");
+        System.out.println(BOLD + "  #" + number + PLAIN + " - (" + UNDERLINE + size + PLAIN + "KB)");
       });
     });
   }

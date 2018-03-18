@@ -1,7 +1,6 @@
 package files;
 
 public class FileChunk implements Comparable<FileChunk> {
-  private final static int MAX_CHUNK_SIZE = 64000;
   byte[] chunk_data;
   int chunk_n;
   int chunk_size;
@@ -26,7 +25,7 @@ public class FileChunk implements Comparable<FileChunk> {
   }
 
   public void incActualRep() {
-    synchronized (this) {
+    synchronized (this){
       this.actual_rep++;
     }
   }
@@ -44,7 +43,7 @@ public class FileChunk implements Comparable<FileChunk> {
   }
 
   public boolean isFinalChunk() {
-    return this.chunk_size < MAX_CHUNK_SIZE;
+    return this.chunk_size < File_IO.MAX_CHUNK_SIZE;
   }
 
   @Override

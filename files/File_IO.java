@@ -9,12 +9,12 @@ import java.io.IOException;
 import java.io.FileNotFoundException;
 
 public class File_IO {
-  private final static int MAX_CHUNK_SIZE = 64000;
-  private final static int MAX_N_CHUNKS   = 999999;
+  public final static int MAX_CHUNK_SIZE = 30000;
+  private final static int MAX_N_CHUNKS  = 999999;
 
 
   //Contains the local files which were sent for backup
-  private static ConcurrentHashMap<String, FileInfo>file_table = new ConcurrentHashMap<String, FileInfo>();
+  private static ConcurrentHashMap<String, FileInfo> file_table = new ConcurrentHashMap<String, FileInfo>();
 
   public static void incReplication(String file_id, int chunk_n) {
     FileInfo file = file_table.get(file_id);
@@ -65,8 +65,8 @@ public class File_IO {
       if (bytes_read == -1){
         return null;
       }
-      else { //bytes_read == 0 means its the last chunk with size 0
-        file.addChunk(new FileChunk(buf, bytes_read, rep_degree, i));
+      else {
+        file.addChunk(new FileChunk(buf, bytes_read, i, rep_degree));
       }
     }
     return file;
@@ -107,7 +107,7 @@ public class File_IO {
     boolean  erased = true;
 
     if (file != null){
-      Vector<FileChunk>chunks = file.getChunks();
+      Vector<FileChunk> chunks = file.getChunks();
       int size = chunks.size();
       for (int i = 0; i < size; i++){
         FileChunk chunk = chunks.get(i);
@@ -141,7 +141,7 @@ public class File_IO {
     }
   }
 
-  public static boolean restoreFile(String file_name, Vector<FileChunk>chunks) {
+  public static boolean restoreFile(String file_name, Vector<FileChunk> chunks) {
     chunks.sort(null);
     FileOutputStream out;
     if ((out = openFileWriter(file_name)) == null){
@@ -228,7 +228,7 @@ public class File_IO {
     }
   }
 
-  public static ConcurrentHashMap<String, FileInfo>getTable() {
+  public static ConcurrentHashMap<String, FileInfo> getTable() {
     return file_table;
   }
 }

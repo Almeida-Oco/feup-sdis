@@ -48,13 +48,13 @@ class BackupHandler extends Handler implements Remote {
 
     packet.setRDegree(this.rep_degree);
     packet.setType("PUTCHUNK");
-    packet.setFileID(this.file_name);
+    packet.setFileID(file.getID());
 
     for (FileChunk chunk : file.getChunks()) {
       packet.setChunkN(chunk.getChunkN());
       packet.setData(chunk.getData());
 
-      this.signals.registerValue(this.file_name, chunk.getChunkN());
+      this.signals.registerValue(file.getID(), chunk.getChunkN());
 
       if (!this.sendChunk(packet)) {
         System.err.println("Not enough confirmations for packet #" + chunk.getChunkN());

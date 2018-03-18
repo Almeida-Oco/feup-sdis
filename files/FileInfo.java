@@ -4,10 +4,14 @@ import java.util.Vector;
 import java.util.Collections;
 import java.io.File;
 import java.security.MessageDigest;
+import java.security.DigestException;
 import java.security.NoSuchAlgorithmException;
+import java.nio.charset.StandardCharsets;
+import java.io.UnsupportedEncodingException;
 
 public class FileInfo {
-  private final static int MAX_CHUNK_SIZE = 64000;
+  private final static int HASH_SIZE = 32;
+
   String file_name; //Used only for hashing purposes
   String file_id;
   String metadata;  //Used only for hashing purposes
@@ -16,9 +20,8 @@ public class FileInfo {
   FileInfo(File fd, int chunk_number) {
     String abs_path   = fd.getAbsolutePath(),
         last_mod      = Long.toString(fd.lastModified());
-    int metadata_size = abs_path.length() + last_mod.length() + 2 * MAX_CHUNK_SIZE;
+    int metadata_size = abs_path.length() + last_mod.length() + 2 * File_IO.MAX_CHUNK_SIZE;
 
-    //TODO calculate metadata_size differently
     this.metadata  = new String(new byte[metadata_size]);
     this.metadata += abs_path + last_mod;
     this.file_name = abs_path;
@@ -40,8 +43,12 @@ public class FileInfo {
     if (this.file_id == null) { // Still reading from file
       this.tryHash(chunk);
     }
-
-    this.chunks.add(index, chunk);
+    if (index >= 0) {
+      System.out.println("Replicated chunk!\nNUMBER = " + chunk.getChunkN());
+    }
+    else {
+      this.chunks.add(-(index) - 1, chunk);
+    }
   }
 
   void eraseChunk(FileChunk chunk) {
@@ -72,7 +79,20 @@ public class FileInfo {
       intestine = null;
       System.exit(0);
     }
-    this.file_id = new String(intestine.digest(this.metadata.getBytes()));
+    intestine.update(this.metadata.getBytes());
+    byte[] hash = new byte[32];
+
+    try {
+      int    size   = intestine.digest(hash, 0, HASH_SIZE);
+      String middle = new String(hash, 0, HASH_SIZE, StandardCharsets.US_ASCII);
+      this.file_id = StringToHex.toHex(middle.getBytes("US-ASCII"), HASH_SIZE);
+    }
+    catch (DigestException err) {
+      System.err.println("Failed to digest!\n - " + err.getMessage());
+    }
+    catch (UnsupportedEncodingException err) {
+      System.err.println("Unknown encoding!\n - " + err.getMessage());
+    }
   }
 
   public String getName() {

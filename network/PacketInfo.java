@@ -7,11 +7,14 @@ import java.util.regex.Matcher;
 import java.net.InetAddress;
 import java.net.DatagramPacket;
 import java.nio.charset.StandardCharsets;
+import java.io.UnsupportedEncodingException;
 
 
+// TODO fileID should be 64!!!
 public class PacketInfo {
   private static final Pattern MSG_PAT = Pattern.compile(" *(?<msgT>\\w+) +(?<version>\\d.\\d) +(?<senderID>\\d+) +(?<fileID>.{64})( +(?<chunkN1>\\d{1,6}) +(?<Rdegree>\\d)| +(?<chunkN2>\\d{1,6}))? *\r\n.*\r\n(?<data>.{0,64000})?", Pattern.CASE_INSENSITIVE);
   private static final String CRLF     = "\r\n";
+  private static final int HASH_SIZE   = 64;
 
   String msg_type;
   String version;
@@ -57,20 +60,26 @@ public class PacketInfo {
 
     new_packet.addr = packet.getAddress();
     new_packet.port = packet.getPort();
-    if (match.matches() && !new_packet.fromMatcher(match)) { //TODO should fromMatcher return a PacketInfo?
+    if (!new_packet.fromMatcher(match)) { //TODO should fromMatcher return a PacketInfo?
       return null;
     }
+    System.out.println("CHUNK type = " + new_packet.getType());
+    System.out.println("Got chunk #" + new_packet.getChunkN() + " of file " + new_packet.getFileID());
     return new_packet;
   }
 
   private boolean fromMatcher(Matcher matcher) {
     String chunk_n;
 
+    if (!matcher.matches()) {
+      System.err.println("Message does not match pattern!");
+      return false;
+    }
     try {
       this.msg_type  = matcher.group("msgT");
       this.version   = matcher.group("version");
       this.sender_id = Integer.parseInt(matcher.group("senderID"));
-      this.file_id   = matcher.group("fileID");
+      this.file_id   = HexToString.fromHex(matcher.group("fileID").getBytes("US-ASCII"), HASH_SIZE);
 
       if ((chunk_n = matcher.group("chunkN1")) != null) {
         this.chunk_n  = Integer.parseInt(chunk_n);
@@ -81,6 +90,7 @@ public class PacketInfo {
       }
 
       this.data = matcher.group("data");
+      System.out.println("PACKET TYPE = " + this.msg_type);
       return true;
     }
     catch (IllegalArgumentException err) {
@@ -89,6 +99,10 @@ public class PacketInfo {
     }
     catch (IllegalStateException err) {
       System.err.println("Match failed or not done yet!\n - " + err.getMessage());
+      return false;
+    }
+    catch (UnsupportedEncodingException err) {
+      System.err.println("Unknown encoding while parsing packet!\n - " + err.getMessage());
       return false;
     }
   }
@@ -111,8 +125,8 @@ public class PacketInfo {
 
     return this.msg_type + " "
            + this.version + " "
+           + this.sender_id + " "
            + this.file_id + " "
-           + Integer.toString(this.sender_id) + " "
            + (is_delete ? "" : Integer.toString(this.chunk_n) + " ")
            + (is_putchunk ? this.r_degree + " " : "")
            + CRLF + CRLF;

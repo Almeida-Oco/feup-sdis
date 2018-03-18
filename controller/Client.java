@@ -18,34 +18,34 @@ class Client {
   private static final String STATE   = "STATE";
 
   public static void main(String args[]) {
-    if (!ClientParser.parseArgs(args)) {
+    if (!ClientParser.parseArgs(args)){
       User_IO.clientUsage();
       return;
     }
     HandlerInterface handler = getObj(args[0]);
-    if (handler == null) {
+    if (handler == null){
       return;
     }
     String protocol = args[1];
 
     try {
-      if (protocol.equals(BACKUP)) {
+      if (protocol.equals(BACKUP)){
         handler.backup(args[2], Integer.parseInt(args[3]));
       }
-      else if (protocol.equals(RESTORE)) {
+      else if (protocol.equals(RESTORE)){
         handler.restore(args[2]);
       }
-      else if (protocol.equals(RECLAIM)) {
+      else if (protocol.equals(RECLAIM)){
         handler.reclaim(args[2]);
       }
-      else if (protocol.equals(DELETE)) {
+      else if (protocol.equals(DELETE)){
         handler.delete(args[2]);
       }
-      else if (protocol.equals(STATE)) {
+      else if (protocol.equals(STATE)){
         handler.state();
       }
     }
-    catch (RemoteException err) {
+    catch (RemoteException err){
       System.out.println("Failed to start protocol '" + protocol + "' due to RMI issues!\n - " + err.getMessage());
       return;
     }
@@ -53,15 +53,15 @@ class Client {
 
   private static HandlerInterface getObj(String name) {
     try {
-      Registry         registry = LocateRegistry.getRegistry(8000);
+      Registry         registry = LocateRegistry.getRegistry(8050);
       HandlerInterface handler  = (HandlerInterface)registry.lookup(name);
       return handler;
     }
-    catch (RemoteException err) {
+    catch (RemoteException err){
       System.err.println("Could not get object '" + name + "' from RMI!");
       return null;
     }
-    catch (NotBoundException err) {
+    catch (NotBoundException err){
       System.err.println("'" + name + "' is a non existing RMI object!\n - " + err.getMessage());
       return null;
     }
