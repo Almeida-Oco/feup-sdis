@@ -45,10 +45,10 @@ public class PutchunkHandler extends Handler {
     PacketInfo packet = new PacketInfo(this.sender_addr, this.sender_port);
 
     packet.setType("STORED");
-    packet.setVersion(this.version);
     packet.setFileID(this.file_id);
     packet.setChunkN(this.chunk_n);
     packet.setData(this.data);
+
     Random rand = new Random();
     try {
       Thread.sleep(rand.nextInt(401)); //TODO use ScheduledExecutorService?

@@ -84,7 +84,6 @@ public class PacketInfo {
   }
 
   // 5C7D433B09023F443F3F3F3B3F51190F573F59793F162C393F3F3F3F3F3F4F39
-
   private boolean fromMatcher(Matcher matcher) {
     String chunk_n;
 
@@ -158,13 +157,13 @@ public class PacketInfo {
 
     return this.addr != null&&
            this.port != -1 &&
-           (is_putchunk || is_stored || is_removed || is_getchunk || is_delete || is_chunk) &&                                                                          // Check message type
-           (this.version != null) &&                                                                                                                                    // Check version
-           (this.file_id != null) &&                                                                                                                                    // Check file_id
-           (this.sender_id != -1) &&                                                                                                                                    // Check sender id
-           ((this.chunk_n != -1 && (is_putchunk || is_stored || is_getchunk || is_removed || is_chunk)) || (this.chunk_n == -1 && (is_delete))) &&                      // Check chunk number
-           ((this.r_degree != -1 && is_putchunk) || (this.r_degree == -1 && (is_stored || is_getchunk || is_removed || is_delete || is_chunk))) &&                      // Check replication degree
-           ((this.data != null&& (is_putchunk || is_chunk)) || ((this.data == null || this.data.equals("")) && (is_stored || is_getchunk || is_removed || is_delete))); // Check data
+           (is_putchunk || is_stored || is_removed || is_getchunk || is_delete || is_chunk) &&                             // Check message type
+           (this.version != null) &&                                                                                       // Check version
+           (this.file_id != null) &&                                                                                       // Check file_id
+           (this.sender_id != -1) &&                                                                                       // Check sender id
+           ((this.chunk_n != -1 && (is_putchunk || is_stored || is_getchunk || is_removed || is_chunk)) || (is_delete)) && // Check chunk number
+           ((this.r_degree != -1 && is_putchunk) || (is_stored || is_getchunk || is_removed || is_delete || is_chunk)) &&  // Check replication degree
+           ((this.data != null&& (is_putchunk || is_chunk)) || (is_stored || is_getchunk || is_removed || is_delete));     // Check data
   }
 
   public void setType(String type) {
@@ -210,6 +209,10 @@ public class PacketInfo {
 
   public String getType() {
     return this.msg_type;
+  }
+
+  public int getSenderID() {
+    return this.sender_id;
   }
 
   public String getFileID() {
