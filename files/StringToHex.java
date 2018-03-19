@@ -25,7 +25,7 @@ class StringToHex {
   }
 
   static String toHex(byte[] text, int size) {
-    String chars = new String(new byte[size * 2]);
+    String chars = new String();
 
     for (int txt_i = 0; txt_i < size; txt_i++) {
       char[] hex = charToHex(text[txt_i]);

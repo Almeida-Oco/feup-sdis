@@ -10,11 +10,13 @@ import java.nio.charset.StandardCharsets;
 import java.io.UnsupportedEncodingException;
 
 
-// TODO fileID should be 64!!!
 public class PacketInfo {
-  private static final Pattern MSG_PAT = Pattern.compile(" *(?<msgT>\\w+) +(?<version>\\d.\\d) +(?<senderID>\\d+) +(?<fileID>.{64})( +(?<chunkN1>\\d{1,6}) +(?<Rdegree>\\d)| +(?<chunkN2>\\d{1,6}))? *\r\n.*\r\n(?<data>.{0,64000})?", Pattern.CASE_INSENSITIVE);
-  private static final String CRLF     = "\r\n";
-  private static final int HASH_SIZE   = 64;
+  private static final String regex = "\\s*(?<msgT>\\w+)\\s+(?<version>\\d\\.\\d)\\s+(?<senderID>\\d+)\\s+(?<fileID>.{64})((\\s+(?<chunkN1>\\d{1,6})\\s+(?<Rdegree>\\d))|\\s+(?<chunkN2>\\d{1,6}))?\\s*\r\n\r\n(?<data>.{0,64000})?";
+
+  private static final Pattern MSG_PAT = Pattern.compile(regex, Pattern.DOTALL | Pattern.MULTILINE);
+
+  private static final String CRLF   = "\r\n";
+  private static final int HASH_SIZE = 64;
 
   String msg_type;
   String version;
@@ -26,6 +28,18 @@ public class PacketInfo {
 
   InetAddress addr;
   int port;
+
+  public static void main(String[] args) {
+    String  cmp   = "PUTCHUNK 1.0 1 5C7D433B09023F443F3F3F3B3F51190F573F59793F162C393F3F3F3F3F3F4F39 0 1 \r\n\r\n SAD ";
+    Matcher match = MSG_PAT.matcher(cmp);
+
+    if (match.matches()) {
+      System.out.println("Matches");
+    }
+    else {
+      System.out.println("Does not");
+    }
+  }
 
   public PacketInfo(InetAddress addr, int port) {
     this.msg_type = null;
@@ -55,18 +69,21 @@ public class PacketInfo {
   }
 
   public static PacketInfo fromPacket(DatagramPacket packet) {
-    Matcher    match      = PacketInfo.MSG_PAT.matcher(new String(packet.getData(), StandardCharsets.US_ASCII));
+    String     data       = new String(packet.getData(), packet.getOffset(), packet.getLength(), StandardCharsets.US_ASCII).trim();
+    Matcher    match      = MSG_PAT.matcher(data);
     PacketInfo new_packet = new PacketInfo(packet.getAddress(), packet.getPort());
 
     new_packet.addr = packet.getAddress();
     new_packet.port = packet.getPort();
+
     if (!new_packet.fromMatcher(match)) { //TODO should fromMatcher return a PacketInfo?
       return null;
     }
-    System.out.println("CHUNK type = " + new_packet.getType());
-    System.out.println("Got chunk #" + new_packet.getChunkN() + " of file " + new_packet.getFileID());
+    System.out.println("Got chunk #" + new_packet.getChunkN());
     return new_packet;
   }
+
+  // 5C7D433B09023F443F3F3F3B3F51190F573F59793F162C393F3F3F3F3F3F4F39
 
   private boolean fromMatcher(Matcher matcher) {
     String chunk_n;
@@ -76,10 +93,11 @@ public class PacketInfo {
       return false;
     }
     try {
+      System.out.println("Message matches pattern!");
       this.msg_type  = matcher.group("msgT");
       this.version   = matcher.group("version");
       this.sender_id = Integer.parseInt(matcher.group("senderID"));
-      this.file_id   = HexToString.fromHex(matcher.group("fileID").getBytes("US-ASCII"), HASH_SIZE);
+      this.file_id   = new String(matcher.group("fileID").getBytes("US-ASCII"), 0, HASH_SIZE, StandardCharsets.US_ASCII);
 
       if ((chunk_n = matcher.group("chunkN1")) != null) {
         this.chunk_n  = Integer.parseInt(chunk_n);
@@ -90,7 +108,6 @@ public class PacketInfo {
       }
 
       this.data = matcher.group("data");
-      System.out.println("PACKET TYPE = " + this.msg_type);
       return true;
     }
     catch (IllegalArgumentException err) {
@@ -122,13 +139,12 @@ public class PacketInfo {
     boolean is_delete = this.msg_type.equalsIgnoreCase("DELETE"),
         is_putchunk   = this.msg_type.equalsIgnoreCase("PUTCHUNK");
 
-
     return this.msg_type + " "
            + this.version + " "
            + this.sender_id + " "
            + this.file_id + " "
-           + (is_delete ? "" : Integer.toString(this.chunk_n) + " ")
-           + (is_putchunk ? this.r_degree + " " : "")
+           + (is_delete ? "" : (Integer.toString(this.chunk_n) + " "))
+           + (is_putchunk ? this.r_degree : "")
            + CRLF + CRLF;
   }
 
@@ -181,7 +197,7 @@ public class PacketInfo {
   }
 
   public void setData(byte[] data) {
-    this.data = new String(data, StandardCharsets.US_ASCII);
+    this.data = new String(data, 0, data.length, StandardCharsets.US_ASCII);
   }
 
   public void setAddress(InetAddress addr) {

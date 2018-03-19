@@ -31,8 +31,9 @@ class HexToString {
     hex_chars.put('f', 15);
   }
 
+  // 5C7D433B09023F443F3F3F3B3F51190F573F59793F162C393F3F3F3F3F3F4F39
+
   private static char charFromHex(char major, char minor) {
-    System.out.println("Maj " + major + ", min " + minor);
     int maj = hex_chars.get(major),
         min = hex_chars.get(minor);
 

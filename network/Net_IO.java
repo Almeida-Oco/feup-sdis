@@ -23,7 +23,7 @@ public class Net_IO {
       this.mcast_socket.setReceiveBufferSize(BUF_SIZE);
       this.mcast_socket.setSendBufferSize(BUF_SIZE);
     }
-    catch (IOException err){
+    catch (IOException err) {
       System.err.println("Failed to create Multicast Socket!\n - " + err.getMessage());
       this.mcast_socket = null;
       return;
@@ -34,15 +34,15 @@ public class Net_IO {
       this.mcast_socket.joinGroup(this.mcast_addr);
       this.mcast_socket.setTimeToLive(TTL);
     }
-    catch (UnknownHostException err){
+    catch (UnknownHostException err) {
       System.err.println("No host found associated with IP '" + addr + "'\n - " + err.getMessage());
       this.mcast_socket = null; //On fail this is set to null
     }
-    catch (SecurityException err){
+    catch (SecurityException err) {
       System.err.println("Not allowed to execute checkConnect method!\n - " + err.getMessage());
       this.mcast_socket = null; //On fail this is set to null
     }
-    catch (IOException err){
+    catch (IOException err) {
       System.err.println("Failed to join Multicast group: '" + addr + "'\n - " + err.getMessage());
       this.mcast_socket = null; //On fail this is set to null
     }
@@ -64,33 +64,32 @@ public class Net_IO {
     try {
       DatagramPacket packet = new DatagramPacket(new byte[BUF_SIZE], BUF_SIZE);
       this.mcast_socket.receive(packet);
-      return PacketInfo.fromPacket(packet);
+      PacketInfo recv_packet = PacketInfo.fromPacket(packet);
+
+      return recv_packet;
     }
-    catch (IOException err){
+    catch (IOException err) {
       System.err.println("Failed to receive message!\n - " + err.getMessage());
       return null;
     }
   }
 
   public boolean sendMsg(PacketInfo packet) {
-    if (!packet.isReady()){
+    if (!packet.isReady()) {
       System.err.println("Packet is not ready to be sent!");
       return false;
     }
-
-    System.out.println("  CHUNK N = " + packet.getChunkN());
-
-    // System.out.println(" ----------- \n" + packet.toString() + "\n --------------");
-
     DatagramPacket dgram_packet = new DatagramPacket(new byte[BUF_SIZE], BUF_SIZE);
-    dgram_packet.setData(packet.toString().getBytes());
     dgram_packet.setAddress(packet.getAddress());
     dgram_packet.setPort(packet.getPort());
+
     try {
+      String data = packet.toString();
+      dgram_packet.setData(data.getBytes(StandardCharsets.US_ASCII), 0, data.length());
       this.mcast_socket.send(dgram_packet);
       return true;
     }
-    catch (IOException err){
+    catch (IOException err) {
       System.err.println("Failed to send DatagramPacket!\n - " + err.getMessage());
       return false;
     }

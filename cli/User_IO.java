@@ -21,10 +21,13 @@ public class User_IO {
         ip_name            = "  ip        ",
         ip_desc            = "Standard IPv4 address (If missing 127.0.0.1 will be used)\n",
         port_name          = "  port      ",
-        port_desc          = "Port number to use for the service";
+        port_desc          = "Port number to use for the service",
+        usage   = "  java controller.Server <version> <server id> <access point> <MC> <MDR> <MDB>",
+        example = "  java controller.Server 1.0 1 8000 224.0.0.1:8001 224.0.0.2:8002 224.0.0.3:8003";
 
 
-    System.err.print("Usage:\n  java Server <version> <server id> <access point> <MC> <MDR> <MDB>\n\n");
+    System.err.print("Usage:\n" + usage + "\n" + example + "\n\n");
+
     System.err.print("Arguments:\n" +
         BOLD + prot_name + PLAIN + prot_desc +
         BOLD + id_name + PLAIN + id_desc +
@@ -55,9 +58,12 @@ public class User_IO {
         reclaim_name     = "  RECLAIM   ",
         reclaim_desc     = "Reclaims the memory space specified in " + UNDERLINE + "operand1" + PLAIN + " (memory in KB)\n",
         state_name       = "  STATE     ",
-        state_desc       = "Retrives the current status of the peer (no operand needed)\n";
+        state_desc       = "Retrives the current status of the peer (no operand needed)\n",
+        usage            = "  java controller.Client <peer_ap> <sub protocol> <operand1> <operand2>",
+        example          = "  java controller.Client 1 BACKUP example.txt 1";
 
-    System.out.print("Usage:\n  java Client <peer_ap> <sub protocol> <operand1> <operand2>\n\n");
+    System.out.print("Usage:\n" + usage + "\n" + example + "\n\n");
+
     System.err.print("Arguments:\n" +
         BOLD + ap_name + PLAIN + ap_desc +
         BOLD + prot_name + PLAIN + prot_desc +
