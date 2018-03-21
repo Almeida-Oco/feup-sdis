@@ -69,17 +69,18 @@ public class PacketInfo {
   }
 
   public static PacketInfo fromPacket(DatagramPacket packet) {
-    String     data       = new String(packet.getData(), packet.getOffset(), packet.getLength(), StandardCharsets.US_ASCII).trim();
+    String     data       = new String(packet.getData(), packet.getOffset(), packet.getLength(), StandardCharsets.US_ASCII);
     Matcher    match      = MSG_PAT.matcher(data);
     PacketInfo new_packet = new PacketInfo(packet.getAddress(), packet.getPort());
 
     new_packet.addr = packet.getAddress();
     new_packet.port = packet.getPort();
 
+    System.err.println(" - " + data.substring(0, 81));
     if (!new_packet.fromMatcher(match)) { //TODO should fromMatcher return a PacketInfo?
       return null;
     }
-    System.out.println("Got chunk #" + new_packet.getChunkN());
+
     return new_packet;
   }
 
@@ -131,7 +132,7 @@ public class PacketInfo {
       return null;
     }
 
-    return this.headerToString() + ((is_putchunk || is_chunk) ? this.data : "");
+    return this.headerToString() + CRLF + CRLF + ((is_putchunk || is_chunk) ? this.data : "");
   }
 
   private String headerToString() {
@@ -143,8 +144,7 @@ public class PacketInfo {
            + this.sender_id + " "
            + this.file_id + " "
            + (is_delete ? "" : (Integer.toString(this.chunk_n) + " "))
-           + (is_putchunk ? this.r_degree : "")
-           + CRLF + CRLF;
+           + (is_putchunk ? this.r_degree : "");
   }
 
   public boolean isReady() {
@@ -195,8 +195,8 @@ public class PacketInfo {
     this.data = data;
   }
 
-  public void setData(byte[] data) {
-    this.data = new String(data, 0, data.length, StandardCharsets.US_ASCII);
+  public void setData(byte[] data, int size) {
+    this.data = new String(data, 0, size, StandardCharsets.US_ASCII);
   }
 
   public void setAddress(InetAddress addr) {
@@ -232,6 +232,10 @@ public class PacketInfo {
 
   public String getData() {
     return this.data;
+  }
+
+  public int dataSize() {
+    return this.data.length();
   }
 
   public InetAddress getAddress() {

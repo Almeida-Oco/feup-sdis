@@ -54,7 +54,7 @@ public class GetchunkHandler extends Handler {
       packet.setVersion(this.version);
       packet.setFileID(this.file_id);
       packet.setChunkN(this.chunk_n);
-      packet.setData(chunk.getData());
+      packet.setData(chunk.getData(), chunk.getSize());
       Random rand = new Random();
 
       try {

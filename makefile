@@ -19,3 +19,4 @@ clean :
 #@ hides the commands from console (they are not printed)
 %.class : %.java
 	@$(JAVAC) $<
+	@rm -rf stored_files

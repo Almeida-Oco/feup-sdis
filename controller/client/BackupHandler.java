@@ -14,7 +14,7 @@ class BackupHandler extends Handler implements Remote {
   int rep_degree;
   Listener mc, mdb;
   SignalCounter signals;
-  String curr_packet;
+  String curr_packet = null;
 
   void start(String f_name, int rep_degree, Listener mc, Listener mdb) {
     this.file_name  = f_name;
@@ -28,12 +28,16 @@ class BackupHandler extends Handler implements Remote {
   //TODO missing saving the peer that responded
   @Override
   public void signal(PacketInfo packet) {
+    System.err.println("Got signal of packet " + packet.getType());
     this.signals.signalValue(packet.getFileID() + "#" + packet.getChunkN());
   }
 
   @Override
   public Pair<String, Handler> register() {
-    return new Pair<String, Handler>(this.curr_packet, this);
+    if (this.curr_packet != null) {
+      return new Pair<String, Handler>(this.curr_packet, this);
+    }
+    return null;
   }
 
   @Override
@@ -52,10 +56,10 @@ class BackupHandler extends Handler implements Remote {
 
     for (FileChunk chunk : file.getChunks()) {
       packet.setChunkN(chunk.getChunkN());
-      packet.setData(chunk.getData());
+      packet.setData(chunk.getData(), chunk.getSize());
 
       this.signals.registerValue(file.getID(), chunk.getChunkN());
-
+      System.out.println("Sending chunk #" + packet.getChunkN());
       if (!this.sendChunk(packet)) {
         System.err.println("Not enough confirmations for packet #" + chunk.getChunkN());
       }
@@ -78,6 +82,7 @@ class BackupHandler extends Handler implements Remote {
 
       try {
         Thread.sleep(wait_time * tries);
+        System.out.println("Confirmations = " + this.signals.confirmations(id));
       }
       catch (InterruptedException err) {
         System.err.println("Failed to sleep for " + (wait_time * tries) + "ms");
@@ -87,10 +92,6 @@ class BackupHandler extends Handler implements Remote {
     }
 
     this.mc.removeFromSignal(this);
-    return tries <= 5 && this.signals.confirmations(id) > this.signals.maxNumber();
-  }
-
-  private int countConfirmations(String file_id, int chunk_n) {
-    return 0;
+    return tries <= 5 && this.signals.confirmations(id) >= this.signals.maxNumber();
   }
 }

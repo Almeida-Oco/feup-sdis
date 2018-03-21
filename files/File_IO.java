@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.io.FileNotFoundException;
 
 public class File_IO {
-  public final static int MAX_CHUNK_SIZE = 30000;
+  public final static int MAX_CHUNK_SIZE = 64000;
   private final static int MAX_N_CHUNKS  = 999999;
   private final static String PATH       = "./stored_files/";
 

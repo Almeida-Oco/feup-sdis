@@ -79,7 +79,7 @@ public class Net_IO {
       System.err.println("Packet is not ready to be sent!");
       return false;
     }
-    DatagramPacket dgram_packet = new DatagramPacket(new byte[BUF_SIZE], BUF_SIZE);
+    DatagramPacket dgram_packet = new DatagramPacket(new byte[packet.dataSize()], packet.dataSize());
     dgram_packet.setAddress(packet.getAddress());
     dgram_packet.setPort(packet.getPort());
 

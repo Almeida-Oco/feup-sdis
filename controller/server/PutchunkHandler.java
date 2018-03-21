@@ -3,6 +3,7 @@ package controller.server;
 import network.*;
 import controller.Pair;
 import controller.Handler;
+import controller.ApplicationInfo;
 import files.*;
 
 import java.net.InetAddress;
@@ -42,7 +43,7 @@ public class PutchunkHandler extends Handler {
 
   public void run() {
     File_IO.storeChunk(this.file_id, new FileChunk(this.data.getBytes(), this.data.length(), this.chunk_n));
-    PacketInfo packet = new PacketInfo(this.sender_addr, this.sender_port);
+    PacketInfo packet = new PacketInfo(ApplicationInfo.getMC().getAddr(), ApplicationInfo.getMC().getPort());
 
     packet.setType("STORED");
     packet.setFileID(this.file_id);
@@ -56,6 +57,7 @@ public class PutchunkHandler extends Handler {
     catch (InterruptedException err) {
       System.out.println("PutchunkHandler failed to sleep!\n - " + err.getMessage());
     }
+    System.err.println("Sending packet " + packet.getType());
     this.mc.sendMsg(packet);
   }
 }
