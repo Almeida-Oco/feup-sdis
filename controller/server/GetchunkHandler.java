@@ -6,9 +6,10 @@ import controller.Handler;
 import network.*;
 import files.*;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Random;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class GetchunkHandler extends Handler {
   boolean got_chunk = false;
@@ -16,15 +17,17 @@ public class GetchunkHandler extends Handler {
   String file_id;
   int chunk_n;
   Net_IO mdr;
+  ScheduledThreadPoolExecutor services;
 
   //TODO should I just store the packet then initialize?
   // How much overhead is added with these initializations?
   public GetchunkHandler(PacketInfo packet, Net_IO mdr) {
     super();
-    this.mdr     = mdr;
-    this.version = packet.getVersion();
-    this.file_id = packet.getFileID();
-    this.chunk_n = packet.getChunkN();
+    this.mdr      = mdr;
+    this.version  = packet.getVersion();
+    this.file_id  = packet.getFileID();
+    this.chunk_n  = packet.getChunkN();
+    this.services = new ScheduledThreadPoolExecutor(1);
   }
 
   @Override
@@ -57,18 +60,13 @@ public class GetchunkHandler extends Handler {
       packet.setData(chunk.getData(), chunk.getSize());
       Random rand = new Random();
 
-      try {
-        Thread.sleep(rand.nextInt(401)); //TODO use ScheduledExecutorService?
-      }
-      catch (InterruptedException err) {
-        System.out.println("Getchunk failed to sleep!\n - " + err.getMessage());
-      }
-
-      synchronized (this) {
-        if (!this.got_chunk) {
-          mdr.sendMsg(packet);
+      this.services.schedule(()->{
+        synchronized (this) {
+          if (!this.got_chunk) {
+            this.mdr.sendMsg(packet);
+          }
         }
-      }
+      }, rand.nextInt(401), TimeUnit.MILLISECONDS);
     }
   }
 }

@@ -6,8 +6,10 @@ import controller.Handler;
 import controller.ApplicationInfo;
 import files.*;
 
-import java.net.InetAddress;
 import java.util.Random;
+import java.net.InetAddress;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class PutchunkHandler extends Handler {
   byte version;
@@ -15,6 +17,7 @@ public class PutchunkHandler extends Handler {
   int chunk_n;
   String data;
   Net_IO mc;
+  ScheduledThreadPoolExecutor services;
 
   public PutchunkHandler(PacketInfo packet, Net_IO mc) {
     super();
@@ -25,6 +28,7 @@ public class PutchunkHandler extends Handler {
     this.data        = packet.getData();
     this.sender_addr = packet.getAddress();
     this.sender_port = packet.getPort();
+    this.services    = new ScheduledThreadPoolExecutor(1);
   }
 
   @Override
@@ -42,22 +46,17 @@ public class PutchunkHandler extends Handler {
   }
 
   public void run() {
-    File_IO.storeChunk(this.file_id, new FileChunk(this.data.getBytes(), this.data.length(), this.chunk_n));
     PacketInfo packet = new PacketInfo(ApplicationInfo.getMC().getAddr(), ApplicationInfo.getMC().getPort());
+    Random     rand   = new Random();
 
+    File_IO.storeChunk(this.file_id, new FileChunk(this.data.getBytes(), this.data.length(), this.chunk_n));
     packet.setType("STORED");
     packet.setFileID(this.file_id);
     packet.setChunkN(this.chunk_n);
     packet.setData(this.data);
 
-    Random rand = new Random();
-    try {
-      Thread.sleep(rand.nextInt(401)); //TODO use ScheduledExecutorService?
-    }
-    catch (InterruptedException err) {
-      System.out.println("PutchunkHandler failed to sleep!\n - " + err.getMessage());
-    }
-    System.err.println("Sending packet " + packet.getType());
-    this.mc.sendMsg(packet);
+    this.services.schedule(()->{
+      this.mc.sendMsg(packet);
+    }, rand.nextInt(401), TimeUnit.MILLISECONDS);
   }
 }

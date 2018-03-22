@@ -29,9 +29,6 @@ public class Listener implements Runnable {
 
     do {
       if ((packet = this.channel.recvMsg()) != null&& (packet.getSenderID() != ApplicationInfo.getServID())) {
-        System.out.println("LOG: mc::recvMsg()\nTYPE = " + packet.getType() +
-            "\nServ_ID = " + packet.getSenderID() + "\nCHUNK_N = " + packet.getChunkN());
-
         this.handleTask(Handler.newHandler(packet), packet);
 
         for (String key : signals.keySet()) {

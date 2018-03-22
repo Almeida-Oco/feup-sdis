@@ -8,13 +8,19 @@ import controller.listener.Listener;
 import controller.Pair;
 
 import java.rmi.Remote;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.Callable;
 
 class BackupHandler extends Handler implements Remote {
+  private static final int MAX_TRIES  = 5;
+  private static final long WAIT_TIME = 1000;
   String file_name;
   int rep_degree;
   Listener mc, mdb;
   SignalCounter signals;
   String curr_packet = null;
+  ScheduledThreadPoolExecutor services;
 
   void start(String f_name, int rep_degree, Listener mc, Listener mdb) {
     this.file_name  = f_name;
@@ -22,6 +28,7 @@ class BackupHandler extends Handler implements Remote {
     this.mc         = mc;
     this.mdb        = mdb;
     this.signals    = new SignalCounter(rep_degree);
+    this.services   = new ScheduledThreadPoolExecutor(1);
     this.run();
   }
 
@@ -60,9 +67,7 @@ class BackupHandler extends Handler implements Remote {
 
       this.signals.registerValue(file.getID(), chunk.getChunkN());
       System.out.println("Sending chunk #" + packet.getChunkN());
-      if (!this.sendChunk(packet)) {
-        System.err.println("Not enough confirmations for packet #" + chunk.getChunkN());
-      }
+      this.sendChunk(packet);
     }
 
     File_IO.addFile(file);
@@ -70,28 +75,35 @@ class BackupHandler extends Handler implements Remote {
     System.out.println("BACKUP");
   }
 
-  private boolean sendChunk(PacketInfo packet) {
+  private void sendChunk(PacketInfo packet) {
     int    wait_time = 1000, tries = 1;
     String id = packet.getFileID() + "#" + packet.getChunkN();
 
     this.curr_packet = id;
     this.mc.registerForSignal(this);
 
-    while (tries <= 5 && this.signals.confirmations(id) < this.signals.maxNumber()) {
-      this.mdb.getChannel().sendMsg(packet);
+    this.services.schedule(()->{
+      return this.getConfirmations(packet, tries, id);
+    }, wait_time, TimeUnit.MILLISECONDS);
+  }
 
-      try {
-        Thread.sleep(wait_time * tries);
-        System.out.println("Confirmations = " + this.signals.confirmations(id));
-      }
-      catch (InterruptedException err) {
-        System.err.println("Failed to sleep for " + (wait_time * tries) + "ms");
-      }
+  private Void getConfirmations(PacketInfo packet, int try_n, String id) {
+    this.mdb.getChannel().sendMsg(packet);
+    boolean got_confirmations = this.signals.confirmations(id) >= this.signals.maxNumber();
 
-      tries++;
+    if (try_n <= MAX_TRIES && !got_confirmations) {
+      this.services.schedule(()->{
+        return this.getConfirmations(packet, try_n + 1, id);
+      }, try_n * WAIT_TIME, TimeUnit.MILLISECONDS);
     }
-
-    this.mc.removeFromSignal(this);
-    return tries <= 5 && this.signals.confirmations(id) >= this.signals.maxNumber();
+    else if (try_n > MAX_TRIES) {
+      System.err.println("Not enough confirmations for packet #" + this.file_name);
+      this.mc.removeFromSignal(this);
+    }
+    else if (try_n <= MAX_TRIES && got_confirmations) {
+      System.err.println("File '" + this.file_name + "' stored!");
+      this.mc.removeFromSignal(this);
+    }
+    return null;
   }
 }
