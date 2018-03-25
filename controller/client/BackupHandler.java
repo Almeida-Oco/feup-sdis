@@ -1,17 +1,18 @@
 package controller.client;
 
-import network.*;
 import files.*;
-import controller.SignalCounter;
-import controller.Handler;
-import controller.listener.Listener;
+import network.*;
 import controller.Pair;
+import controller.Handler;
+import controller.SignalCounter;
+import controller.listener.Listener;
 
-import java.util.Vector;
 import java.rmi.Remote;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.Vector;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 class BackupHandler extends Handler implements Remote {
   private static final int MAX_TRIES  = 5;
@@ -57,39 +58,42 @@ class BackupHandler extends Handler implements Remote {
     FileInfo file = File_IO.readFile(this.file_name, this.rep_degree);
 
     Vector<FileChunk> chunks = file.getChunks();
+    Vector<ScheduledFuture<Void> > futures = new Vector<ScheduledFuture<Void> >(chunks.size());
+
     for (FileChunk chunk : chunks) {
       PacketInfo packet = new PacketInfo("PUTCHUNK", file.getID(), chunk.getChunkN());
       packet.setRDegree(this.rep_degree);
       packet.setData(chunk.getData(), chunk.getSize());
 
       this.signals.registerValue(file.getID(), chunk.getChunkN(), packet.getRDegree());
-      this.sendChunk(packet);
+      futures.add(this.sendChunk(packet));
     }
 
     File_IO.addFile(file);
     this.curr_packet = null;
-    System.out.println("\n --- Backup Done ---");
+    for (ScheduledFuture<Void> future : futures) {
+      try {
+        future.get();
+      }
+      catch (Exception err) {
+        System.err.println("Backup::run() -> Future interrupted!\n - " + err.getMessage());
+      }
+    }
   }
 
-  private void sendChunk(PacketInfo packet) {
+  private ScheduledFuture<Void> sendChunk(PacketInfo packet) {
     int    wait_time = 1000, tries = 0;
     String id = packet.getFileID() + "#" + packet.getChunkN();
 
     this.curr_packet = id;
     this.mc.registerForSignal(id, "STORED", this);
 
-    this.services.schedule(()->{
+    return this.services.schedule(()->{
       return this.getConfirmations(packet, tries + 1, id);
     }, wait_time, TimeUnit.MILLISECONDS);
   }
 
   private Void getConfirmations(PacketInfo packet, int try_n, String id) {
-    // System.out.println("-- START DATA CHUNK " + packet.getChunkN() + " --");
-    // for (int i = 0; i < 5; i++) {
-    //   System.out.println(String.format("  %x", packet.getData()[i]));
-    // }
-    // System.out.println("-- END DATA CHUNK " + packet.getChunkN() + " --");
-
     this.mdb.sendMsg(packet);
     boolean got_confirmations = this.signals.confirmations(id) >= this.signals.maxNumber();
 

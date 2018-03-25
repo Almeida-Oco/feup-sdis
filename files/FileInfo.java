@@ -43,7 +43,7 @@ public class FileInfo {
       this.tryHash(chunk);
     }
     if (index >= 0) {
-      System.out.println("Replicated chunk!\nNUMBER = " + chunk.getChunkN());
+      System.out.println("Replicated chunk #" + chunk.getChunkN());
     }
     else {
       this.chunks.add(-(index) - 1, chunk);

@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Callable;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
@@ -36,7 +37,7 @@ class RestoreHandler extends Handler implements Remote {
   public void signal(PacketInfo packet) {
     int data_size = packet.getData().length();
 
-    this.chunks.add(new FileChunk(packet.getData().getBytes(), data_size, packet.getChunkN()));
+    this.chunks.add(new FileChunk(packet.getData().getBytes(StandardCharsets.ISO_8859_1), data_size, packet.getChunkN()));
   }
 
   @Override
@@ -74,7 +75,7 @@ class RestoreHandler extends Handler implements Remote {
     }
 
     if (this.waitForRemaining(file.getChunks(), expected)) {
-      File_IO.restoreFile(file.getName(), this.chunks);
+      File_IO.restoreFile(file.getName(), new Vector<FileChunk>(this.chunks));
       System.out.println("Restored file '" + this.file_name + "'!");
     }
     else {

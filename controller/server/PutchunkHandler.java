@@ -50,12 +50,6 @@ public class PutchunkHandler extends Handler {
     PacketInfo packet = new PacketInfo(ApplicationInfo.getMC().getAddr(), ApplicationInfo.getMC().getPort());
     Random     rand   = new Random();
 
-    // System.out.println("-- START DATA CHUNK " + this.chunk_n + " --");
-    // for (int i = 0; i < 5; i++) {
-    //   System.out.println(String.format("  %x", this.data.getBytes(StandardCharsets.ISO_8859_1)[i]));
-    // }
-    // System.out.println("-- END DATA CHUNK " + this.chunk_n + " --");
-
     File_IO.storeChunk(this.file_id, new FileChunk(this.data.getBytes(StandardCharsets.ISO_8859_1), this.data.length(), this.chunk_n));
     packet.setType("STORED");
     packet.setFileID(this.file_id);

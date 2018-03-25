@@ -10,7 +10,7 @@ import java.lang.SecurityException;
 
 public class Net_IO {
   final int TTL      = 1;
-  final int BUF_SIZE = 65000;
+  final int BUF_SIZE = 66000;
 
   MulticastSocket mcast_socket;
   InetAddress mcast_addr;
@@ -49,7 +49,6 @@ public class Net_IO {
   }
 
   public InetAddress getAddr() {
-    System.out.println("Addr == null? " + (this.mcast_addr == null));
     return this.mcast_addr;
   }
 

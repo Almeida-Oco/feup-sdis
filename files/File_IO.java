@@ -132,8 +132,10 @@ public class File_IO {
     }
   }
 
-  public static boolean restoreFile(String file_name, Set<FileChunk> chunks) {
+  public static boolean restoreFile(String file_name, Vector<FileChunk> chunks) {
+    chunks.sort(null);
     FileOutputStream out;
+
 
     if ((out = openFileWriter(file_name)) == null) {
       return false;
@@ -142,7 +144,6 @@ public class File_IO {
 
     try {
       for (FileChunk chunk : chunks) {
-        System.out.println("Restoring with chunk #" + chunk.getChunkN());
         out.write(chunk.getData());
       }
       out.close();

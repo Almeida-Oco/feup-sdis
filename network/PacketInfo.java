@@ -82,7 +82,8 @@ public class PacketInfo {
       this.msg_type  = matcher.group("msgT");
       this.version   = matcher.group("version");
       this.sender_id = Integer.parseInt(matcher.group("senderID"));
-      this.file_id   = new String(matcher.group("fileID").getBytes(StandardCharsets.ISO_8859_1), 0, HASH_SIZE, StandardCharsets.ISO_8859_1);
+      this.file_id   = matcher.group("fileID");
+      this.data      = matcher.group("data");
 
       if ((chunk_n = matcher.group("chunkN1")) != null) {
         this.chunk_n  = Integer.parseInt(chunk_n);
@@ -92,7 +93,6 @@ public class PacketInfo {
         this.chunk_n = Integer.parseInt(chunk_n);
       }
 
-      this.data = matcher.group("data");
       return true;
     }
     catch (IllegalArgumentException err) {
