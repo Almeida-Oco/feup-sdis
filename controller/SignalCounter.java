@@ -13,10 +13,11 @@ public class SignalCounter {
     this.max_count = max;
   }
 
-  public void registerValue(String file_name, int chunk_n) {
+  public void registerValue(String file_name, int chunk_n, int max_n) {
     String name = file_name + "#" + chunk_n;
 
     this.signal_counter.put(name, new Integer(0));
+    this.max_count = max_n;
   }
 
   public void signalValue(String file_id) {

@@ -9,6 +9,7 @@ import files.*;
 import java.util.Random;
 import java.net.InetAddress;
 import java.util.concurrent.TimeUnit;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class PutchunkHandler extends Handler {
@@ -26,7 +27,7 @@ public class PutchunkHandler extends Handler {
     this.file_id     = packet.getFileID();
     this.chunk_n     = packet.getChunkN();
     this.data        = packet.getData();
-    this.sender_addr = packet.getAddress();
+    this.sender_addr = packet.getAddr();
     this.sender_port = packet.getPort();
     this.services    = new ScheduledThreadPoolExecutor(1);
   }
@@ -49,7 +50,13 @@ public class PutchunkHandler extends Handler {
     PacketInfo packet = new PacketInfo(ApplicationInfo.getMC().getAddr(), ApplicationInfo.getMC().getPort());
     Random     rand   = new Random();
 
-    File_IO.storeChunk(this.file_id, new FileChunk(this.data.getBytes(), this.data.length(), this.chunk_n));
+    // System.out.println("-- START DATA CHUNK " + this.chunk_n + " --");
+    // for (int i = 0; i < 5; i++) {
+    //   System.out.println(String.format("  %x", this.data.getBytes(StandardCharsets.ISO_8859_1)[i]));
+    // }
+    // System.out.println("-- END DATA CHUNK " + this.chunk_n + " --");
+
+    File_IO.storeChunk(this.file_id, new FileChunk(this.data.getBytes(StandardCharsets.ISO_8859_1), this.data.length(), this.chunk_n));
     packet.setType("STORED");
     packet.setFileID(this.file_id);
     packet.setChunkN(this.chunk_n);

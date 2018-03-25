@@ -51,19 +51,24 @@ public class GetchunkHandler extends Handler {
     FileChunk chunk = File_IO.getChunk(this.file_id, this.chunk_n);
 
     if (chunk != null) {
-      PacketInfo packet = new PacketInfo(this.sender_addr, this.sender_port);
+      PacketInfo packet = new PacketInfo(this.mdr.getAddr(), this.mdr.getPort());
 
       packet.setType("CHUNK");
-      packet.setVersion(this.version);
       packet.setFileID(this.file_id);
       packet.setChunkN(this.chunk_n);
       packet.setData(chunk.getData(), chunk.getSize());
-      Random rand = new Random();
 
+      Random rand = new Random();
       this.services.schedule(()->{
         synchronized (this) {
+          System.out.println("Got chunk? " + this.got_chunk);
           if (!this.got_chunk) {
-            this.mdr.sendMsg(packet);
+            if (this.mdr.sendMsg(packet)) {
+              System.out.println("GetChunkHandler::run() -> Msg sent!\n - ID = '" + this.file_id + "#" + this.chunk_n + "'");
+            }
+            else {
+              System.out.println("GetChunkHandler::run() -> Msg not sent!");
+            }
           }
         }
       }, rand.nextInt(401), TimeUnit.MILLISECONDS);

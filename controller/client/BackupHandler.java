@@ -7,6 +7,7 @@ import controller.Handler;
 import controller.listener.Listener;
 import controller.Pair;
 
+import java.util.Vector;
 import java.rmi.Remote;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -35,7 +36,6 @@ class BackupHandler extends Handler implements Remote {
   //TODO missing saving the peer that responded
   @Override
   public void signal(PacketInfo packet) {
-    System.err.println("Got signal of packet " + packet.getType());
     this.signals.signalValue(packet.getFileID() + "#" + packet.getChunkN());
   }
 
@@ -54,41 +54,43 @@ class BackupHandler extends Handler implements Remote {
 
   @Override
   public void run() {
-    FileInfo   file   = File_IO.readFile(this.file_name, this.rep_degree);
-    PacketInfo packet = new PacketInfo(this.mdb.getChannel().getAddr(), this.mdb.getChannel().getPort());
+    FileInfo file = File_IO.readFile(this.file_name, this.rep_degree);
 
-    packet.setRDegree(this.rep_degree);
-    packet.setType("PUTCHUNK");
-    packet.setFileID(file.getID());
-
-    for (FileChunk chunk : file.getChunks()) {
-      packet.setChunkN(chunk.getChunkN());
+    Vector<FileChunk> chunks = file.getChunks();
+    for (FileChunk chunk : chunks) {
+      PacketInfo packet = new PacketInfo("PUTCHUNK", file.getID(), chunk.getChunkN());
+      packet.setRDegree(this.rep_degree);
       packet.setData(chunk.getData(), chunk.getSize());
 
-      this.signals.registerValue(file.getID(), chunk.getChunkN());
-      System.out.println("Sending chunk #" + packet.getChunkN());
+      this.signals.registerValue(file.getID(), chunk.getChunkN(), packet.getRDegree());
       this.sendChunk(packet);
     }
 
     File_IO.addFile(file);
     this.curr_packet = null;
-    System.out.println("BACKUP");
+    System.out.println("\n --- Backup Done ---");
   }
 
   private void sendChunk(PacketInfo packet) {
-    int    wait_time = 1000, tries = 1;
+    int    wait_time = 1000, tries = 0;
     String id = packet.getFileID() + "#" + packet.getChunkN();
 
     this.curr_packet = id;
-    this.mc.registerForSignal(this);
+    this.mc.registerForSignal(id, "STORED", this);
 
     this.services.schedule(()->{
-      return this.getConfirmations(packet, tries, id);
+      return this.getConfirmations(packet, tries + 1, id);
     }, wait_time, TimeUnit.MILLISECONDS);
   }
 
   private Void getConfirmations(PacketInfo packet, int try_n, String id) {
-    this.mdb.getChannel().sendMsg(packet);
+    // System.out.println("-- START DATA CHUNK " + packet.getChunkN() + " --");
+    // for (int i = 0; i < 5; i++) {
+    //   System.out.println(String.format("  %x", packet.getData()[i]));
+    // }
+    // System.out.println("-- END DATA CHUNK " + packet.getChunkN() + " --");
+
+    this.mdb.sendMsg(packet);
     boolean got_confirmations = this.signals.confirmations(id) >= this.signals.maxNumber();
 
     if (try_n <= MAX_TRIES && !got_confirmations) {
@@ -101,8 +103,9 @@ class BackupHandler extends Handler implements Remote {
       this.mc.removeFromSignal(this);
     }
     else if (try_n <= MAX_TRIES && got_confirmations) {
-      System.err.println("File '" + this.file_name + "' stored!");
+      System.out.println("File '" + this.file_name + "' stored!");
       this.mc.removeFromSignal(this);
+      this.services.shutdownNow();
     }
     return null;
   }

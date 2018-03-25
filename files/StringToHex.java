@@ -28,14 +28,14 @@ class StringToHex {
     String chars = new String();
 
     for (int txt_i = 0; txt_i < size; txt_i++) {
-      char[] hex = charToHex(text[txt_i]);
+      char[] hex = charToHex(Byte.toUnsignedInt(text[txt_i]));
       chars += hex[0];
       chars += hex[1];
     }
     return chars;
   }
 
-  private static char[] charToHex(byte chr) {
+  private static char[] charToHex(int chr) {
     char[] ret   = new char[2];
     int    major = chr / 16;
     int    minor = chr % 16;

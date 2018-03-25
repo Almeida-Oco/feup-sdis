@@ -1,6 +1,7 @@
 package files;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 import java.util.Vector;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -35,19 +36,6 @@ public class File_IO {
     file_table.put(file.getName(), file);
   }
 
-  public static FileInfo getFileInfo(String file_name) {
-    if (file_name == null) {
-      return null;
-    }
-    return file_table.get(file_name);
-  }
-
-  public static FileChunk getChunk(String file_id, int chunk_n) {
-    FileInfo file = file_table.get(file_id);
-
-    return file.getChunk(chunk_n);
-  }
-
   public static FileInfo readFile(String file_name, int rep_degree) {
     File            fd = new File(file_name);
     int             chunk_n, bytes_read;
@@ -80,7 +68,7 @@ public class File_IO {
     try {
       directory.mkdir();
       FileOutputStream writer = new FileOutputStream(chunk_file);
-      writer.write(chunk.getData());
+      writer.write(chunk.getData(), 0, chunk.getSize());
       FileInfo file = file_table.putIfAbsent(file_id, new FileInfo(file_id, chunk));
       if (file != null) {
         file.addChunk(chunk);
@@ -144,9 +132,9 @@ public class File_IO {
     }
   }
 
-  public static boolean restoreFile(String file_name, Vector<FileChunk> chunks) {
-    chunks.sort(null);
+  public static boolean restoreFile(String file_name, Set<FileChunk> chunks) {
     FileOutputStream out;
+
     if ((out = openFileWriter(file_name)) == null) {
       return false;
     }
@@ -154,6 +142,7 @@ public class File_IO {
 
     try {
       for (FileChunk chunk : chunks) {
+        System.out.println("Restoring with chunk #" + chunk.getChunkN());
         out.write(chunk.getData());
       }
       out.close();
@@ -229,6 +218,19 @@ public class File_IO {
       System.err.println("Failed to read file from stream!\n - " + err.getMessage());
       return -1;
     }
+  }
+
+  public static FileInfo getFileInfo(String file_name) {
+    if (file_name == null) {
+      return null;
+    }
+    return file_table.get(file_name);
+  }
+
+  public static FileChunk getChunk(String file_id, int chunk_n) {
+    FileInfo file = file_table.get(file_id);
+
+    return file.getChunk(chunk_n);
   }
 
   public static ConcurrentHashMap<String, FileInfo> getTable() {

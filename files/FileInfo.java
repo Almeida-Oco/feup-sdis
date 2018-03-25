@@ -7,7 +7,6 @@ import java.security.MessageDigest;
 import java.security.DigestException;
 import java.security.NoSuchAlgorithmException;
 import java.nio.charset.StandardCharsets;
-import java.io.UnsupportedEncodingException;
 
 public class FileInfo {
   private final static int HASH_SIZE = 32;
@@ -84,14 +83,11 @@ public class FileInfo {
 
     try {
       int    size   = intestine.digest(hash, 0, HASH_SIZE);
-      String middle = new String(hash, 0, HASH_SIZE, StandardCharsets.US_ASCII);
-      this.file_id = StringToHex.toHex(middle.getBytes("US-ASCII"), HASH_SIZE);
+      String middle = new String(hash, 0, HASH_SIZE, StandardCharsets.ISO_8859_1);
+      this.file_id = StringToHex.toHex(middle.getBytes(StandardCharsets.ISO_8859_1), HASH_SIZE);
     }
     catch (DigestException err) {
       System.err.println("Failed to digest!\n - " + err.getMessage());
-    }
-    catch (UnsupportedEncodingException err) {
-      System.err.println("Unknown encoding!\n - " + err.getMessage());
     }
   }
 

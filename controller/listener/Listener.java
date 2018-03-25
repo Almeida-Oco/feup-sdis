@@ -6,6 +6,7 @@ import controller.Handler;
 import controller.Pair;
 import controller.ApplicationInfo;
 
+import java.net.InetAddress;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -25,15 +26,9 @@ public class Listener implements Runnable {
     String     txt = null;
     PacketInfo packet;
 
-    System.out.println("Listening...");
-
     do {
       if ((packet = this.channel.recvMsg()) != null&& (packet.getSenderID() != ApplicationInfo.getServID())) {
         this.handleTask(Handler.newHandler(packet), packet);
-
-        for (String key : signals.keySet()) {
-          System.out.println("  KEY = '" + key + "'");
-        }
       }
     } while (txt == null);
 
@@ -42,7 +37,7 @@ public class Listener implements Runnable {
 
   private void handleTask(Handler task, PacketInfo packet) {
     if (task != null) {
-      this.registerForSignal(task);
+      this.registerForSignal(task.register());
       this.task_queue.execute((Runnable)task);
     }
     else {
@@ -53,10 +48,8 @@ public class Listener implements Runnable {
   private void signal(PacketInfo packet) {
     String file_id = packet.getFileID() + "#" + packet.getChunkN();
 
-
     ConcurrentHashMap<String, Handler> chunks = this.signals.get(packet.getType());
     if (chunks != null) {
-      System.out.println("Signalled ID '" + file_id + "'");
       Handler task = chunks.get(file_id);
       if (task != null) {
         task.signal(packet);
@@ -64,20 +57,43 @@ public class Listener implements Runnable {
     }
   }
 
-  public Net_IO getChannel() {
-    return this.channel;
+  public boolean sendMsg(PacketInfo packet) {
+    return this.channel.sendMsg(packet);
   }
 
-  // TODO no need to receive just the task, add remaining parameters
-  public void registerForSignal(Handler task) {
-    Pair<String, Handler> input = task.register();
+  public PacketInfo recvMsg(PacketInfo packet) {
+    return this.channel.recvMsg();
+  }
 
-    if (input != null) {
-      ConcurrentHashMap<String, Handler> type = this.signals.computeIfAbsent(task.signalType(), (x)->{
+  public InetAddress getAddr() {
+    return this.channel.getAddr();
+  }
+
+  public int getPort() {
+    return this.channel.getPort();
+  }
+
+  public void registerForSignal(Pair<String, Handler> task) {
+    if (task != null) {
+      ConcurrentHashMap<String, Handler> type = this.signals.computeIfAbsent(task.getSecond().signalType(), (x)->{
         return new ConcurrentHashMap<String, Handler>();
       });
       if (type != null) {
-        type.put(input.getFirst(), input.getSecond());
+        type.put(task.getFirst(), task.getSecond());
+      }
+      else {
+        System.err.println("Why the frick is type null??");
+      }
+    }
+  }
+
+  public void registerForSignal(String chunk_id, String signal_type, Handler task) {
+    if (chunk_id != null&& signal_type != null&& task != null) {
+      ConcurrentHashMap<String, Handler> type = this.signals.computeIfAbsent(signal_type, (x)->{
+        return new ConcurrentHashMap<String, Handler>();
+      });
+      if (type != null) {
+        type.put(chunk_id, task);
       }
       else {
         System.err.println("Why the frick is type null??");

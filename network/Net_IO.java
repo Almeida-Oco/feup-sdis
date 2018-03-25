@@ -49,6 +49,7 @@ public class Net_IO {
   }
 
   public InetAddress getAddr() {
+    System.out.println("Addr == null? " + (this.mcast_addr == null));
     return this.mcast_addr;
   }
 
@@ -75,17 +76,20 @@ public class Net_IO {
   }
 
   public boolean sendMsg(PacketInfo packet) {
+    packet.setAddr(this.mcast_addr);
+    packet.setPort(this.mcast_port);
     if (!packet.isReady()) {
       System.err.println("Packet is not ready to be sent!");
       return false;
     }
-    DatagramPacket dgram_packet = new DatagramPacket(new byte[packet.dataSize()], packet.dataSize());
-    dgram_packet.setAddress(packet.getAddress());
-    dgram_packet.setPort(packet.getPort());
+    String         data         = packet.toString();
+    int            size         = data.length();
+    DatagramPacket dgram_packet = new DatagramPacket(new byte[size], size);
 
+    dgram_packet.setAddress(packet.getAddr());
+    dgram_packet.setPort(packet.getPort());
     try {
-      String data = packet.toString();
-      dgram_packet.setData(data.getBytes(StandardCharsets.US_ASCII), 0, data.length());
+      dgram_packet.setData(data.getBytes(StandardCharsets.ISO_8859_1), 0, size);
       this.mcast_socket.send(dgram_packet);
       return true;
     }

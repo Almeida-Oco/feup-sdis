@@ -11,11 +11,10 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Collections;
 import java.util.Vector;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 class RestoreHandler extends Handler implements Remote {
   String file_name;
@@ -53,41 +52,73 @@ class RestoreHandler extends Handler implements Remote {
   @Override
   public void run() {
     FileInfo   file   = File_IO.getFileInfo(this.file_name);
-    PacketInfo packet = new PacketInfo(this.mdr.getChannel().getAddr(), this.mdr.getChannel().getPort());
+    PacketInfo packet = new PacketInfo(this.mc.getAddr(), this.mc.getPort());
+
+    if (file == null) {
+      System.err.println("File '" + this.file_name + "' does not exist in table!");
+      return;
+    }
 
     packet.setType("GETCHUNK");
     packet.setFileID(file.getID());
-    this.expected_chunks = file.chunkNumber();
+    int expected = file.chunkNumber();
 
-    this.chunks = Collections.synchronizedSet(new HashSet<FileChunk>(this.expected_chunks, 1));
+    this.chunks = Collections.synchronizedSet(new HashSet<FileChunk>(expected, 1));
 
     for (FileChunk chunk : file.getChunks()) {
-      this.curr_packet = this.file_name + "#" + chunk.getChunkN();
+      String chunk_id = file.getID() + "#" + chunk.getChunkN();
       packet.setChunkN(chunk.getChunkN());
 
-      this.mdr.getChannel().sendMsg(packet);
-      this.mdr.registerForSignal(this);
+      this.mdr.registerForSignal(chunk_id, "CHUNK", this);
+      this.mc.sendMsg(packet);
     }
-    if (this.waitForRemaining(file.getChunks())) {
-      File_IO.restoreFile(file.getName(), new Vector<FileChunk>(this.chunks));
+
+    if (this.waitForRemaining(file.getChunks(), expected)) {
+      File_IO.restoreFile(file.getName(), this.chunks);
+      System.out.println("Restored file '" + this.file_name + "'!");
     }
     else {
-      System.err.println("Timed out!\nFailed to recover file " + file.getName());
+      System.err.println("Timed out!\nFailed to recover file " + this.file_name);
     }
   }
 
-  private boolean waitForRemaining(Vector<FileChunk> chunks) {
-    AtomicInteger            count     = new AtomicInteger(0);
-    ScheduledExecutorService schedulor = Executors.newScheduledThreadPool(1);
-    ScheduledFuture          future    = schedulor.scheduleAtFixedRate(()->{
-      System.out.println("Waiting for chunks (" + this.chunks.size() + "/" + this.expected_chunks + ")");
-      count.incrementAndGet();
-    }, 0, 2, TimeUnit.SECONDS);
+  private boolean waitForRemaining(Vector<FileChunk> chunks, int expected_chunks) {
+    int i = 0;
 
-    while (this.chunks.size() < this.expected_chunks && count.get() < 5) {
+    ScheduledFuture<Boolean>    future;
+    ScheduledThreadPoolExecutor schedulor = new ScheduledThreadPoolExecutor(1);
+    Waiter wait_task = new Waiter(this.chunks, expected_chunks);
+
+    for (i = 0; i < 5; i++) {
+      future = schedulor.schedule(wait_task, 2, TimeUnit.SECONDS);
+      try {
+        if (!future.get()) { //Meaning it has received all chunks
+          break;
+        }
+      }
+      catch (Exception err) {
+        System.err.println("RestoreHandler::run() -> Error waiting for thread!\n - " + err.getMessage());
+      }
     }
 
-    future.cancel(false);
-    return this.chunks.size() == this.expected_chunks;
+    return i < 5;
+  }
+}
+
+class Waiter implements Callable<Boolean> {
+  Set<FileChunk> chunks;
+  int expected_chunks;
+  int count;
+
+  Waiter(Set<FileChunk> chunks, int expected) {
+    this.chunks          = chunks;
+    this.expected_chunks = expected;
+  }
+
+  public Boolean call() {
+    int size = this.chunks.size();
+
+    System.out.println("Waiting for chunks (" + size + "/" + this.expected_chunks + ")");
+    return size < this.expected_chunks;
   }
 }

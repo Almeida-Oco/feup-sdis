@@ -43,14 +43,14 @@ class DeleteHandler extends Handler implements Remote {
     FileInfo      file   = File_IO.getFileInfo(this.file_name);
     String        id     = file.getID();
     AtomicInteger count  = new AtomicInteger(0);
-    PacketInfo    packet = new PacketInfo(this.mc.getChannel().getAddr(), this.mc.getChannel().getPort());
+    PacketInfo    packet = new PacketInfo(this.mc.getAddr(), this.mc.getPort());
 
     packet.setType("DELETE");
     packet.setFileID(id);
 
     ScheduledExecutorService schedulor = Executors.newScheduledThreadPool(1);
     ScheduledFuture          future    = schedulor.scheduleAtFixedRate(()->{
-      this.mc.getChannel().sendMsg(packet);
+      this.mc.sendMsg(packet);
       count.incrementAndGet();
       File_IO.eraseFile(this.file_name);
     }, 0, 2, TimeUnit.SECONDS);

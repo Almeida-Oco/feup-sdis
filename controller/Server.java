@@ -22,7 +22,7 @@ class Server {
   private static final int MAX_TASKS = 100;
 
   public static void main(String[] args) {
-    if (!ServerParser.parseArgs(args)){
+    if (!ServerParser.parseArgs(args)) {
       User_IO.serverUsage();
       return;
     }
@@ -34,7 +34,7 @@ class Server {
     LinkedBlockingQueue<Runnable> queue      = new LinkedBlockingQueue<Runnable>(MAX_TASKS);
     ThreadPoolExecutor            task_queue = new ThreadPoolExecutor(cores - 1, cores - 1, 0, TimeUnit.SECONDS, queue);
 
-    for (int i = 2; i < Runtime.getRuntime().availableProcessors(); i++){
+    for (int i = 2; i < Runtime.getRuntime().availableProcessors(); i++) {
       task_queue.prestartCoreThread();
     }
 
@@ -42,20 +42,23 @@ class Server {
     Listener mdb_listener = new Listener(ApplicationInfo.getMDB(), task_queue);
     Listener mdr_listener = new Listener(ApplicationInfo.getMDR(), task_queue);
 
-    if (!registerClient(ApplicationInfo.getServID(), mc_listener, mdb_listener, mdr_listener)){
+    if (!registerClient(ApplicationInfo.getServID(), mc_listener, mdb_listener, mdr_listener)) {
       return;
     }
 
     Thread mc  = new Thread(mc_listener);
     Thread mdb = new Thread(mdb_listener);
+    Thread mdr = new Thread(mdr_listener);
     mc.start();
     mdb.start();
-
+    mdr.start();
+    System.out.println("Ready");
     try {
       mc.join();
       mdb.join();
+      mdr.join();
     }
-    catch (InterruptedException err){
+    catch (InterruptedException err) {
       System.err.println("Failed to join thread!\n - " + err.getMessage());
     }
   }
@@ -68,7 +71,7 @@ class Server {
 
       registry.rebind("" + id, stub);
     }
-    catch (RemoteException err){
+    catch (RemoteException err) {
       System.err.println("Failed to register client handler!\n - " + err.getMessage());
       return false;
     }
