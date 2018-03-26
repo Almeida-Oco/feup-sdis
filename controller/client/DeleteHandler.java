@@ -40,24 +40,20 @@ class DeleteHandler extends Handler implements Remote {
 
   @Override
   public void run() {
-    FileInfo      file   = File_IO.getFileInfo(this.file_name);
-    String        id     = file.getID();
-    AtomicInteger count  = new AtomicInteger(0);
-    PacketInfo    packet = new PacketInfo(this.mc.getAddr(), this.mc.getPort());
-
-    packet.setType("DELETE");
-    packet.setFileID(id);
+    FileInfo   file   = File_IO.getFileInfo(this.file_name);
+    PacketInfo packet = new PacketInfo("DELETE", file.getID(), -1);
 
     ScheduledExecutorService schedulor = Executors.newScheduledThreadPool(1);
-    ScheduledFuture          future    = schedulor.scheduleAtFixedRate(()->{
-      this.mc.sendMsg(packet);
-      count.incrementAndGet();
-      File_IO.eraseFile(this.file_name);
-    }, 0, 2, TimeUnit.SECONDS);
 
-    while (count.get() < 5) {
+    for (int i = 0; i < 5; i++) {
+      try {
+        schedulor.schedule(()->this.mc.sendMsg(packet), 2, TimeUnit.SECONDS).get();
+      }
+      catch (Exception err) {
+        System.err.println("Delete::run() -> Interruped scheduler!\n - " + err.getMessage());
+      }
     }
 
-    future.cancel(false);
+    File_IO.eraseFile(this.file_name);
   }
 }

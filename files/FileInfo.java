@@ -10,10 +10,9 @@ import java.nio.charset.StandardCharsets;
 
 public class FileInfo {
   private final static int HASH_SIZE = 32;
+  String file_name, metadata; //Used only for hashing purposes
 
-  String file_name; //Used only for hashing purposes
   String file_id;
-  String metadata;  //Used only for hashing purposes
   Vector<FileChunk> chunks;
 
   FileInfo(File fd, int chunk_number) {
@@ -48,6 +47,17 @@ public class FileInfo {
     else {
       this.chunks.add(-(index) - 1, chunk);
     }
+  }
+
+  FileChunk popChunk() {
+    if (this.chunks.size() > 0) {
+      FileChunk first = this.chunks.firstElement();
+      this.chunks.remove(0);
+
+      return first;
+    }
+
+    return null;
   }
 
   void eraseChunk(FileChunk chunk) {

@@ -4,14 +4,16 @@ import files.*;
 import network.*;
 import controller.Pair;
 import controller.Handler;
-import controller.SignalCounter;
 import controller.listener.Listener;
 
 import java.rmi.Remote;
 import java.util.Vector;
+import java.util.Enumeration;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 class BackupHandler extends Handler implements Remote {
@@ -37,7 +39,7 @@ class BackupHandler extends Handler implements Remote {
   //TODO missing saving the peer that responded
   @Override
   public void signal(PacketInfo packet) {
-    this.signals.signalValue(packet.getFileID() + "#" + packet.getChunkN());
+    this.signals.signalValue(packet.getFileID() + "#" + packet.getChunkN(), packet.getSenderID());
   }
 
   @Override
@@ -65,7 +67,7 @@ class BackupHandler extends Handler implements Remote {
       packet.setRDegree(this.rep_degree);
       packet.setData(chunk.getData(), chunk.getSize());
 
-      this.signals.registerValue(file.getID(), chunk.getChunkN(), packet.getRDegree());
+      this.signals.registerValue(file.getID(), chunk.getChunkN(), chunk);
       futures.add(this.sendChunk(packet));
     }
 
@@ -112,5 +114,51 @@ class BackupHandler extends Handler implements Remote {
       this.services.shutdownNow();
     }
     return null;
+  }
+}
+
+class SignalCounter {
+  ConcurrentHashMap<String, FileChunk> signal_counter = new ConcurrentHashMap<String, FileChunk>();
+  int max_count;
+
+  public SignalCounter(int max) {
+    this.max_count = max;
+  }
+
+  public void registerValue(String file_name, int chunk_n, FileChunk chunk) {
+    this.signal_counter.put(file_name + "#" + chunk_n, chunk);
+  }
+
+  public void signalValue(String chunk_id, int peer_id) {
+    FileChunk chunk = this.signal_counter.get(chunk_id);
+
+    if (chunk == null) {
+      System.err.println("Could not get chunk '" + chunk_id + "' from signal_counter!");
+      return;
+    }
+    chunk.addPeer(peer_id);
+  }
+
+  public int confirmations(String file_id) {
+    return this.signal_counter.get(file_id).getActualRep();
+  }
+
+  public int maxNumber() {
+    return this.max_count;
+  }
+
+  public Vector<Pair<String, Integer> > getRemainder() {
+    Enumeration<String> keys = this.signal_counter.keys();
+
+    Vector<Pair<String, Integer> > chunks = new Vector<Pair<String, Integer> >();
+
+    while (keys.hasMoreElements()) {
+      String name = keys.nextElement();
+      int    hash = name.lastIndexOf('#');
+
+      chunks.addElement(new Pair<String, Integer>(name.substring(0, hash), Integer.parseInt(name.substring(hash))));
+    }
+
+    return chunks;
   }
 }

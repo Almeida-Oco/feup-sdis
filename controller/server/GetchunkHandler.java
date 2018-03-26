@@ -51,11 +51,7 @@ public class GetchunkHandler extends Handler {
     FileChunk chunk = File_IO.getChunk(this.file_id, this.chunk_n);
 
     if (chunk != null) {
-      PacketInfo packet = new PacketInfo(this.mdr.getAddr(), this.mdr.getPort());
-
-      packet.setType("CHUNK");
-      packet.setFileID(this.file_id);
-      packet.setChunkN(this.chunk_n);
+      PacketInfo packet = new PacketInfo("CHUNK", this.file_id, this.chunk_n);
       packet.setData(chunk.getData(), chunk.getSize());
 
       Random rand = new Random();

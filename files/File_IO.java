@@ -1,5 +1,7 @@
 package files;
 
+import controller.Pair;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Set;
 import java.util.Vector;
@@ -16,21 +18,6 @@ public class File_IO {
 
   //Contains the local files which were sent for backup
   private static ConcurrentHashMap<String, FileInfo> file_table = new ConcurrentHashMap<String, FileInfo>();
-
-  public static void incReplication(String file_id, int chunk_n) {
-    FileInfo file = file_table.get(file_id);
-
-    if (file == null) {
-      System.err.println("File '" + file_id + "' not in database!");
-      return;
-    }
-
-    FileChunk chunk = file.getChunk(chunk_n);
-    if (chunk == null) {
-      return;
-    }
-    chunk.incActualRep();
-  }
 
   public static void addFile(FileInfo file) {
     file_table.put(file.getName(), file);
@@ -60,6 +47,17 @@ public class File_IO {
     return file;
   }
 
+  private static int readFromFile(FileInputStream stream, byte[] buf) {
+    try {
+      int bytes_read = stream.read(buf);
+      return bytes_read == -1 ? 0 : bytes_read;
+    }
+    catch (IOException err) {
+      System.err.println("Failed to read file from stream!\n - " + err.getMessage());
+      return -1;
+    }
+  }
+
   public static boolean storeChunk(String file_id, FileChunk chunk) {
     File chunk_file = new File(PATH + file_id + '#' + chunk.getChunkN());
     File directory  = new File(PATH);
@@ -85,33 +83,6 @@ public class File_IO {
       System.err.println("Failed to write data to file\n - " + err.getMessage());
       return false;
     }
-  }
-
-  public static boolean fileExists(String file_name) {
-    File f = new File(file_name);
-
-    return f.exists() && !f.isDirectory();
-  }
-
-  public static boolean eraseChunksOf(String file_name) {
-    FileInfo file   = file_table.get(file_name);
-    boolean  erased = true;
-
-    if (file != null) {
-      Vector<FileChunk> chunks = file.getChunks();
-      int size = chunks.size();
-      for (int i = 0; i < size; i++) {
-        FileChunk chunk = chunks.get(i);
-        erased = erased && eraseChunk(file_name + chunk.getChunkN());
-        if (erased) {
-          file.eraseChunk(chunk);
-        }
-      }
-      file_table.remove(file_name);
-      return erased;
-    }
-
-    return true;
   }
 
   public static boolean eraseFile(String file_name) {
@@ -207,17 +178,6 @@ public class File_IO {
     catch (SecurityException err) {
       System.err.println("Access denied to file '" + file_name + "'\n - " + err.getMessage());
       return null;
-    }
-  }
-
-  private static int readFromFile(FileInputStream stream, byte[] buf) {
-    try {
-      int bytes_read = stream.read(buf);
-      return bytes_read == -1 ? 0 : bytes_read;
-    }
-    catch (IOException err) {
-      System.err.println("Failed to read file from stream!\n - " + err.getMessage());
-      return -1;
     }
   }
 

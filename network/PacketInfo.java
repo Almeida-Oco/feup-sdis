@@ -32,21 +32,6 @@ public class PacketInfo {
   private PacketInfo() {
   }
 
-  public PacketInfo(InetAddress addr, int port) {
-    byte ver = ApplicationInfo.getVersion();
-
-    this.addr      = addr;
-    this.port      = port;
-    this.version   = Byte.toString((byte)(ver / 10)) + "." + Byte.toString((byte)(ver % 10));
-    this.sender_id = ApplicationInfo.getServID();
-
-    this.msg_type = null;
-    this.file_id  = null;
-    this.chunk_n  = -1;
-    this.r_degree = -1;
-    this.data     = null;
-  }
-
   public PacketInfo(String msg_type, String file_id, int chunk_n) {
     byte ver = ApplicationInfo.getVersion();
 

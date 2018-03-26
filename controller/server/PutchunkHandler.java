@@ -47,13 +47,10 @@ public class PutchunkHandler extends Handler {
   }
 
   public void run() {
-    PacketInfo packet = new PacketInfo(ApplicationInfo.getMC().getAddr(), ApplicationInfo.getMC().getPort());
+    PacketInfo packet = new PacketInfo("STORED", this.file_id, this.chunk_n);
     Random     rand   = new Random();
 
     File_IO.storeChunk(this.file_id, new FileChunk(this.data.getBytes(StandardCharsets.ISO_8859_1), this.data.length(), this.chunk_n));
-    packet.setType("STORED");
-    packet.setFileID(this.file_id);
-    packet.setChunkN(this.chunk_n);
     packet.setData(this.data);
 
     this.services.schedule(()->{

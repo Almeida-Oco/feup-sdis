@@ -1,37 +1,47 @@
 package files;
 
+import java.util.Vector;
+
 public class FileChunk implements Comparable<FileChunk> {
+  Vector<Integer> stored_in;
   byte[] chunk_data;
   int chunk_n;
   int chunk_size;
   int rep_degree;
-  int actual_rep;
 
 
   FileChunk(byte[] data, int size, int chunk_n, int degree) {
+    this.stored_in  = new Vector<Integer>();
     this.chunk_data = data;
     this.chunk_size = size;
     this.chunk_n    = chunk_n;
     this.rep_degree = degree;
-    this.actual_rep = 0;
   }
 
   public FileChunk(byte[] data, int size, int chunk_n) {
+    this.stored_in  = new Vector<Integer>();
     this.chunk_data = data;
     this.chunk_size = size;
     this.chunk_n    = chunk_n;
     this.rep_degree = 1;
-    this.actual_rep = 1;
   }
 
-  public void incActualRep() {
-    synchronized (this){
-      this.actual_rep++;
+  public void addPeer(int peer_id) {
+    synchronized (this) {
+      this.stored_in.add(peer_id);
     }
   }
 
   public byte[] getData() {
     return this.chunk_data;
+  }
+
+  public int getDesiredRep() {
+    return this.rep_degree;
+  }
+
+  public int getActualRep() {
+    return this.stored_in.size();
   }
 
   public int getSize() {
