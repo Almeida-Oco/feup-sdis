@@ -13,7 +13,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 public class Listener implements Runnable {
   Net_IO channel;
   ThreadPoolExecutor task_queue;
-  static ConcurrentHashMap<String, ConcurrentHashMap<String, Handler> > signals = new ConcurrentHashMap<String, ConcurrentHashMap<String, Handler> >(4);
+  private static ConcurrentHashMap<String, ConcurrentHashMap<String, Handler> > signals = new ConcurrentHashMap<String, ConcurrentHashMap<String, Handler> >(4);
 
 
   public Listener(Net_IO channel, ThreadPoolExecutor tasks) {
@@ -73,9 +73,9 @@ public class Listener implements Runnable {
     return this.channel.getPort();
   }
 
-  public void registerForSignal(Pair<String, Handler> task) {
+  public static void registerForSignal(Pair<String, Handler> task) {
     if (task != null) {
-      ConcurrentHashMap<String, Handler> type = this.signals.computeIfAbsent(task.second().signalType(), (x)->{
+      ConcurrentHashMap<String, Handler> type = signals.computeIfAbsent(task.second().signalType(), (x)->{
         return new ConcurrentHashMap<String, Handler>();
       });
       if (type != null) {
@@ -87,9 +87,9 @@ public class Listener implements Runnable {
     }
   }
 
-  public void registerForSignal(String chunk_id, String signal_type, Handler task) {
+  public static void registerForSignal(String signal_type, String chunk_id, Handler task) {
     if (chunk_id != null&& signal_type != null&& task != null) {
-      ConcurrentHashMap<String, Handler> type = this.signals.computeIfAbsent(signal_type, (x)->{
+      ConcurrentHashMap<String, Handler> type = signals.computeIfAbsent(signal_type, (x)->{
         return new ConcurrentHashMap<String, Handler>();
       });
       if (type != null) {
@@ -101,13 +101,11 @@ public class Listener implements Runnable {
     }
   }
 
-  public void removeFromSignal(Handler task) {
-    Pair<String, Handler> input = task.register();
-    if (input != null) {
-      ConcurrentHashMap type = this.signals.get(task.signalType());
-      if (type != null) {
-        type.remove(input.first());
-      }
+  public static void removeFromSignal(String signal_type, String chunk_id) {
+    ConcurrentHashMap type = signals.get(signal_type);
+
+    if (type != null) {
+      type.remove(chunk_id);
     }
   }
 }

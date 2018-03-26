@@ -67,7 +67,7 @@ class RestoreHandler extends Handler implements Remote {
       String chunk_id = file.getID() + "#" + chunk.getChunkN();
       packet.setChunkN(chunk.getChunkN());
 
-      this.mdr.registerForSignal(chunk_id, "CHUNK", this);
+      this.mdr.registerForSignal("CHUNK", chunk_id, this);
       this.mc.sendMsg(packet);
     }
 

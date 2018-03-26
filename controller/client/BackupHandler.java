@@ -13,7 +13,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 class BackupHandler extends Handler implements Remote {
@@ -84,15 +83,14 @@ class BackupHandler extends Handler implements Remote {
   }
 
   private ScheduledFuture<Void> sendChunk(PacketInfo packet) {
-    int    wait_time = 1000, tries = 0;
     String id = packet.getFileID() + "#" + packet.getChunkN();
 
     this.curr_packet = id;
-    this.mc.registerForSignal(id, "STORED", this);
+    this.mc.registerForSignal("STORED", id, this);
 
     return this.services.schedule(()->{
-      return this.getConfirmations(packet, tries + 1, id);
-    }, wait_time, TimeUnit.MILLISECONDS);
+      return this.getConfirmations(packet, 1, id);
+    }, WAIT_TIME, TimeUnit.MILLISECONDS);
   }
 
   private Void getConfirmations(PacketInfo packet, int try_n, String id) {
@@ -107,11 +105,11 @@ class BackupHandler extends Handler implements Remote {
     }
     else if (try_n > MAX_TRIES) {
       System.err.println("Not enough confirmations for packet #" + this.file_name);
-      this.mc.removeFromSignal(this);
+      this.mc.removeFromSignal("STORED", id);
     }
     else if (try_n <= MAX_TRIES && got_confirmations) {
       System.out.println("File '" + this.file_name + "' stored!");
-      this.mc.removeFromSignal(this);
+      this.mc.removeFromSignal("STORED", id);
       this.services.shutdownNow();
     }
     return null;

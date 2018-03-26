@@ -20,7 +20,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 class Server {
   private static final int cores     = Runtime.getRuntime().availableProcessors();
-  private static final int MAX_TASKS = 100;
+  private static final int MAX_TASKS = 255;
   private static final int RMI_PORT  = 1099;
 
   public static void main(String[] args) {
@@ -34,11 +34,7 @@ class Server {
 
   private static void startProgram() {
     LinkedBlockingQueue<Runnable> queue      = new LinkedBlockingQueue<Runnable>(MAX_TASKS);
-    ThreadPoolExecutor            task_queue = new ThreadPoolExecutor(cores - 1, cores - 1, 0, TimeUnit.SECONDS, queue);
-
-    for (int i = 2; i < Runtime.getRuntime().availableProcessors(); i++) {
-      task_queue.prestartCoreThread();
-    }
+    ThreadPoolExecutor            task_queue = new ThreadPoolExecutor(cores, cores, 0, TimeUnit.SECONDS, queue);
 
     Listener mc_listener  = new Listener(ApplicationInfo.getMC(), task_queue);
     Listener mdb_listener = new Listener(ApplicationInfo.getMDB(), task_queue);
