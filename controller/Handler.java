@@ -40,6 +40,10 @@ public abstract class Handler implements Runnable {
     else if (type.equals("REMOVED")) {
       return new RemovedHandler(packet);
     }
+    else if (type.equals("STORED")) {
+      File_IO.tryIncRep(packet.getFileID(), packet.getChunkN(), packet.getSenderID());
+      return null;
+    }
     return null;
   }
 }

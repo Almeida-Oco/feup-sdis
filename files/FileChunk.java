@@ -10,20 +10,20 @@ public class FileChunk implements Comparable<FileChunk> {
   int rep_degree;
 
 
-  FileChunk(byte[] data, int size, int chunk_n, int degree) {
-    this.stored_in  = new Vector<Integer>();
+  public FileChunk(byte[] data, int size, int chunk_n, int desired_rep, Vector<Integer> peers) {
+    this.stored_in  = peers;
     this.chunk_data = data;
     this.chunk_size = size;
     this.chunk_n    = chunk_n;
-    this.rep_degree = degree;
+    this.rep_degree = desired_rep;
   }
 
-  public FileChunk(byte[] data, int size, int chunk_n) {
+  public FileChunk(byte[] data, int size, int chunk_n, int desired_rep) {
     this.stored_in  = new Vector<Integer>();
     this.chunk_data = data;
     this.chunk_size = size;
     this.chunk_n    = chunk_n;
-    this.rep_degree = 1;
+    this.rep_degree = desired_rep;
   }
 
   public void addPeer(int peer_id) {

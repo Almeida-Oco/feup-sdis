@@ -25,16 +25,13 @@ public class File_IO {
   private static ConcurrentHashMap<String, Vector<FileChunk> > stored_chunks = new ConcurrentHashMap<String, Vector<FileChunk> >();
 
 
-
-  public static void incActualRep(String file_id, int chunk_n, int peer_id) {
+  public static void tryIncRep(String file_id, int chunk_n, int peer_id) {
     Vector<FileChunk> chunks = stored_chunks.get(file_id);
     if (chunks == null) {
-      System.err.println("No file '" + file_id + "' stored locally!");
       return;
     }
     int index = FileChunk.binarySearch(chunks, chunk_n);
     if (index == -1) {
-      System.err.println("No chunk #" + chunk_n + " of file '" + file_id + "' stored locally!");
       return;
     }
 
@@ -156,6 +153,22 @@ public class File_IO {
     }
   }
 
+  public static void eraseChunk(String file_id, int chunk_n, boolean rm_from_table) {
+    String path = PATH + file_id + "#" + chunk_n;
+
+    try {
+      File chunk = new File(path);
+      chunk.delete();
+      Vector<FileChunk> chunks = stored_chunks.get(file_id);
+      if (rm_from_table) {
+        chunks.remove(FileChunk.binarySearch(chunks, chunk_n));
+      }
+    }
+    catch (SecurityException err) {
+      System.err.println("Security manager denied access to file '" + path + "'!\n - " + err.getMessage());
+    }
+  }
+
   public static boolean eraseFileChunks(String file_id) {
     Vector<FileChunk> chunks = stored_chunks.get(file_id);
 
@@ -163,16 +176,7 @@ public class File_IO {
       return false;
     }
 
-    chunks.forEach((chunk)->{
-      String chunk_name = PATH + file_id + "#" + chunk.getChunkN();
-      File chunk_file   = new File(chunk_name);
-      try {
-        chunk_file.delete();
-      }
-      catch (SecurityException err) {
-        System.err.println("Security manager denied access to file '" + chunk_name + "'!\n - " + err.getMessage());
-      }
-    });
+    chunks.forEach((chunk)->eraseChunk(file_id, chunk.getChunkN(), false));
     stored_chunks.remove(file_id);
     return true;
   }

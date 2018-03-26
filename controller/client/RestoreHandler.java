@@ -37,7 +37,7 @@ class RestoreHandler extends Handler implements Remote {
   public void signal(PacketInfo packet) {
     int data_size = packet.getData().length();
 
-    this.chunks.add(new FileChunk(packet.getData().getBytes(StandardCharsets.ISO_8859_1), data_size, packet.getChunkN()));
+    this.chunks.add(new FileChunk(packet.getData().getBytes(StandardCharsets.ISO_8859_1), data_size, packet.getChunkN(), 0));
   }
 
   @Override
