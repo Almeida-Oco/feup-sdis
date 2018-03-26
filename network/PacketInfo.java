@@ -2,9 +2,9 @@ package network;
 
 import controller.ApplicationInfo;
 
+import java.net.InetAddress;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
-import java.net.InetAddress;
 import java.net.DatagramPacket;
 import java.nio.charset.StandardCharsets;
 import java.io.UnsupportedEncodingException;

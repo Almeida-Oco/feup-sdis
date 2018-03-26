@@ -1,15 +1,15 @@
 package controller.client;
 
-import cli.User_IO;
-import cli.Files;
 import files.*;
-import network.PacketInfo;
-import controller.Handler;
+import cli.Files;
+import cli.User_IO;
 import controller.Pair;
+import controller.Handler;
+import network.PacketInfo;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.Vector;
 import java.rmi.Remote;
+import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 
 class StateHandler extends Handler implements Remote {
   @Override

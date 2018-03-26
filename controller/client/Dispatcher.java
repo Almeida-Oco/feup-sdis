@@ -1,9 +1,11 @@
 package controller.client;
 
+import controller.ApplicationInfo;
+import controller.HandlerInterface;
+import controller.listener.Listener;
+
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import controller.ApplicationInfo;
-import controller.listener.Listener;
 
 public class Dispatcher implements HandlerInterface {
   Listener mc, mdb, mdr;

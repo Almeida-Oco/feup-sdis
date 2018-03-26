@@ -96,10 +96,11 @@ class BackupHandler extends Handler implements Remote {
   }
 
   private Void getConfirmations(PacketInfo packet, int try_n, String id) {
-    this.mdb.sendMsg(packet);
     boolean got_confirmations = this.signals.confirmations(id) >= this.signals.maxNumber();
 
     if (try_n <= MAX_TRIES && !got_confirmations) {
+      this.mdb.sendMsg(packet);
+      System.out.println("Sent chunk #" + packet.getChunkN());
       this.services.schedule(()->{
         return this.getConfirmations(packet, try_n + 1, id);
       }, try_n * WAIT_TIME, TimeUnit.MILLISECONDS);

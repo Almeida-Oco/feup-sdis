@@ -1,11 +1,14 @@
 package controller.client;
 
 import network.*;
+import files.File_IO;
 import controller.Pair;
+import files.FileChunk;
 import controller.Handler;
 import controller.listener.Listener;
 
 import java.rmi.Remote;
+import java.util.Vector;
 
 
 class ReclaimHandler extends Handler implements Remote {
@@ -34,6 +37,9 @@ class ReclaimHandler extends Handler implements Remote {
 
   @Override
   public void run() {
-    System.out.println("GOT RECLAIM MSG!");
+    Vector<Pair<String, FileChunk> > chunks = File_IO.reclaimSpace(this.space);
+    for (Pair<String, FileChunk> pair : chunks) {
+      System.out.println("Removing " + pair.first() + "#" + pair.second().getChunkN());
+    }
   }
 }

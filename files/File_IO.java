@@ -4,6 +4,7 @@ import controller.Pair;
 
 import java.io.File;
 import java.util.Set;
+import java.util.Map;
 import java.util.Vector;
 import java.io.IOException;
 import java.util.Collections;
@@ -22,6 +23,23 @@ public class File_IO {
 
   //Contains the chunks stored by the peer
   private static ConcurrentHashMap<String, Vector<FileChunk> > stored_chunks = new ConcurrentHashMap<String, Vector<FileChunk> >();
+
+
+
+  public static void incActualRep(String file_id, int chunk_n, int peer_id) {
+    Vector<FileChunk> chunks = stored_chunks.get(file_id);
+    if (chunks == null) {
+      System.err.println("No file '" + file_id + "' stored locally!");
+      return;
+    }
+    int index = FileChunk.binarySearch(chunks, chunk_n);
+    if (index == -1) {
+      System.err.println("No chunk #" + chunk_n + " of file '" + file_id + "' stored locally!");
+      return;
+    }
+
+    chunks.get(index).addPeer(peer_id);
+  }
 
   public static void addFile(FileInfo file) {
     file_table.put(file.getName(), file);
@@ -51,6 +69,31 @@ public class File_IO {
     return file;
   }
 
+  private static int numberOfChunks(File file) {
+    if (!file.exists()) {
+      System.err.println("File '" + file.getName() + "' does not exist!");
+      return -1;
+    }
+
+    if (file.isDirectory()) {
+      System.err.println("File '" + file.getName() + "' is a directory!");
+      return -1;
+    }
+
+    long file_size;
+    if ((file_size = file.length()) == 0L) {
+      System.err.println("Cannot get length from a system-dependent entity!");
+      return -1;
+    }
+
+    if (file_size % File_IO.MAX_CHUNK_SIZE == 0) {
+      return (int)(Math.ceil(file_size * 1.0 / File_IO.MAX_CHUNK_SIZE) + 1);
+    }
+    else {
+      return (int)(Math.ceil(file_size * 1.0 / File_IO.MAX_CHUNK_SIZE));
+    }
+  }
+
   private static int readFromFile(FileInputStream stream, byte[] buf) {
     try {
       int bytes_read = stream.read(buf);
@@ -59,6 +102,22 @@ public class File_IO {
     catch (IOException err) {
       System.err.println("Failed to read file from stream!\n - " + err.getMessage());
       return -1;
+    }
+  }
+
+  private static FileInputStream openFileReader(File file) {
+    String f_name = file.getName();
+
+    try {
+      return new FileInputStream(file);
+    }
+    catch (FileNotFoundException err) {
+      System.err.println("Failed to open file '" + f_name + "'\n - " + err.getMessage());
+      return null;
+    }
+    catch (SecurityException err) {
+      System.err.println("Access denied to file '" + f_name + "'\n - " + err.getMessage());
+      return null;
     }
   }
 
@@ -118,18 +177,6 @@ public class File_IO {
     return true;
   }
 
-  public static boolean eraseChunk(String chunk_id) {
-    File chunk = new File(PATH + chunk_id);
-
-    try {
-      return chunk.delete();
-    }
-    catch (SecurityException err) {
-      System.err.println("Failed to delete chunk '" + chunk_id + "'\n - " + err.getMessage());
-      return false;
-    }
-  }
-
   public static boolean restoreFile(String file_name, Vector<FileChunk> chunks) {
     chunks.sort(null);
     FileOutputStream out;
@@ -149,47 +196,6 @@ public class File_IO {
       return false;
     }
     return true;
-  }
-
-  private static int numberOfChunks(File file) {
-    if (!file.exists()) {
-      System.err.println("File '" + file.getName() + "' does not exist!");
-      return -1;
-    }
-
-    if (file.isDirectory()) {
-      System.err.println("File '" + file.getName() + "' is a directory!");
-      return -1;
-    }
-
-    long file_size;
-    if ((file_size = file.length()) == 0L) {
-      System.err.println("Cannot get length from a system-dependent entity!");
-      return -1;
-    }
-
-    if (file_size % File_IO.MAX_CHUNK_SIZE == 0) {
-      return (int)(Math.ceil(file_size * 1.0 / File_IO.MAX_CHUNK_SIZE) + 1);
-    }
-    else {
-      return (int)(Math.ceil(file_size * 1.0 / File_IO.MAX_CHUNK_SIZE));
-    }
-  }
-
-  private static FileInputStream openFileReader(File file) {
-    String f_name = file.getName();
-
-    try {
-      return new FileInputStream(file);
-    }
-    catch (FileNotFoundException err) {
-      System.err.println("Failed to open file '" + f_name + "'\n - " + err.getMessage());
-      return null;
-    }
-    catch (SecurityException err) {
-      System.err.println("Access denied to file '" + f_name + "'\n - " + err.getMessage());
-      return null;
-    }
   }
 
   private static FileOutputStream openFileWriter(String file_name) {
@@ -213,20 +219,29 @@ public class File_IO {
     return file_table.get(file_name);
   }
 
-  public static FileChunk getChunk(String file_id, int chunk_n) {
+  public static FileChunk getStoredChunk(String file_id, int chunk_n) {
     Vector<FileChunk> chunks = stored_chunks.get(file_id);
     if (chunks == null) {
-      System.err.println("File '" + file_id + "' is not stored locally!");
       return null;
     }
 
     int index = FileChunk.binarySearch(chunks, chunk_n);
+    System.out.println("Index = " + index);
     if (index == -1) {
       System.err.println("Chunk #" + chunk_n + " is not stored locally!");
       return null;
     }
 
     return chunks.get(index);
+  }
+
+  public static int chunkRepDegree(String file_id, int chunk_n) {
+    FileChunk chunk = getStoredChunk(file_id, chunk_n);
+
+    if (chunk != null) {
+      return chunk.getActualRep();
+    }
+    return -1;
   }
 
   private static void addChunk(String file_id, FileChunk chunk) {
@@ -245,31 +260,37 @@ public class File_IO {
     return file_table;
   }
 
-  // public static Vector<Pair<String, FileChunk> > reclaimSpace(long space) {
-  //   Vector<Pair<String, FileChunk> > overly_rep = getOverlyReplicated();
-  //   long rem_space = space, i, size = overly_rep.size();
-  //   Vector<Pair<String, FileChunk> > chunks = new Vector<Pair<String, FileChunk> >(size);
-  //
-  //   for (i = 0; i < size && rem_space > 0; i++) {
-  //     FileChunk chunk = overly_rep.at(i);
-  //     chunks.add(chunk);
-  //     rem_space -= chunk.getSize();
-  //   }
-  //
-  //   if (rem_space > 0) { //Still space left to reclaim
-  //   }
-  //
-  //   return chunks;
-  // }
-  //
-  // private static Vector<Pair<String, FileChunk> > reclaimRemaining(long space) {
-  //   Vector<Pair<String, FileChunk> > chunks = new Vector<Pair<String, FileChunk> >();
-  // }
-  //
-  // private static Vector<Pair<String, FileChunk> > getOverlyReplicated() {
-  //   Vector<Pair<String, FileChunk> > chunks = new Vector<Pair<String, FileChunk> >();
-  //   file_table.forEach((file_name, file_info)->{
-  //     chunks.addAll(file_info.getOverlyReplicated());
-  //   });
-  // }
+  public static Vector<Pair<String, FileChunk> > reclaimSpace(long bytes) {
+    Vector<Pair<String, FileChunk> > rem_chunks = new Vector<Pair<String, FileChunk> >();
+    long rem_bytes = bytes;
+    int  size = stored_chunks.size(), has_chunks = size;
+
+    for (int i = 0; i < MAX_N_CHUNKS && has_chunks > 0 && rem_bytes > 0; i++, has_chunks = size) {
+      for (Map.Entry<String, Vector<FileChunk> > entry : stored_chunks.entrySet()) {
+        if (i < entry.getValue().size()) {
+          FileChunk chunk = entry.getValue().get(i);
+          rem_chunks.add(new Pair<String, FileChunk>(entry.getKey(), chunk));
+          rem_bytes -= chunk.getSize();
+        }
+        else {
+          has_chunks--;
+        }
+      }
+    }
+
+    System.out.println("Reclaiming " + (bytes - rem_bytes) + " bytes!");
+    return rem_chunks;
+  }
+
+  private static void removeChunks(Vector<Pair<String, FileChunk> > chunks) {
+    chunks.forEach((pair)->{
+      Vector<FileChunk> file_chunks = stored_chunks.get(pair.first());
+      if (file_chunks != null) {
+        int index = Collections.binarySearch(file_chunks, pair.second());
+        if (index >= 0) {
+          file_chunks.remove(index);
+        }
+      }
+    });
+  }
 }

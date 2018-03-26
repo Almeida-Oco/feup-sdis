@@ -1,14 +1,14 @@
 package controller.listener;
 
 import network.Net_IO;
+import controller.Pair;
 import network.PacketInfo;
 import controller.Handler;
-import controller.Pair;
 import controller.ApplicationInfo;
 
 import java.net.InetAddress;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadPoolExecutor;
 
 public class Listener implements Runnable {
   Net_IO channel;
@@ -75,11 +75,11 @@ public class Listener implements Runnable {
 
   public void registerForSignal(Pair<String, Handler> task) {
     if (task != null) {
-      ConcurrentHashMap<String, Handler> type = this.signals.computeIfAbsent(task.getSecond().signalType(), (x)->{
+      ConcurrentHashMap<String, Handler> type = this.signals.computeIfAbsent(task.second().signalType(), (x)->{
         return new ConcurrentHashMap<String, Handler>();
       });
       if (type != null) {
-        type.put(task.getFirst(), task.getSecond());
+        type.put(task.first(), task.second());
       }
       else {
         System.err.println("Why the frick is type null??");
@@ -106,7 +106,7 @@ public class Listener implements Runnable {
     if (input != null) {
       ConcurrentHashMap type = this.signals.get(task.signalType());
       if (type != null) {
-        type.remove(input.getFirst());
+        type.remove(input.first());
       }
     }
   }

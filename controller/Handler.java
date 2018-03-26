@@ -1,10 +1,10 @@
 package controller;
 
-import network.*;
 import files.*;
-import controller.ApplicationInfo;
+import network.*;
 import controller.Pair;
 import controller.server.*;
+import controller.ApplicationInfo;
 
 import java.net.InetAddress;
 import java.util.concurrent.ThreadPoolExecutor;

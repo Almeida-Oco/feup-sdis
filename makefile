@@ -5,6 +5,13 @@ JVM=java
 sources = $(wildcard */*/*.java */*.java *.java)
 classes = $(sources:.java=.class)
 
+ifeq (reclaim,$(firstword $(MAKECMDGOALS)))
+  # use the rest as arguments for "reclaim"
+  SPACE := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  # ...and turn them into do-nothing targets
+  $(eval $(SPACE):;@:)
+endif
+
 #default entry point
 default: all
 
@@ -14,18 +21,22 @@ all: $(classes)
 #removes .class files
 clean :
 	@rm -f $(classes)
+	@rm -rf stored_files
 
 backup: 
-	@cp /home/jalmeida/Pictures/Moonrise.jpg /home/jalmeida/Pictures/Nature/
-	@java controller.Client 1 BACKUP /home/jalmeida/Pictures/Nature/Moonrise.jpg 1
+	@cp /home/jalmeida/Pictures/Example2.png /home/jalmeida/Pictures/Example.png
+	@java controller.Client 1 BACKUP /home/jalmeida/Pictures/Example.png 1
 
 restore:
-	@rm -f /home/jalmeida/Pictures/Nature/Moonrise.jpg
-	@java controller.Client 1 RESTORE /home/jalmeida/Pictures/Nature/Moonrise.jpg
+	@rm /home/jalmeida/Pictures/Example.png
+	@java controller.Client 1 RESTORE /home/jalmeida/Pictures/Example.png
 
 delete:
-	@cp /home/jalmeida/Pictures/Moonrise.jpg /home/jalmeida/Pictures/Nature/
-	@java controller.Client 1 DELETE /home/jalmeida/Pictures/Nature/Moonrise.jpg
+	@cp /home/jalmeida/Pictures/Example2.png /home/jalmeida/Pictures/Example.png
+	@java controller.Client 1 DELETE /home/jalmeida/Pictures/Example.png
+
+reclaim:
+	@java controller.Client 2 RECLAIM $(word 1, $(SPACE))
 
 
 #what happens when trying to make a .class file

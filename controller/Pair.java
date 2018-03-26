@@ -18,11 +18,11 @@ public class Pair<A, B> {
     return false;
   }
 
-  public A getFirst() {
+  public A first() {
     return this.st;
   }
 
-  public B getSecond() {
+  public B second() {
     return this.nd;
   }
 }

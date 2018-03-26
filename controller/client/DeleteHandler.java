@@ -1,18 +1,18 @@
 package controller.client;
 
 import network.*;
-import files.FileInfo;
 import files.File_IO;
+import files.FileInfo;
+import controller.Pair;
 import controller.Handler;
 import controller.listener.Listener;
-import controller.Pair;
 
 import java.rmi.Remote;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ScheduledExecutorService;
 
 class DeleteHandler extends Handler implements Remote {
   String file_name;

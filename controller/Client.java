@@ -1,14 +1,14 @@
 package controller;
 
-import controller.client.HandlerInterface;
 import cli.User_IO;
 import parser.ClientParser;
+import controller.HandlerInterface;
 
+import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
+import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
-import java.rmi.RemoteException;
-import java.rmi.NotBoundException;
 
 class Client {
   private static final String BACKUP  = "BACKUP";
@@ -53,7 +53,7 @@ class Client {
 
   private static HandlerInterface getObj(String name) {
     try {
-      Registry         registry = LocateRegistry.getRegistry(8000);
+      Registry         registry = LocateRegistry.getRegistry();
       HandlerInterface handler  = (HandlerInterface)registry.lookup(name);
       return handler;
     }

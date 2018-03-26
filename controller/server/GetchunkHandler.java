@@ -48,7 +48,7 @@ public class GetchunkHandler extends Handler {
   }
 
   public void run() {
-    FileChunk chunk = File_IO.getChunk(this.file_id, this.chunk_n);
+    FileChunk chunk = File_IO.getStoredChunk(this.file_id, this.chunk_n);
 
     if (chunk != null) {
       PacketInfo packet = new PacketInfo("CHUNK", this.file_id, this.chunk_n);

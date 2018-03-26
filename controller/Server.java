@@ -1,25 +1,27 @@
 package controller;
 
-import parser.ServerParser;
 import cli.User_IO;
-import controller.client.HandlerInterface;
-import controller.client.Dispatcher;
+import parser.ServerParser;
 import controller.ApplicationInfo;
+import controller.HandlerInterface;
+import controller.client.Dispatcher;
 import controller.listener.Listener;
 
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.rmi.RemoteException;
+import java.rmi.registry.Registry;
+import java.util.concurrent.TimeUnit;
+import java.rmi.AlreadyBoundException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.rmi.registry.Registry;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.RemoteException;
-import java.rmi.server.UnicastRemoteObject;
 
 class Server {
   private static final int cores     = Runtime.getRuntime().availableProcessors();
   private static final int MAX_TASKS = 100;
+  private static final int RMI_PORT  = 1099;
 
   public static void main(String[] args) {
     if (!ServerParser.parseArgs(args)) {
@@ -64,18 +66,39 @@ class Server {
   }
 
   private static boolean registerClient(int id, Listener mc, Listener mdb, Listener mdr) {
-    try {
-      Registry         registry = LocateRegistry.createRegistry(ApplicationInfo.getAP());
-      Dispatcher       handler  = new Dispatcher(mc, mdb, mdr);
-      HandlerInterface stub     = (HandlerInterface)UnicastRemoteObject.exportObject(handler, ApplicationInfo.getAP());
+    HandlerInterface stub;
+    Registry         registry;
 
-      registry.rebind("" + id, stub);
+    try {
+      stub     = (HandlerInterface)UnicastRemoteObject.exportObject(new Dispatcher(mc, mdb, mdr), 0);
+      registry = LocateRegistry.getRegistry(RMI_PORT);
     }
     catch (RemoteException err) {
       System.err.println("Failed to register client handler!\n - " + err.getMessage());
       return false;
     }
 
-    return true;
+    if (!tryBinding(registry, Integer.toString(id), stub)) {
+      System.out.println("Creating registry...");
+      try {
+        registry = LocateRegistry.createRegistry(RMI_PORT);
+      }
+      catch (RemoteException err) {
+        System.err.println("Failed to create registry!\n - " + err.getMessage());
+        return false;
+      }
+    }
+
+    return tryBinding(registry, Integer.toString(id), stub);
+  }
+
+  private static boolean tryBinding(Registry reg, String id, HandlerInterface stub) {
+    try {
+      reg.rebind(id, stub);
+      return true;
+    }
+    catch (RemoteException err) {
+      return false;
+    }
   }
 }
