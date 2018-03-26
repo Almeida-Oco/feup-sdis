@@ -1,21 +1,20 @@
 package controller.client;
 
 import network.*;
+import controller.Pair;
 import controller.Handler;
 import controller.listener.Listener;
-import controller.Pair;
-
 
 import java.rmi.Remote;
+
 
 class ReclaimHandler extends Handler implements Remote {
   int space;
   Listener mc, mdb;
 
-  void start(int space, Listener mc, Listener mdb) {
+  void start(int space, Listener mc) {
     this.space = space;
     this.mc    = mc;
-    this.mdb   = mdb;
     this.run();
   }
 

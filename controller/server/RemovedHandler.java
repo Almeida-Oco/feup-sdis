@@ -28,6 +28,7 @@ public class RemovedHandler extends Handler {
   }
 
   public void run() {
-    File_IO.eraseFile(this.file_id);
+    System.out.println("GOT REMOVED MSG");
+    // File_IO.eraseFile(this.file_id);
   }
 }

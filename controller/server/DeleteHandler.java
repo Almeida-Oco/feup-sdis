@@ -28,6 +28,8 @@ public class DeleteHandler extends Handler {
   }
 
   public void run() {
-    File_IO.eraseFile(this.file_id);
+    if (File_IO.eraseFileChunks(this.file_id)) {
+      System.out.println("Erased chunks of file '" + this.file_id + "'");
+    }
   }
 }

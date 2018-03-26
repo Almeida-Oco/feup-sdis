@@ -60,4 +60,25 @@ public class FileChunk implements Comparable<FileChunk> {
   public int compareTo(FileChunk chunk) {
     return Integer.compare(this.chunk_n, ((FileChunk)chunk).chunk_n);
   }
+
+  static int binarySearch(Vector<FileChunk> chunks, int chunk_n) {
+    int low = 0, high = chunks.size(), mid, number;
+
+    while (low <= high) {
+      mid    = (low + high) / 2;
+      number = chunks.get(mid).getChunkN();
+
+      if (number > chunk_n) {
+        high = mid - 1;
+      }
+      else if (number < chunk_n) {
+        low = mid + 1;
+      }
+      else {
+        return mid;
+      }
+    }
+
+    return -1;
+  }
 }

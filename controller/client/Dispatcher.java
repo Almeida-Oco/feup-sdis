@@ -37,7 +37,7 @@ public class Dispatcher implements HandlerInterface {
   }
 
   public void reclaim(String size) throws RemoteException {
-    this.reclaim.start(Integer.parseInt(size), mc, mdb);
+    this.reclaim.start(Integer.parseInt(size), mc);
   }
 
   public void state() throws RemoteException {

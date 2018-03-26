@@ -1,14 +1,14 @@
 package controller.server;
 
-import network.PacketInfo;
+import files.*;
+import network.*;
 import controller.Pair;
 import controller.Handler;
-import network.*;
-import files.*;
+import network.PacketInfo;
 
 import java.util.Random;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class GetchunkHandler extends Handler {

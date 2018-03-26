@@ -2,14 +2,15 @@ package files;
 
 import controller.Pair;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.io.File;
 import java.util.Set;
 import java.util.Vector;
+import java.io.IOException;
+import java.util.Collections;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.File;
-import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class File_IO {
   public final static int MAX_CHUNK_SIZE = 64000;
@@ -18,6 +19,9 @@ public class File_IO {
 
   //Contains the local files which were sent for backup
   private static ConcurrentHashMap<String, FileInfo> file_table = new ConcurrentHashMap<String, FileInfo>();
+
+  //Contains the chunks stored by the peer
+  private static ConcurrentHashMap<String, Vector<FileChunk> > stored_chunks = new ConcurrentHashMap<String, Vector<FileChunk> >();
 
   public static void addFile(FileInfo file) {
     file_table.put(file.getName(), file);
@@ -59,19 +63,16 @@ public class File_IO {
   }
 
   public static boolean storeChunk(String file_id, FileChunk chunk) {
+    stored_chunks.putIfAbsent(file_id, new Vector<FileChunk>());
     File chunk_file = new File(PATH + file_id + '#' + chunk.getChunkN());
     File directory  = new File(PATH);
 
-    //TODO need to store file_chunk in table
     try {
       directory.mkdir();
       FileOutputStream writer = new FileOutputStream(chunk_file);
       writer.write(chunk.getData(), 0, chunk.getSize());
-      FileInfo file = file_table.putIfAbsent(file_id, new FileInfo(file_id, chunk));
-      if (file != null) {
-        file.addChunk(chunk);
-      }
 
+      addChunk(file_id, chunk);
       writer.close();
       return true;
     }
@@ -85,10 +86,36 @@ public class File_IO {
     }
   }
 
-  public static boolean eraseFile(String file_name) {
-    File file = new File(file_name);
+  public static void eraseLocalFile(String file_id) {
+    File file = new File(file_id);
 
-    return file.delete();
+    try {
+      file.delete();
+    }
+    catch (SecurityException err) {
+      System.err.println("Security manager denied access to file '" + file_id + "'!\n - " + err.getMessage());
+    }
+  }
+
+  public static boolean eraseFileChunks(String file_id) {
+    Vector<FileChunk> chunks = stored_chunks.get(file_id);
+
+    if (chunks == null) {
+      return false;
+    }
+
+    chunks.forEach((chunk)->{
+      String chunk_name = PATH + file_id + "#" + chunk.getChunkN();
+      File chunk_file   = new File(chunk_name);
+      try {
+        chunk_file.delete();
+      }
+      catch (SecurityException err) {
+        System.err.println("Security manager denied access to file '" + chunk_name + "'!\n - " + err.getMessage());
+      }
+    });
+    stored_chunks.remove(file_id);
+    return true;
   }
 
   public static boolean eraseChunk(String chunk_id) {
@@ -107,11 +134,9 @@ public class File_IO {
     chunks.sort(null);
     FileOutputStream out;
 
-
     if ((out = openFileWriter(file_name)) == null) {
       return false;
     }
-
 
     try {
       for (FileChunk chunk : chunks) {
@@ -189,12 +214,62 @@ public class File_IO {
   }
 
   public static FileChunk getChunk(String file_id, int chunk_n) {
-    FileInfo file = file_table.get(file_id);
+    Vector<FileChunk> chunks = stored_chunks.get(file_id);
+    if (chunks == null) {
+      System.err.println("File '" + file_id + "' is not stored locally!");
+      return null;
+    }
 
-    return file.getChunk(chunk_n);
+    int index = FileChunk.binarySearch(chunks, chunk_n);
+    if (index == -1) {
+      System.err.println("Chunk #" + chunk_n + " is not stored locally!");
+      return null;
+    }
+
+    return chunks.get(index);
+  }
+
+  private static void addChunk(String file_id, FileChunk chunk) {
+    Vector<FileChunk> chunks = stored_chunks.get(file_id);
+    int index = Collections.binarySearch(chunks, chunk);
+
+    if (index < 0) {
+      chunks.add(-(index) - 1, chunk);
+    }
+    else {
+      System.out.println("Replicated chunk #" + chunk.getChunkN());
+    }
   }
 
   public static ConcurrentHashMap<String, FileInfo> getTable() {
     return file_table;
   }
+
+  // public static Vector<Pair<String, FileChunk> > reclaimSpace(long space) {
+  //   Vector<Pair<String, FileChunk> > overly_rep = getOverlyReplicated();
+  //   long rem_space = space, i, size = overly_rep.size();
+  //   Vector<Pair<String, FileChunk> > chunks = new Vector<Pair<String, FileChunk> >(size);
+  //
+  //   for (i = 0; i < size && rem_space > 0; i++) {
+  //     FileChunk chunk = overly_rep.at(i);
+  //     chunks.add(chunk);
+  //     rem_space -= chunk.getSize();
+  //   }
+  //
+  //   if (rem_space > 0) { //Still space left to reclaim
+  //   }
+  //
+  //   return chunks;
+  // }
+  //
+  // private static Vector<Pair<String, FileChunk> > reclaimRemaining(long space) {
+  //   Vector<Pair<String, FileChunk> > chunks = new Vector<Pair<String, FileChunk> >();
+  // }
+  //
+  // private static Vector<Pair<String, FileChunk> > getOverlyReplicated() {
+  //   Vector<Pair<String, FileChunk> > chunks = new Vector<Pair<String, FileChunk> >();
+  //   file_table.forEach((file_name, file_info)->{
+  //     chunks.addAll(file_info.getOverlyReplicated());
+  //   });
+  // }
 }

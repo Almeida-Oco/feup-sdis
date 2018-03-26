@@ -1,18 +1,18 @@
 package controller.client;
 
-import network.*;
 import files.*;
+import network.*;
+import controller.Pair;
 import controller.Handler;
 import controller.listener.Listener;
-import controller.Pair;
 
-import java.rmi.Remote;
 import java.util.Set;
+import java.rmi.Remote;
+import java.util.Vector;
 import java.util.HashSet;
 import java.util.Collections;
-import java.util.Vector;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;

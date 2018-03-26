@@ -1,12 +1,14 @@
 package files;
 
+import controller.Pair;
+
+import java.io.File;
 import java.util.Vector;
 import java.util.Collections;
-import java.io.File;
 import java.security.MessageDigest;
 import java.security.DigestException;
-import java.security.NoSuchAlgorithmException;
 import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
 
 public class FileInfo {
   private final static int HASH_SIZE = 32;
@@ -110,24 +112,14 @@ public class FileInfo {
   }
 
   public FileChunk getChunk(int chunk_n) {
-    int low = 0, high = this.chunks.size(), mid, number;
+    int index = FileChunk.binarySearch(this.chunks, chunk_n);
 
-    while (low <= high) {
-      mid    = (low + high) / 2;
-      number = this.chunks.get(mid).getChunkN();
-
-      if (number > chunk_n) {
-        high = mid - 1;
-      }
-      else if (number < chunk_n) {
-        low = mid + 1;
-      }
-      else {
-        return this.chunks.get(mid);
-      }
+    if (index == -1) {
+      System.err.println("Chunk #" + chunk_n + " not stored in file " + this.file_name);
+      return null;
     }
 
-    return null;
+    return this.chunks.get(index);
   }
 
   public int chunkNumber() {
@@ -136,5 +128,16 @@ public class FileInfo {
 
   public Vector<FileChunk> getChunks() {
     return this.chunks;
+  }
+
+  Vector<Pair<String, FileChunk> > getOverlyReplicated() {
+    Vector<Pair<String, FileChunk> > chunks = new Vector<Pair<String, FileChunk> >();
+    this.chunks.forEach((chunk)->{
+      if (chunk.getActualRep() > chunk.getDesiredRep()) {
+        this.chunks.remove(chunk);
+        chunks.add(new Pair<String, FileChunk>(this.file_id, chunk));
+      }
+    });
+    return chunks;
   }
 }

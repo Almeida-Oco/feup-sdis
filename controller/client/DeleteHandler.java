@@ -45,15 +45,19 @@ class DeleteHandler extends Handler implements Remote {
 
     ScheduledExecutorService schedulor = Executors.newScheduledThreadPool(1);
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 3; i++) {
       try {
-        schedulor.schedule(()->this.mc.sendMsg(packet), 2, TimeUnit.SECONDS).get();
+        schedulor.schedule(()->{
+          this.mc.sendMsg(packet);
+          System.out.println("Sent delete msg");
+        }, 2, TimeUnit.SECONDS).get();
       }
       catch (Exception err) {
         System.err.println("Delete::run() -> Interruped scheduler!\n - " + err.getMessage());
       }
     }
 
-    File_IO.eraseFile(this.file_name);
+    File_IO.eraseLocalFile(this.file_name);
+    System.out.println("Erased file '" + this.file_name + "'");
   }
 }
