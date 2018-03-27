@@ -1,5 +1,10 @@
 package cli;
 
+import files.*;
+
+import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class User_IO {
   private static final String PLAIN     = "\033[0;0m";
   private static final String BOLD      = "\033[0;1m";
@@ -77,12 +82,34 @@ public class User_IO {
         BOLD + state_name + PLAIN + state_desc + "\n\n");
   }
 
-  public static void printState(Files files) {
-    files.getFiles().forEach((file_name, info)->{
-      System.out.println(BOLD + file_name + PLAIN);
-      info.forEach((number, size)->{
-        System.out.println(BOLD + "  #" + number + PLAIN + " - (" + UNDERLINE + size + PLAIN + "KB)");
+  public static void printState(ConcurrentHashMap<String, FileInfo> backed_up, ConcurrentHashMap<String, Vector<FileChunk> > stored_chunks) {
+    System.out.println(BOLD + "\nBACKED UP FILES\n" + PLAIN);
+    backed_up.forEach((file_name, info)->{
+      printFileInfo(" ", info);
+    });
+
+    System.out.println(BOLD + "\nSTORED CHUNKS\n" + PLAIN);
+    stored_chunks.forEach((file_id, chunks)->{
+      System.out.println(BOLD + "  " + file_id + PLAIN);
+      chunks.forEach((chunk)->{
+        printChunkInfo("    ", file_id + "#" + chunk.getChunkN(), chunk);
       });
     });
+  }
+
+  public static void printFileInfo(String indentation, FileInfo info) {
+    System.out.println(indentation + BOLD + info.getName() + PLAIN);
+    System.out.println(UNDERLINE + indentation + "  " + info.getID() + PLAIN + "  -  " + info.getDesiredRep());
+    info.getChunks().forEach((chunk)->{
+      printChunkInfo(indentation + "    ", Integer.toString(chunk.getChunkN()), chunk);
+    });
+  }
+
+  public static void printChunkInfo(String indentation, String chunk_id, FileChunk chunk) {
+    System.out.println(indentation +
+        BOLD + chunk_id + PLAIN + " | "
+        + chunk.getSize() + " | "
+        + chunk.getActualRep() + "/"
+        + chunk.getDesiredRep());
   }
 }

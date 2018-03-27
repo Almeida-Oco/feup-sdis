@@ -16,25 +16,19 @@ public class FileInfo {
 
   String file_id;
   Vector<FileChunk> chunks;
+  int desired_rep;
 
-  FileInfo(File fd, int chunk_number) {
+  FileInfo(File fd, int chunk_number, int rep_degree) {
     String abs_path   = fd.getAbsolutePath(),
         last_mod      = Long.toString(fd.lastModified());
     int metadata_size = abs_path.length() + last_mod.length() + 2 * File_IO.MAX_CHUNK_SIZE;
 
-    this.metadata  = new String(new byte[metadata_size]);
-    this.metadata += abs_path + last_mod;
-    this.file_name = abs_path;
-    this.chunks    = new Vector<FileChunk>(chunk_number);
-    this.file_id   = null;
-  }
-
-  FileInfo(String file_id, FileChunk chunk) {
-    this.file_id   = file_id;
-    this.metadata  = null;
-    this.file_name = null;
-    this.chunks    = new Vector<FileChunk>();
-    this.chunks.add(chunk);
+    this.metadata    = new String(new byte[metadata_size]);
+    this.metadata   += abs_path + last_mod;
+    this.file_name   = abs_path;
+    this.chunks      = new Vector<FileChunk>(chunk_number);
+    this.file_id     = null;
+    this.desired_rep = rep_degree;
   }
 
   void addChunk(FileChunk chunk) {
@@ -114,6 +108,10 @@ public class FileInfo {
     }
 
     return this.chunks.get(index);
+  }
+
+  public int getDesiredRep() {
+    return this.desired_rep;
   }
 
   public int chunkNumber() {

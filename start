@@ -1,0 +1,88 @@
+#!/bin/bash
+
+FILE='/home/jalmeida/Pictures/Example.png'
+FILE_BACKUP='/home/jalmeida/Pictures/Example2.png'
+RMI='8000'
+MC='224.0.0.1:8001'
+MDR='224.0.0.2:8002'
+MDB='224.0.0.3:8003'
+
+BOLD=$(tput bold)
+UNDERLINE=$(tput smul)
+PLAIN=$(tput sgr0)
+ARG_N="$#"
+
+
+function backup() {
+	cp $FILE_BACKUP $FILE
+	echo "java controller.Client $1 BACKUP $FILE $2"
+}
+
+function restore() {
+	rm $FILE
+	echo "java controller.Client $1 RESTORE $FILE"
+}
+
+function delete() {
+	cp $FILE_BACKUP $FILE
+	echo "java controller.Client $1 DELETE $FILE"
+}
+
+function reclaim() {
+	echo "java controller.Client $1 RECLAIM $2"
+}
+
+function state() {
+	echo "java controller.Client $1 STATE"
+}
+
+function peer() {
+  echo "java controller.Server 1.0 $1 $RMI $MC $MDR $MDB"
+}
+
+function printUsage() {
+  printf 'Wrong number of parameters!\n'
+  printf "Usage:\n"
+  printf "  ./start <protocol> <arguments>"
+  printf "\n\n${UNDERLINE}Protocols${PLAIN}\n\n"
+  printf "  ${BOLD}peer${PLAIN}      Starts a new peer of the network\n"
+  printf "  ${BOLD}backup${PLAIN}    Backs up the file\n"
+  printf "  ${BOLD}restore${PLAIN}   Restored the file\n"
+  printf "  ${BOLD}delete${PLAIN}    Deletes the file from the network\n"
+  printf "  ${BOLD}reclaim${PLAIN}   Reclaims N bytes from the protocol\n"
+  printf "  ${BOLD}state${PLAIN}     Gets the current state of the peer\n"
+  printf "\n${UNDERLINE}Arguments${PLAIN}\n\n"
+  printf "  peer <peer_id>\n"
+  printf "  backup <peer_id> <rep_degree>\n"
+  printf "  restore <peer_id>\n"
+  printf "  delete <peer_id>\n"
+  printf "  reclaim <peer_id> <bytes>\n"
+  printf "  state <peer_id>\n\n"
+}
+
+if [ $ARG_N -ge 1 ]; then
+	PROTOCOL=$1
+	if [ ${PROTOCOL} = 'backup' -a $ARG_N == 3 ]; then
+		backup $2 $3
+	elif [ ${PROTOCOL} = 'restore' -a $ARG_N == 2 ]; then
+		restore $2
+	elif [ ${PROTOCOL} = 'delete' -a $ARG_N == 2 ]; then
+		delete $2
+	elif [ ${PROTOCOL} = 'reclaim' -a $ARG_N == 3 ]; then
+		reclaim $2 $3
+	elif [ ${PROTOCOL} = 'state' -a $ARG_N == 2 ]; then
+		state $2
+  elif [ ${PROTOCOL} = 'peer' -a $ARG_N == 2 ]; then
+    echo 'Starting peer with:'
+    echo " MC  - $MC"
+    echo " MDR - $MDR"
+    echo " MDB - $MDB"
+    echo " RMI - Port $RMI"
+    peer $2
+	else
+    printUsage
+	fi
+
+else
+	printUsage
+fi

@@ -51,7 +51,7 @@ public class File_IO {
       return null;
     }
 
-    FileInfo file = new FileInfo(fd, chunk_n);
+    FileInfo file = new FileInfo(fd, chunk_n, rep_degree);
     for (int i = 0; i < chunk_n; i++) {
       byte[] buf = new byte[MAX_CHUNK_SIZE];
       bytes_read = File_IO.readFromFile(reader, buf);
@@ -260,8 +260,12 @@ public class File_IO {
     }
   }
 
-  public static ConcurrentHashMap<String, FileInfo> getTable() {
+  public static ConcurrentHashMap<String, FileInfo> getBackedUpTable() {
     return file_table;
+  }
+
+  public static ConcurrentHashMap<String, Vector<FileChunk> > getChunksTable() {
+    return stored_chunks;
   }
 
   public static Vector<Pair<String, FileChunk> > reclaimSpace(long bytes) {
