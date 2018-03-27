@@ -158,6 +158,7 @@ public class File_IO {
 
     try {
       file.delete();
+      file_table.remove(file_id);
     }
     catch (SecurityException err) {
       System.err.println("Security manager denied access to file '" + file_id + "'!\n - " + err.getMessage());
