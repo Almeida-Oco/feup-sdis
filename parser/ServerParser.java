@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
 public class ServerParser {
-  private static final String regex    = " *((?<ip1>\\d{1,4}).(?<ip2>\\d{1,4}).(?<ip3>\\d{1,4}).(?<ip4>\\d{1,4}))?:?(?<port>\\d{1,7}) *";
+  private static final String regex    = "\\s*((?<ip1>\\d{1,4})\\.(?<ip2>\\d{1,4})\\.(?<ip3>\\d{1,4})\\.(?<ip4>\\d{1,4}))?:?(?<port>\\d{1,7}) *";
   private static final Pattern pattern = Pattern.compile(regex);
 
   public static boolean parseArgs(String[] args) {
@@ -19,19 +19,19 @@ public class ServerParser {
     if (args.length != 6 ||
         (version = extractVersion(args[0])) == -1 ||
         (serv_id = extractServID(args[1])) == -1 ||
-        (ap = extractAP(args[2])) == -1){
+        (ap = extractAP(args[2])) == -1) {
       return false;
     }
 
-    if ((mc = extractChannel(args[3])) == null){
+    if ((mc = extractChannel(args[3])) == null) {
       System.err.println("Failed to initialize Multicast Control Channel!");
       return false;
     }
-    if ((mdb = extractChannel(args[4])) == null){
+    if ((mdb = extractChannel(args[4])) == null) {
       System.err.println("Failed to initialize Multicast Data Channel");
       return false;
     }
-    if ((mdr = extractChannel(args[5])) == null){
+    if ((mdr = extractChannel(args[5])) == null) {
       System.err.println("Failed to initialize Multicast Data Recovery Channel");
       return false;
     }
@@ -46,7 +46,7 @@ public class ServerParser {
   private static byte extractVersion(String version) {
     byte major, minor;
 
-    if (version.length() != 3){
+    if (version.length() != 3) {
       System.err.println("Version arguments does not have exactly 3 characters!");
 
       return -1;
@@ -56,11 +56,11 @@ public class ServerParser {
       major = Byte.valueOf(String.valueOf(version.charAt(0)));
       minor = Byte.valueOf(String.valueOf(version.charAt(2)));
     }
-    catch (NumberFormatException err){
+    catch (NumberFormatException err) {
       System.err.println("Version number NaN!\n - " + err.getMessage());
       return -1;
     }
-    catch (IndexOutOfBoundsException err){
+    catch (IndexOutOfBoundsException err) {
       System.err.println("This should not happen!");
       System.exit(0);
       return -1; // This is needed for some reason
@@ -76,7 +76,7 @@ public class ServerParser {
       id = Integer.parseInt(serv_id);
       return id;
     }
-    catch (NumberFormatException err){
+    catch (NumberFormatException err) {
       System.err.println("Server ID argument NaN!\n - " + err.getMessage());
       return -1;
     }
@@ -86,7 +86,7 @@ public class ServerParser {
     try {
       return Integer.parseInt(ap);
     }
-    catch (NumberFormatException err){
+    catch (NumberFormatException err) {
       System.err.println("AP is not a number!\n - " + err.getMessage());
       return -1;
     }
@@ -98,17 +98,17 @@ public class ServerParser {
     int     port;
     Net_IO  channel;
 
-    if (!matcher.matches()){
+    if (!matcher.matches()) {
       System.err.println("Specified ip:port does not match expected pattern!");
       return null;
     }
 
-    if ((ip = extractIP(matcher)) == null || (port = extractPort(matcher)) == -1){
+    if ((ip = extractIP(matcher)) == null || (port = extractPort(matcher)) == -1) {
       return null;
     }
 
     channel = new Net_IO(ip, port);
-    if (!channel.isReady()){
+    if (!channel.isReady()) {
       return null;
     }
 
@@ -122,7 +122,7 @@ public class ServerParser {
       if (matcher.group("ip1") == null ||
           matcher.group("ip2") == null ||
           matcher.group("ip3") == null ||
-          matcher.group("ip4") == null){
+          matcher.group("ip4") == null) {
         throw new IllegalArgumentException();
       }
       ip += matcher.group("ip1") + ".";
@@ -131,11 +131,11 @@ public class ServerParser {
       ip += matcher.group("ip4");
       return ip;
     }
-    catch (IllegalArgumentException err){
+    catch (IllegalArgumentException err) {
       System.out.println("No ip specified! Using localhost");
       return "127.0.0.1";
     }
-    catch (IllegalStateException err){
+    catch (IllegalStateException err) {
       System.err.println("extractIP() -> This should not happen!");
       System.exit(1);
       return null;   //This is needed for some reason
@@ -147,7 +147,7 @@ public class ServerParser {
 
     try {
       port = Integer.parseInt(matcher.group("port"));
-      if (port > 0 && port <= 65535){
+      if (port > 0 && port <= 65535) {
         return port;
       }
       else {
@@ -155,11 +155,11 @@ public class ServerParser {
         return -1;
       }
     }
-    catch (NumberFormatException err){
+    catch (NumberFormatException err) {
       System.err.println("Port argument is not a valid port!\n - " + err.getMessage());
       return -1;
     }
-    catch (IllegalArgumentException err){
+    catch (IllegalArgumentException err) {
       System.err.println("No port specified for protocol!");
       return -1;
     }

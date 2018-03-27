@@ -54,9 +54,10 @@ public class RemovedHandler extends Handler {
   public void run() {
     Random rand = new Random();
     ScheduledThreadPoolExecutor services = new ScheduledThreadPoolExecutor(1);
+    ScheduledFuture             future;
 
     Listener.registerForSignal("PUTCHUNK", this.chunk_id, this);
-    services.schedule(()->{
+    future = services.schedule(()->{
       if (!this.got_putchunk.get()) {
         waiting_for_putchunk = false;
         Listener.removeFromSignal("PUTCHUNK", this.chunk_id);
@@ -66,11 +67,18 @@ public class RemovedHandler extends Handler {
           this.services.schedule(()->this.getConfirmations(1), WAIT_TIME, TimeUnit.MILLISECONDS).get();
         }
         catch (InterruptedException | ExecutionException err) {
-          System.err.println("Removed::run() -> Interruped scheduler!\n - " + err.getMessage());
+          System.err.println("Removed::run() -> Interruped inner scheduler!\n - " + err.getMessage());
           return;
         }
       }
     }, rand.nextInt(401), TimeUnit.MILLISECONDS);
+
+    try {
+      future.get();
+    }
+    catch (Exception err) {
+      System.err.println("Removed::run() -> Interruped outer scheduler!\n - " + err.getMessage());
+    }
   }
 
   private void getConfirmations(int try_n) {

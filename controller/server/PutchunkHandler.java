@@ -11,6 +11,7 @@ import java.util.Vector;
 import java.net.InetAddress;
 import java.util.concurrent.TimeUnit;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class PutchunkHandler extends Handler {
@@ -53,22 +54,38 @@ public class PutchunkHandler extends Handler {
   }
 
   public void run() {
-    PacketInfo packet = new PacketInfo("STORED", this.file_id, this.chunk_n);
+    PacketInfo      packet = new PacketInfo("STORED", this.file_id, this.chunk_n);
+    int             rem_space = File_IO.getRemainingSpace(), data_size = this.data.length();
+    Random          rand = new Random();
+    ScheduledFuture future;
 
     packet.setData(this.data);
-    Random rand = new Random();
 
     // Only stores chunk if the perceived rep degree is smaller than intended
-    this.services.schedule(()->{
-      int actual_rep;
-      synchronized (this) {
-        actual_rep = this.replicators.size();
-      }
+    if (rem_space >= data_size) {
+      future = this.services.schedule(()->{
+        int actual_rep;
+        synchronized (this) {
+          actual_rep = this.replicators.size();
+        }
 
-      if (actual_rep < this.desired_rep) {
-        File_IO.storeChunk(this.file_id, new FileChunk(this.data.getBytes(StandardCharsets.ISO_8859_1), this.data.length(), this.chunk_n, this.desired_rep, this.replicators));
-        this.mc.sendMsg(packet);
+        if (actual_rep < this.desired_rep) {
+          this.replicators.add(ApplicationInfo.getServID());
+          File_IO.storeChunk(this.file_id, new FileChunk(this.data.getBytes(StandardCharsets.ISO_8859_1), this.data.length(), this.chunk_n, this.desired_rep, this.replicators));
+          this.mc.sendMsg(packet);
+        }
+      }, rand.nextInt(401), TimeUnit.MILLISECONDS);
+
+      try {
+        future.get();
       }
-    }, rand.nextInt(401), TimeUnit.MILLISECONDS);
+      catch (Exception err) {
+        System.err.println("Putchunk::run() -> Future interrupted!\n - " + err.getMessage());
+      }
+    }
+    else {
+      System.out.println("Not enough space to store " + data_size +
+          " bytes!\n Space remaining: " + rem_space + " bytes");
+    }
   }
 }

@@ -22,7 +22,7 @@ class Client {
       User_IO.clientUsage();
       return;
     }
-    HandlerInterface handler = getObj(args[0]);
+    HandlerInterface handler = getObj(ClientParser.getIP(), ClientParser.getPort(), ClientParser.getName());
     if (handler == null) {
       return;
     }
@@ -51,14 +51,18 @@ class Client {
     }
   }
 
-  private static HandlerInterface getObj(String name) {
+  private static HandlerInterface getObj(String ip, int port, String name) {
     try {
-      Registry         registry = LocateRegistry.getRegistry();
-      HandlerInterface handler  = (HandlerInterface)registry.lookup(name);
+      Registry registry = LocateRegistry.getRegistry(ip, port);
+      if (registry == null) {
+        System.err.println("Failed to get registry from " + ip + ":" + port);
+        return null;
+      }
+      HandlerInterface handler = (HandlerInterface)registry.lookup(name);
       return handler;
     }
     catch (RemoteException err) {
-      System.err.println("Could not get object '" + name + "' from RMI!");
+      System.err.println("Could not get object '" + name + "' from RMI!\n - " + err.getMessage());
       return null;
     }
     catch (NotBoundException err) {

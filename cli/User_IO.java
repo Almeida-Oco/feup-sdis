@@ -6,9 +6,10 @@ import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class User_IO {
-  private static final String PLAIN     = "\033[0;0m";
-  private static final String BOLD      = "\033[0;1m";
-  private static final String UNDERLINE = "\033[0;4m";
+  private static final String PLAIN      = "\033[0;0m";
+  private static final String BOLD       = "\033[0;1m";
+  private static final String UNDERLINE  = "\033[0;4m";
+  private static final int MAX_LINE_SIZE = 70;
 
   public static void serverUsage() {
     final String prot_name = "  version          ",
@@ -16,7 +17,7 @@ public class User_IO {
         id_name            = "  server id        ",
         id_desc            = "ID to assign to the server ( [0-9]+ )\n",
         ap_name            = "  access point     ",
-        ap_desc            = "Service access point to use ( .* ) \n",
+        ap_desc            = "Service access point to use ( [0-9]+ ) \n",
         mc_name            = "  MC               ",
         mc_desc            = "Name of the multicast control channel to use ( <ip>?:?<port> )\n",
         mdr_name           = "  MDR              ",
@@ -47,7 +48,7 @@ public class User_IO {
 
   public static void clientUsage() {
     final String ap_name = "  peer_ap        ",
-        ap_desc          = "Client access point to use ( .* )\n",
+        ap_desc          = "Client access point to use ( //<ip>:<port?>/<name> )\n",
         prot_name        = "  sub protocol   ",
         prot_desc        = "Protocol to initiate. ( <protocol> )\n",
         op1_name         = "  operand1       ",
@@ -82,34 +83,47 @@ public class User_IO {
         BOLD + state_name + PLAIN + state_desc + "\n\n");
   }
 
-  public static void printState(ConcurrentHashMap<String, FileInfo> backed_up, ConcurrentHashMap<String, Vector<FileChunk> > stored_chunks) {
-    System.out.println(BOLD + "\nBACKED UP FILES\n" + PLAIN);
+  public static void printState(ConcurrentHashMap<String, FileInfo> backed_up,
+      ConcurrentHashMap<String, Vector<FileChunk> > stored_chunks, int max_space, int used_space) {
+    System.out.println("\n" + BOLD + "Used " + UNDERLINE + used_space +
+        BOLD + " of " + UNDERLINE + max_space + BOLD + " bytes");
+
+    System.out.println(BOLD + "\n" + center("BACKED UP FILES", MAX_LINE_SIZE) + "\n" + PLAIN);
     backed_up.forEach((file_name, info)->{
-      printFileInfo(" ", info);
+      printFileInfo(info);
     });
 
-    System.out.println(BOLD + "\nSTORED CHUNKS\n" + PLAIN);
+    System.out.println(BOLD + "\n" + center("STORED CHUNKS", MAX_LINE_SIZE) + "\n" + PLAIN);
     stored_chunks.forEach((file_id, chunks)->{
-      System.out.println(BOLD + "  " + file_id + PLAIN);
+      System.out.println(BOLD + file_id + PLAIN);
       chunks.forEach((chunk)->{
-        printChunkInfo("    ", file_id + "#" + chunk.getChunkN(), chunk);
+        printChunkInfo("      ", "#" + chunk.getChunkN(), chunk);
       });
     });
   }
 
-  public static void printFileInfo(String indentation, FileInfo info) {
-    System.out.println(indentation + BOLD + info.getName() + PLAIN);
-    System.out.println(UNDERLINE + indentation + "  " + info.getID() + PLAIN + "  -  " + info.getDesiredRep());
+  public static void printFileInfo(FileInfo info) {
+    System.out.println(BOLD + info.getName() + PLAIN);
+    System.out.println("  " + UNDERLINE + info.getID() + PLAIN + "  -  " + info.getDesiredRep());
     info.getChunks().forEach((chunk)->{
-      printChunkInfo(indentation + "    ", Integer.toString(chunk.getChunkN()), chunk);
+      printChunkInfo("      ", "#" + Integer.toString(chunk.getChunkN()), chunk);
     });
   }
 
   public static void printChunkInfo(String indentation, String chunk_id, FileChunk chunk) {
     System.out.println(indentation +
-        BOLD + chunk_id + PLAIN + " | "
-        + chunk.getSize() + " | "
+        UNDERLINE + chunk_id + PLAIN + " | "
+        + center(Integer.toString(chunk.getSize()), 5) + " | "
         + chunk.getActualRep() + "/"
         + chunk.getDesiredRep());
+  }
+
+  public static String center(String text, int len) {
+    String out   = String.format("%" + len + "s%s%" + len + "s", "", text, "");
+    float  mid   = (out.length() / 2);
+    float  start = mid - (len / 2);
+    float  end   = start + len;
+
+    return out.substring((int)start, (int)end);
   }
 }

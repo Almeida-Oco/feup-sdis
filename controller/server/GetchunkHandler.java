@@ -9,6 +9,7 @@ import network.PacketInfo;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class GetchunkHandler extends Handler {
@@ -48,14 +49,15 @@ public class GetchunkHandler extends Handler {
   }
 
   public void run() {
-    FileChunk chunk = File_IO.getStoredChunk(this.file_id, this.chunk_n);
+    FileChunk       chunk = File_IO.getStoredChunk(this.file_id, this.chunk_n);
+    ScheduledFuture future;
 
     if (chunk != null) {
       PacketInfo packet = new PacketInfo("CHUNK", this.file_id, this.chunk_n);
       packet.setData(chunk.getData(), chunk.getSize());
 
       Random rand = new Random();
-      this.services.schedule(()->{
+      future = this.services.schedule(()->{
         synchronized (this) {
           System.out.println("Got chunk? " + this.got_chunk);
           if (!this.got_chunk) {
@@ -68,6 +70,13 @@ public class GetchunkHandler extends Handler {
           }
         }
       }, rand.nextInt(401), TimeUnit.MILLISECONDS);
+
+      try {
+        future.get();
+      }
+      catch (Exception err) {
+        System.err.println("Getchunk::run() -> Future interrupted!\n - " + err.getMessage());
+      }
     }
   }
 }

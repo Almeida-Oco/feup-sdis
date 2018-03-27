@@ -6,17 +6,28 @@ import java.io.File;
 import java.util.Set;
 import java.util.Map;
 import java.util.Vector;
+import java.nio.file.Paths;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.util.concurrent.Future;
 import java.io.FileNotFoundException;
+import java.nio.file.StandardOpenOption;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.nio.channels.AsynchronousFileChannel;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class File_IO {
   public final static int MAX_CHUNK_SIZE = 64000;
   private final static int MAX_N_CHUNKS  = 999999;
   private final static String PATH       = "./stored_files/";
+
+  private static AtomicInteger max_space  = new AtomicInteger(8192000); //Equivalent to 8MB
+  private static AtomicInteger used_space = new AtomicInteger(0);       //Equivalent to 8MB
+  private static Vector<StandardOpenOption> options;
 
   //Contains the local files which were sent for backup
   private static ConcurrentHashMap<String, FileInfo> file_table = new ConcurrentHashMap<String, FileInfo>();
@@ -161,7 +172,9 @@ public class File_IO {
       chunk.delete();
       Vector<FileChunk> chunks = stored_chunks.get(file_id);
       if (rm_from_table) {
-        chunks.remove(FileChunk.binarySearch(chunks, chunk_n));
+        int index = FileChunk.binarySearch(chunks, chunk_n);
+        used_space.addAndGet(chunks.get(index).getSize());
+        chunks.remove(index);
       }
     }
     catch (SecurityException err) {
@@ -183,37 +196,49 @@ public class File_IO {
 
   public static boolean restoreFile(String file_name, Vector<FileChunk> chunks) {
     chunks.sort(null);
-    FileOutputStream out;
+    AsynchronousFileChannel out;
 
     if ((out = openFileWriter(file_name)) == null) {
       return false;
     }
-
+    Vector<Future<Integer> > futures = new Vector<Future<Integer> >(chunks.size());
     try {
       for (FileChunk chunk : chunks) {
-        out.write(chunk.getData());
+        futures.add(out.write(ByteBuffer.wrap(chunk.getData()), MAX_CHUNK_SIZE * chunk.getChunkN()));
       }
-      out.close();
+      for (Future<Integer> future : futures) { //Wait for write to finish
+        future.get();
+      }
     }
-    catch (IOException err) {
-      System.err.println("Failed to write to FD of '" + file_name + "'\n - " + err.getMessage());
+    catch (InterruptedException err) {
+      System.err.println("Interrupted restore futures!\n - " + err.getMessage());
+      return false;
+    }
+    catch (ExecutionException err) {
+      System.err.println("Restore future threw an exception!\n - " + err.getMessage());
       return false;
     }
     return true;
   }
 
-  private static FileOutputStream openFileWriter(String file_name) {
+  private static AsynchronousFileChannel openFileWriter(String file_name) {
     try {
-      return new FileOutputStream(file_name);
+      return AsynchronousFileChannel.open(Paths.get(file_name), StandardOpenOption.WRITE, StandardOpenOption.CREATE_NEW);
     }
-    catch (FileNotFoundException err) {
-      System.err.println("Failed to create file '" + file_name + "'\n - " + err.getMessage());
-      return null;
+    catch (IllegalArgumentException err) {
+      System.err.println("Wrong options!\n - " + err.getMessage());
+    }
+    catch (UnsupportedOperationException err) {
+      System.err.println("Creation of file channels not supported!\n - " + err.getMessage());
     }
     catch (SecurityException err) {
       System.err.println("Access denied to file '" + file_name + "'\n - " + err.getMessage());
-      return null;
     }
+    catch (IOException err) {
+      System.err.println("I/O error occurred!\n - " + err.getMessage());
+    }
+
+    return null;
   }
 
   public static FileInfo getFileInfo(String file_name) {
@@ -239,6 +264,18 @@ public class File_IO {
     return chunks.get(index);
   }
 
+  public static int getMaxSpace() {
+    return max_space.get();
+  }
+
+  public static int getUsedSpace() {
+    return used_space.get();
+  }
+
+  public static int getRemainingSpace() {
+    return max_space.get() - used_space.get();
+  }
+
   public static int chunkRepDegree(String file_id, int chunk_n) {
     FileChunk chunk = getStoredChunk(file_id, chunk_n);
 
@@ -253,6 +290,7 @@ public class File_IO {
     int index = Collections.binarySearch(chunks, chunk);
 
     if (index < 0) {
+      used_space.addAndGet(chunk.getSize());
       chunks.add(-(index) - 1, chunk);
     }
     else {
@@ -290,12 +328,19 @@ public class File_IO {
     return rem_chunks;
   }
 
+  public static void setMaxSpace(int max) {
+    max_space.set(max);
+  }
+
   private static void removeChunks(Vector<Pair<String, FileChunk> > chunks) {
     chunks.forEach((pair)->{
+      FileChunk chunk = pair.second();
       Vector<FileChunk> file_chunks = stored_chunks.get(pair.first());
+
       if (file_chunks != null) {
-        int index = Collections.binarySearch(file_chunks, pair.second());
+        int index = Collections.binarySearch(file_chunks, chunk);
         if (index >= 0) {
+          used_space.addAndGet(chunk.getSize());
           file_chunks.remove(index);
         }
       }

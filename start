@@ -15,29 +15,29 @@ ARG_N="$#"
 
 function backup() {
 	cp $FILE_BACKUP $FILE
-	echo "java controller.Client $1 BACKUP $FILE $2"
+	java controller.Client //192.168.0.111/$1 BACKUP $FILE $2
 }
 
 function restore() {
 	rm $FILE
-	echo "java controller.Client $1 RESTORE $FILE"
+	java controller.Client //192.168.0.111/$1 RESTORE $FILE
 }
 
 function delete() {
 	cp $FILE_BACKUP $FILE
-	echo "java controller.Client $1 DELETE $FILE"
+	java controller.Client //192.168.0.111/$1 DELETE $FILE
 }
 
 function reclaim() {
-	echo "java controller.Client $1 RECLAIM $2"
+	java controller.Client //192.168.0.111/$1 RECLAIM $2
 }
 
 function state() {
-	echo "java controller.Client $1 STATE"
+	java controller.Client //192.168.0.111/$1 STATE
 }
 
 function peer() {
-  echo "java controller.Server 1.0 $1 $RMI $MC $MDR $MDB"
+  java controller.Server 1.0 $1 $RMI $MC $MDR $MDB
 }
 
 function printUsage() {
