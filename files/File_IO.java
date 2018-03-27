@@ -139,9 +139,12 @@ public class File_IO {
       FileOutputStream writer = new FileOutputStream(chunk_file);
       writer.write(chunk.getData(), 0, chunk.getSize());
 
-      addChunk(file_id, chunk);
+      boolean ret = true;
+      if (!addChunk(file_id, chunk)) {
+        ret = false;
+      }
       writer.close();
-      return true;
+      return ret;
     }
     catch (FileNotFoundException err) {
       System.err.println("Failed to open descriptor to file\n - " + err.getCause() + ": " + err.getMessage());
@@ -286,17 +289,17 @@ public class File_IO {
     return -1;
   }
 
-  private static void addChunk(String file_id, FileChunk chunk) {
+  private static boolean addChunk(String file_id, FileChunk chunk) {
     Vector<FileChunk> chunks = stored_chunks.get(file_id);
     int index = Collections.binarySearch(chunks, chunk);
 
     if (index < 0) {
       used_space.addAndGet(chunk.getSize());
       chunks.add(-(index) - 1, chunk);
+      return true;
     }
-    else {
-      System.out.println("Replicated chunk #" + chunk.getChunkN());
-    }
+
+    return false;
   }
 
   public static ConcurrentHashMap<String, FileInfo> getBackedUpTable() {

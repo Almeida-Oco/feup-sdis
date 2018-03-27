@@ -21,7 +21,8 @@ class BackupHandler extends Handler implements Remote {
   String file_name;
   int rep_degree;
   Listener mc, mdb;
-  SignalCounter signals;
+  SignalCounter signals;      System.out.println("Sent chunk #" + packet.getChunkN());
+
   String curr_packet = null;
   ScheduledThreadPoolExecutor services;
 
@@ -98,7 +99,6 @@ class BackupHandler extends Handler implements Remote {
 
     if (try_n <= MAX_TRIES && !got_confirmations) {
       this.mdb.sendMsg(packet);
-      System.out.println("Sent chunk #" + packet.getChunkN());
       this.services.schedule(()->{
         return this.getConfirmations(packet, try_n + 1, id);
       }, try_n * WAIT_TIME, TimeUnit.MILLISECONDS);
@@ -106,12 +106,14 @@ class BackupHandler extends Handler implements Remote {
     else if (try_n > MAX_TRIES) {
       System.err.println("Not enough confirmations for packet #" + this.file_name);
       this.mc.removeFromSignal("STORED", id);
+      this.services.shutdownNow();
     }
     else if (try_n <= MAX_TRIES && got_confirmations) {
       System.out.println("File '" + this.file_name + "' stored!");
       this.mc.removeFromSignal("STORED", id);
       this.services.shutdownNow();
     }
+
     return null;
   }
 }

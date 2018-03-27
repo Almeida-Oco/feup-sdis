@@ -73,11 +73,6 @@ if [ $ARG_N -ge 1 ]; then
 	elif [ ${PROTOCOL} = 'state' -a $ARG_N == 2 ]; then
 		state $2
   elif [ ${PROTOCOL} = 'peer' -a $ARG_N == 2 ]; then
-    echo 'Starting peer with:'
-    echo " MC  - $MC"
-    echo " MDR - $MDR"
-    echo " MDB - $MDB"
-    echo " RMI - Port $RMI"
     peer $2
 	else
     printUsage
