@@ -353,7 +353,6 @@ public class File_IO {
     int index = FileChunk.binarySearch(chunks, chunk_n);
     System.out.println("Index = " + index);
     if (index == -1) {
-      System.err.println("Chunk #" + chunk_n + " is not stored locally!");
       return null;
     }
 

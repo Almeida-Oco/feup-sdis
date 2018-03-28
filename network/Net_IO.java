@@ -108,17 +108,14 @@ public class Net_IO {
    * @return        Whether message was sent or not
    */
   public boolean sendMsg(PacketInfo packet) {
-    packet.setAddr(this.mcast_addr);
-    packet.setPort(this.mcast_port);
     if (!packet.isReady()) {
       System.err.println("Packet is not ready to be sent!");
       return false;
     }
+
     String         data         = packet.toString();
     int            size         = data.length();
-    DatagramPacket dgram_packet = new DatagramPacket(new byte[size], size);
-    dgram_packet.setAddress(this.mcast_addr);
-    dgram_packet.setPort(this.mcast_port);
+    DatagramPacket dgram_packet = new DatagramPacket(new byte[size], size, this.mcast_addr, this.mcast_port);
 
     try {
       dgram_packet.setData(data.getBytes(StandardCharsets.ISO_8859_1), 0, size);

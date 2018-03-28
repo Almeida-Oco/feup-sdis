@@ -22,7 +22,7 @@ public class ApplicationInfo {
   /**
    * The multicast channels
    */
-  static Net_IO mc, mdb, md;
+  static Net_IO mc, mdb, mdr;
 
   /**
    * The sole instance of {@link ApplicationInfo}
@@ -34,7 +34,6 @@ public class ApplicationInfo {
    */
   private ApplicationInfo() {
     serv_id  = -1;
-    ap       = -1;
     version  = 0;
     instance = this;
   }

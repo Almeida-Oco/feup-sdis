@@ -26,28 +26,35 @@ public class RemovedHandler extends Handler {
    * ID of the chunk that got removed (<fileID>#<chunk_number>)
    */
   String chunk_id;
+  /** ID of the file */
+  String file_id;
+  /** Number of the chunk */
+  int chunk_n;
+
+  /** The chunk another peer removed */
+  FileChunk chunk;
 
   /**
    * Whether a PUTCHUNK message was received or not
    */
-  AtomicBoolean got_putchunk;
-  PacketInfo packet;
+  AtomicBoolean got_putchunk = new AtomicBoolean(false),
+      waiting_for_putchunk   = new AtomicBoolean(true);
   Net_IO mdb;
-  boolean waiting_for_putchunk = true;
   ScheduledThreadPoolExecutor services;
 
-  public RemovedHandler(PacketInfo packet, Net_IO mdb) {
+  public RemovedHandler(PacketInfo packet, FileChunk chunk, Net_IO mdb) {
     super();
-    this.services     = new ScheduledThreadPoolExecutor(1);
-    this.packet       = packet;
-    this.got_putchunk = new AtomicBoolean(false);
-    this.chunk_id     = packet.getFileID() + "#" + packet.getChunkN();
-    this.mdb          = mdb;
+    this.chunk    = chunk;
+    this.services = new ScheduledThreadPoolExecutor(1);
+    this.file_id  = packet.getFileID();
+    this.chunk_n  = packet.getChunkN();
+    this.chunk_id = this.file_id + "#" + this.chunk_n;
+    this.mdb      = mdb;
   }
 
   @Override
   public void signal(PacketInfo packet) {
-    if (waiting_for_putchunk) {
+    if (this.waiting_for_putchunk.get()) {
       this.got_putchunk.set(true);
     }
     else {
@@ -72,12 +79,16 @@ public class RemovedHandler extends Handler {
     Listener.registerForSignal("PUTCHUNK", this.chunk_id, this);
     future = services.schedule(()->{
       if (!this.got_putchunk.get()) {
-        waiting_for_putchunk = false;
+        waiting_for_putchunk.set(false);
         Listener.removeFromSignal("PUTCHUNK", this.chunk_id);
         Listener.registerForSignal("STORED", this.chunk_id, this);
 
         try {
-          this.services.schedule(()->this.getConfirmations(1), WAIT_TIME, TimeUnit.MILLISECONDS).get();
+          PacketInfo packet = new PacketInfo("PUTCHUNK", this.file_id, this.chunk_n);
+          packet.setData(chunk.getData(), chunk.getSize());
+          packet.setRDegree(chunk.getDesiredRep());
+
+          this.services.schedule(()->this.getConfirmations(packet, 1), WAIT_TIME, TimeUnit.MILLISECONDS).get();
         }
         catch (InterruptedException | ExecutionException err) {
           System.err.println("Removed::run() -> Interruped inner scheduler!\n - " + err.getMessage());
@@ -94,12 +105,12 @@ public class RemovedHandler extends Handler {
     }
   }
 
-  private void getConfirmations(int try_n) {
-    this.mdb.sendMsg(this.packet);
+  private void getConfirmations(PacketInfo packet, int try_n) {
+    this.mdb.sendMsg(packet);
     if (try_n <= MAX_TRIES && !this.got_putchunk.get()) {
       try {
         this.services.schedule(()->{
-          this.getConfirmations(try_n + 1);
+          this.getConfirmations(packet, try_n + 1);
         }, WAIT_TIME * try_n, TimeUnit.MILLISECONDS).get();
       }
       catch (InterruptedException | ExecutionException err) {

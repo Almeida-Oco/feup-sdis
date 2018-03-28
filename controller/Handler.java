@@ -52,7 +52,11 @@ public abstract class Handler implements Runnable {
       return new DeleteHandler(packet);
     }
     else if (type.equals("REMOVED")) {
-      return new RemovedHandler(packet, ApplicationInfo.getMDB());
+      FileChunk chunk = File_IO.getStoredChunk(packet.getFileID(), packet.getChunkN());
+      if (chunk != null) {
+        return new RemovedHandler(packet, chunk, ApplicationInfo.getMDB());
+      }
+      return null;
     }
     else if (type.equals("STORED")) {
       File_IO.tryIncRep(packet.getFileID(), packet.getChunkN(), packet.getSenderID());

@@ -37,11 +37,6 @@ public class PacketInfo {
   /** Data of message */
   String data;
 
-  /** Address to send message to */
-  InetAddress addr;
-  /** Port to send message to */
-  int port;
-
   /**
    * Initializes a new {@link PacketInfo}
    */
@@ -62,8 +57,6 @@ public class PacketInfo {
     this.msg_type  = msg_type;
     this.file_id   = file_id;
     this.chunk_n   = chunk_n;
-    this.addr      = null;
-    this.port      = -1;
   }
 
   /**
@@ -165,24 +158,14 @@ public class PacketInfo {
         is_delete       = this.msg_type.equalsIgnoreCase("DELETE"),
         is_chunk        = this.msg_type.equalsIgnoreCase("CHUNK");
 
-    // System.out.println("Packet addr != null ? " + (this.addr != null));
-    // System.out.println("Packet port != 1 ? " + (this.port != -1));
-    // System.out.println("Packet version != null ? " + (this.version != null));
-    // System.out.println("Packet file_id != null ? " + (this.file_id != null));
-    // System.out.println("Packet sender_id != -1 ? " + (this.sender_id != -1));
-    // System.out.println("Packet chunk_n != -1 ? " + (this.chunk_n != -1));
-    // System.out.println("Packet r_degree != -1 ? " + (this.r_degree != -1));
-    // System.out.println("Packet data != null ? " + (this.data != null));
-
-    return this.addr != null&&
-           this.port != -1 &&
-           (is_putchunk || is_stored || is_removed || is_getchunk || is_delete || is_chunk) &&                             // Check message type
-           (this.version != null) &&                                                                                       // Check version
-           (this.file_id != null) &&                                                                                       // Check file_id
-           (this.sender_id != -1) &&                                                                                       // Check sender id
-           ((this.chunk_n != -1 && (is_putchunk || is_stored || is_getchunk || is_removed || is_chunk)) || (is_delete)) && // Check chunk number
-           ((this.r_degree != -1 && is_putchunk) || (is_stored || is_getchunk || is_removed || is_delete || is_chunk)) &&  // Check replication degree
-           ((this.data != null&& (is_putchunk || is_chunk)) || (is_stored || is_getchunk || is_removed || is_delete));     // Check data
+    return
+      (is_putchunk || is_stored || is_removed || is_getchunk || is_delete || is_chunk) &&                                  // Check message type
+      (this.version != null) &&                                                                                            // Check version
+      (this.file_id != null) &&                                                                                            // Check file_id
+      (this.sender_id != -1) &&                                                                                            // Check sender id
+      ((this.chunk_n != -1 && (is_putchunk || is_stored || is_getchunk || is_removed || is_chunk)) || (is_delete)) &&      // Check chunk number
+      ((this.r_degree != -1 && is_putchunk) || (is_stored || is_getchunk || is_removed || is_delete || is_chunk)) &&       // Check replication degree
+      ((this.data != null&& (is_putchunk || is_chunk)) || (is_stored || is_getchunk || is_removed || is_delete));          // Check data
   }
 
   /**
@@ -249,22 +232,6 @@ public class PacketInfo {
    */
   public void setData(byte[] data, int size) {
     this.data = new String(data, 0, size, StandardCharsets.ISO_8859_1);
-  }
-
-  /**
-   * Sets the address of the message
-   * @param addr {@link InetAddress} to use
-   */
-  public void setAddr(InetAddress addr) {
-    this.addr = addr;
-  }
-
-  /**
-   * Sets the port of the message
-   * @param port Port to use
-   */
-  public void setPort(int port) {
-    this.port = port;
   }
 
   /**
