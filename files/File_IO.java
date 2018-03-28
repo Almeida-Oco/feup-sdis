@@ -30,14 +30,10 @@ public class File_IO {
   private final static int MAX_N_CHUNKS  = 999999;
   private final static String PATH       = "./stored_files/";
 
-  /**
-   * Maximum space allocated to the program in bytes
-   */
+  /** Maximum space allocated to the program in bytes */
   private static AtomicInteger max_space = new AtomicInteger(8192000);  //Equivalent to 8MB
 
-  /**
-   * Space used by the program in bytes
-   */
+  /** Space used by the program in bytes */
   private static AtomicInteger used_space = new AtomicInteger(0);       //Equivalent to 8MB
 
   /**

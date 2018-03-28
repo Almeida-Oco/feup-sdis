@@ -8,29 +8,19 @@ import java.util.Vector;
  * @author João Almeida
  */
 public class FileChunk implements Comparable<FileChunk> {
-  /**
-   * Peers that replicated this chunk
-   */
+  /** Peers that replicated this chunk */
   Vector<Integer> stored_in;
 
-  /**
-   * Data of the chunk
-   */
+  /** Data of the chunk */
   byte[] chunk_data;
 
-  /**
-   * Number of the chunk
-   */
+  /** Number of the chunk */
   int chunk_n;
 
-  /**
-   * Size of the data of the chunk
-   */
+  /** Size of the data of the chunk */
   int chunk_size;
 
-  /**
-   * Desired replication degree
-   */
+  /** Desired replication degree */
   int rep_degree;
 
   /**

@@ -21,39 +21,25 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
  * @author João Almeida
  */
 class BackupHandler extends Handler implements Remote {
-  /**
-   * Maximum number of tries when backup fails
-   */
+  /** Maximum number of tries when backup fails */
   private static final int MAX_TRIES = 5;
 
-  /**
-   * Base wait time the protocol will wait for 'STORED' messages
-   */
+  /** Base wait time the protocol will wait for 'STORED' messages */
   private static final long WAIT_TIME = 1000;
 
-  /**
-   * The path of the file to be backed up
-   */
+  /** The path of the file to be backed up */
   String file_name;
 
-  /**
-   * The desired replication degree of the file
-   */
+  /** The desired replication degree of the file */
   int rep_degree;
 
-  /**
-   * Instances of the listeners of the MC and MDB channels
-   */
+  /** Instances of the listeners of the MC and MDB channels */
   Listener mc, mdb;
 
-  /**
-   * Counter of the 'STORED' messages received
-   */
+  /** Counter of the 'STORED' messages received */
   ConcurrentHashMap<String, FileChunk> signal_counter;
 
-  /**
-   * The {@link ScheduledThreadPoolExecutor} that starts the backup protocol for each chunk
-   */
+  /** The {@link ScheduledThreadPoolExecutor} that starts the backup protocol for each chunk */
   ScheduledThreadPoolExecutor services;
 
   /**

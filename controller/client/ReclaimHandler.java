@@ -16,9 +16,7 @@ import java.util.Vector;
  * @author João Almeida
  */
 class ReclaimHandler extends Handler implements Remote {
-  /**
-   * Bytes in disk to be reclaimed
-   */
+  /** Bytes in disk to be reclaimed */
   int space;
   Listener mc;
 

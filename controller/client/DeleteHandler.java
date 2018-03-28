@@ -20,14 +20,10 @@ import java.util.concurrent.ScheduledExecutorService;
  * @author João Almeida
  */
 class DeleteHandler extends Handler implements Remote {
-  /**
-   * The path to the file to be deleted
-   */
+  /** The path to the file to be deleted */
   String file_name;
 
-  /**
-   * The instance of MC {@link Listener}
-   */
+  /** The instance of MC {@link Listener} */
   Listener mc;
 
   /**

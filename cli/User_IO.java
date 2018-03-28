@@ -12,24 +12,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author João Almeida
  */
 public class User_IO {
-  /**
-   * {@link String} representing plain console output
-   */
+  /** {@link String} representing plain console output */
   private static final String PLAIN = "\033[0;0m";
 
-  /**
-   * {@link String} representing bold console output
-   */
+  /**  {@link String} representing bold console output */
   private static final String BOLD = "\033[0;1m";
 
-  /**
-   * {@link String} representing underlined console output
-   */
+  /**  {@link String} representing underlined console output */
   private static final String UNDERLINE = "\033[0;4m";
 
-  /**
-   * {@link String} representing bold console output
-   */
+  /** {@link String} representing bold console output */
   private static final int MAX_LINE_SIZE = 70;
 
   /**

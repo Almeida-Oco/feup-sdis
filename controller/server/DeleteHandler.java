@@ -11,9 +11,7 @@ import network.PacketInfo;
  * @author João Almeida
  */
 public class DeleteHandler extends Handler {
-  /**
-   * The ID of the file to be deleted
-   */
+  /** The ID of the file to be deleted */
   String file_id;
 
   /**

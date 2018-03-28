@@ -23,20 +23,14 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
  * @author João Almeida
  */
 class RestoreHandler extends Handler implements Remote {
-  /**
-   * Path to file to be restored
-   */
+  /** Path to file to be restored */
   String file_name;
   Listener mc, mdr;
 
-  /**
-   * Number of expected chunks to receive
-   */
+  /** Number of expected chunks to receive */
   int expected_chunks;
 
-  /**
-   * The chunks received from the network
-   */
+  /** The chunks received from the network */
   Set<FileChunk> chunks;
 
   /**

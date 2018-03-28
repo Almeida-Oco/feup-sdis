@@ -19,19 +19,13 @@ public class FileInfo {
   private final static int HASH_SIZE = 32;
   private String file_name, metadata; //Used only for hashing purposes
 
-  /**
-   * ID of file
-   */
+  /** ID of file */
   String file_id;
 
-  /**
-   * Chunks of the file
-   */
+  /** Chunks of the file */
   Vector<FileChunk> chunks;
 
-  /**
-   * Desired replication degree of file
-   */
+  /** Desired replication degree of file */
   int desired_rep;
 
   /**

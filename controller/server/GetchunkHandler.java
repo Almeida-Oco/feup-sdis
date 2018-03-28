@@ -18,29 +18,19 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
  * @author João Almeida
  */
 public class GetchunkHandler extends Handler {
-  /**
-   * Whether a CHUNK message was already sent into the network
-   */
+  /** Whether a CHUNK message was already sent into the network */
   boolean got_chunk = false;
 
-  /**
-   * The ID of the file to get a chunk from
-   */
+  /** The ID of the file to get a chunk from */
   String file_id;
 
-  /**
-   * The number of the chunk to be sent
-   */
+  /** The number of the chunk to be sent */
   int chunk_n;
 
-  /**
-   * The channel to send the chunk
-   */
+  /** The channel to send the chunk */
   Net_IO mdr;
 
-  /**
-   * {@link ScheduledThreadPoolExecutor} to generate a future
-   */
+  /** {@link ScheduledThreadPoolExecutor} to generate a future */
   ScheduledThreadPoolExecutor services;
 
   /**

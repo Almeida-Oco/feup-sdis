@@ -20,39 +20,25 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
  * @author João Almeida
  */
 public class PutchunkHandler extends Handler {
-  /**
-   * The ID of the file to store a chunk
-   */
+  /**  The ID of the file to store a chunk */
   String file_id;
 
-  /**
-   * The data of the chunk to be stored
-   */
+  /**  The data of the chunk to be stored */
   String data;
 
-  /**
-   * Number of the chunk to be stored
-   */
+  /**  Number of the chunk to be stored */
   int chunk_n;
 
-  /**
-   * Desired replication degree of the chunk
-   */
+  /**  Desired replication degree of the chunk */
   int desired_rep;
 
-  /**
-   * Peers who stored the chunk
-   */
+  /**  Peers who stored the chunk */
   Vector<Integer> replicators;
 
-  /**
-   * Channel to send the STORED message
-   */
+  /**  Channel to send the STORED message */
   Net_IO mc;
 
-  /**
-   * {@link ScheduledThreadPoolExecutor} to generate a future
-   */
+  /**  {@link ScheduledThreadPoolExecutor} to generate a future */
   ScheduledThreadPoolExecutor services;
 
   /**

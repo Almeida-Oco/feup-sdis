@@ -7,14 +7,10 @@ package controller;
  * @author João Almeida
  */
 public class Pair<A, B> {
-  /**
-   * First object
-   */
+  /** First object */
   private A st;
 
-  /**
-   * Second object
-   */
+  /** Second object */
   private B nd;
 
   /**

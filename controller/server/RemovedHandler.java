@@ -22,24 +22,28 @@ public class RemovedHandler extends Handler {
   private static final int MAX_TRIES  = 5;
   private static final long WAIT_TIME = 1000;
 
-  /**
-   * ID of the chunk that got removed (<fileID>#<chunk_number>)
-   */
+  /**  ID of the chunk that got removed (<fileID>#<chunk_number>) */
   String chunk_id;
+
   /** ID of the file */
   String file_id;
+
   /** Number of the chunk */
   int chunk_n;
 
   /** The chunk another peer removed */
   FileChunk chunk;
 
-  /**
-   * Whether a PUTCHUNK message was received or not
-   */
-  AtomicBoolean got_putchunk = new AtomicBoolean(false),
-      waiting_for_putchunk   = new AtomicBoolean(true);
+  /** Whether a PUTCHUNK message was received or not */
+  AtomicBoolean got_putchunk = new AtomicBoolean(false);
+
+  /** If {@link RemovedHandler} is still waiting for putchunk */
+  AtomicBoolean waiting_for_putchunk = new AtomicBoolean(true);
+
+  /**  Channel to send the PUTCHUNK message */
   Net_IO mdb;
+
+  /**  {@link ScheduledThreadPoolExecutor} to generate a future */
   ScheduledThreadPoolExecutor services;
 
   public RemovedHandler(PacketInfo packet, FileChunk chunk, Net_IO mdb) {

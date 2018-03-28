@@ -16,14 +16,10 @@ import java.util.concurrent.ThreadPoolExecutor;
  * @author João Almeida
  */
 public class Listener implements Runnable {
-  /**
-   * The channel to listen to
-   */
+  /** The channel to listen to */
   Net_IO channel;
 
-  /**
-   * Queue to store to be processed received messages
-   */
+  /** Queue to store to be processed received messages */
   ThreadPoolExecutor task_queue;
 
   /**

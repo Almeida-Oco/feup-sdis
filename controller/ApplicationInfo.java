@@ -9,24 +9,16 @@ import network.Net_IO;
  * This class follows the singleton design pattern so there is only one instance throughout the entire program
  */
 public class ApplicationInfo {
-  /**
-   * The ID of the running server
-   */
+  /** The ID of the running server */
   static int serv_id;
 
-  /**
-   * The version of the protocol
-   */
+  /** The version of the protocol */
   static byte version;
 
-  /**
-   * The multicast channels
-   */
+  /** The multicast channels */
   static Net_IO mc, mdb, mdr;
 
-  /**
-   * The sole instance of {@link ApplicationInfo}
-   */
+  /** The sole instance of {@link ApplicationInfo} */
   static ApplicationInfo instance;
 
   /**
