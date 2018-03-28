@@ -17,14 +17,34 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
+/**
+ * Handler for the Restore instruction from the client
+ * @author Gonçalo Moreno
+ * @author João Almeida
+ */
 class RestoreHandler extends Handler implements Remote {
+  /**
+   * Path to file to be restored
+   */
   String file_name;
   Listener mc, mdr;
+
+  /**
+   * Number of expected chunks to receive
+   */
   int expected_chunks;
+
+  /**
+   * The chunks received from the network
+   */
   Set<FileChunk> chunks;
-  String curr_packet;
 
-
+  /**
+   * Initializes the {@link RestoreHandler} with the given arguments and executes it
+   * @param file_name Path to file to be Restored
+   * @param mc        MC {@link Listener}
+   * @param mdr       MDR {@link Listener}
+   */
   void start(String file_name, Listener mc, Listener mdr) {
     this.file_name = file_name;
     this.mc        = mc;
@@ -42,7 +62,7 @@ class RestoreHandler extends Handler implements Remote {
 
   @Override
   public Pair<String, Handler> register() {
-    return new Pair<String, Handler>(this.curr_packet, this);
+    return null;
   }
 
   @Override
@@ -80,6 +100,12 @@ class RestoreHandler extends Handler implements Remote {
     }
   }
 
+  /**
+   * Waits for the remaining chunks for at most 10 seconds
+   * @param  chunks          Currently received chunks
+   * @param  expected_chunks Number of chunks expected
+   * @return                 Whether all the chunks where received or not
+   */
   private boolean waitForRemaining(Vector<FileChunk> chunks, int expected_chunks) {
     int i = 0;
 
@@ -103,16 +129,33 @@ class RestoreHandler extends Handler implements Remote {
   }
 }
 
+/**
+ * {@link Callable} that waits for all chunks to be received
+ * @author Gonçalo Moreno
+ * @author João Almeida
+ */
 class Waiter implements Callable<Boolean> {
+  /**
+   * Currently received chunks
+   */
   Set<FileChunk> chunks;
-  int expected_chunks;
-  int count;
 
+  /**
+   * Number of expected chunks
+   */
+  int expected_chunks;
+
+  /**
+   * Initializes the {@link Waiter}
+   * @param chunks   Chunks received
+   * @param expected Number of chunks expected to receive
+   */
   Waiter(Set<FileChunk> chunks, int expected) {
     this.chunks          = chunks;
     this.expected_chunks = expected;
   }
 
+  @Override
   public Boolean call() {
     int size = this.chunks.size();
 

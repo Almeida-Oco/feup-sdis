@@ -8,14 +8,29 @@ import java.lang.SecurityException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Handles all network related input and output
+ * @author Gonçalo Moreno
+ * @author João Almeida
+ */
 public class Net_IO {
-  final int TTL      = 1;
-  final int BUF_SIZE = 66000;
+  private static final int TTL      = 1;
+  private static final int BUF_SIZE = 66000;
 
+  /** Multicast socket to read and write from */
   MulticastSocket mcast_socket;
+
+  /**  Address of multicast socket */
   InetAddress mcast_addr;
+
+  /** Port of multicast socket */
   int mcast_port;
 
+  /**
+   * Initializes a new {@link Net_IO}
+   * @param addr Address to use
+   * @param port Port to use
+   */
   public Net_IO(String addr, int port) {
     this.mcast_port = port;
     try {
@@ -48,18 +63,31 @@ public class Net_IO {
     }
   }
 
+  /**
+   * Gets the address associated with the socket
+   * @return {@link Net_IO#mcast_addr}
+   */
   public InetAddress getAddr() {
     return this.mcast_addr;
   }
 
+  /**
+   * Gets the port associated with the socket
+   * @return {@link Net_IO#mcast_port}
+   */
   public int getPort() {
     return this.mcast_port;
   }
 
+  /** Whether this object is ready or not  */
   public boolean isReady() {
     return this.mcast_socket != null;
   }
 
+  /**
+   * Receives a message from {@link Net_IO#mcast_socket}
+   * @return Message received, null on error
+   */
   public PacketInfo recvMsg() {
     try {
       DatagramPacket packet = new DatagramPacket(new byte[BUF_SIZE], BUF_SIZE);
@@ -74,6 +102,11 @@ public class Net_IO {
     }
   }
 
+  /**
+   * Sends a message to {@link Net_IO#mcast_socket}
+   * @param  packet Message to send
+   * @return        Whether message was sent or not
+   */
   public boolean sendMsg(PacketInfo packet) {
     packet.setAddr(this.mcast_addr);
     packet.setPort(this.mcast_port);
@@ -84,9 +117,9 @@ public class Net_IO {
     String         data         = packet.toString();
     int            size         = data.length();
     DatagramPacket dgram_packet = new DatagramPacket(new byte[size], size);
+    dgram_packet.setAddress(this.mcast_addr);
+    dgram_packet.setPort(this.mcast_port);
 
-    dgram_packet.setAddress(packet.getAddr());
-    dgram_packet.setPort(packet.getPort());
     try {
       dgram_packet.setData(data.getBytes(StandardCharsets.ISO_8859_1), 0, size);
       this.mcast_socket.send(dgram_packet);

@@ -9,22 +9,36 @@ import controller.ApplicationInfo;
 import java.net.InetAddress;
 import java.util.concurrent.ThreadPoolExecutor;
 
-// TODO is message
+/**
+ * Abstract class representing a Handler for a received message or instruction
+ * @author Gonçalo Moreno
+ * @author João Almeida
+ */
 public abstract class Handler implements Runnable {
-  public InetAddress sender_addr;
-  public int sender_port;
-
-  protected Handler() {
-    this.sender_addr = null;
-    this.sender_port = 0;
-  }
-
+  /**
+   * Signals the {@link Handler} that the packet was received
+   * @param packet The packet received by the {@link Listener}
+   */
   public abstract void signal(PacketInfo packet);
 
+  /**
+   * Registers the {@link Handler} to receive signals when certain messages are received
+   * @return {@link Pair} containing a {@link String} representing the fileID and the chunk number of the messages to be signalled,
+   *  and a {@link Handler} to be notified, null if {@link Handler} need not be signalled
+   */
   public abstract Pair<String, Handler> register();
 
+  /**
+   * The type of messages the {@link Handler} wants to be notified of
+   * @return {@link String} with type of message, null if {@link Handler} need not be signalled
+   */
   public abstract String signalType();
 
+  /**
+   * Creates a new {@link Handler} for the given {@link PacketInfo}
+   * @param  packet Packet that needs to be processed
+   * @return        The new {@link Handler} to process the packet
+   */
   public static Handler newHandler(PacketInfo packet) {
     String type = packet.getType();
 

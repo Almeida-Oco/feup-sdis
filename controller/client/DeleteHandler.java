@@ -14,10 +14,27 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ScheduledExecutorService;
 
+/**
+ * Handler for the Delete instruction from the client
+ * @author Gonçalo Moreno
+ * @author João Almeida
+ */
 class DeleteHandler extends Handler implements Remote {
+  /**
+   * The path to the file to be deleted
+   */
   String file_name;
+
+  /**
+   * The instance of MC {@link Listener}
+   */
   Listener mc;
 
+  /**
+   * Initializes the {@link DeleteHandler} with the given arguments and runs it
+   * @param f_name Path to file to be deleted
+   * @param mc     Instance of MC {@link Listener}
+   */
   void start(String f_name, Listener mc) {
     this.file_name = f_name;
     this.mc        = mc;

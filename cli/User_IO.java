@@ -5,12 +5,36 @@ import files.*;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Static class
+ * Handles printing information to the command-line
+ * @author Gonçalo Moreno
+ * @author João Almeida
+ */
 public class User_IO {
-  private static final String PLAIN      = "\033[0;0m";
-  private static final String BOLD       = "\033[0;1m";
-  private static final String UNDERLINE  = "\033[0;4m";
+  /**
+   * {@link String} representing plain console output
+   */
+  private static final String PLAIN = "\033[0;0m";
+
+  /**
+   * {@link String} representing bold console output
+   */
+  private static final String BOLD = "\033[0;1m";
+
+  /**
+   * {@link String} representing underlined console output
+   */
+  private static final String UNDERLINE = "\033[0;4m";
+
+  /**
+   * {@link String} representing bold console output
+   */
   private static final int MAX_LINE_SIZE = 70;
 
+  /**
+   * Prints the usage of the server implementation
+   */
   public static void serverUsage() {
     final String prot_name = "  version          ",
         prot_desc          = "Protocol version to use ( [0-9].[0-9] )\n",
@@ -46,6 +70,9 @@ public class User_IO {
         BOLD + port_name + PLAIN + port_desc + "\n\n");
   }
 
+  /**
+   * Prints the usage of the client implementation
+   */
   public static void clientUsage() {
     final String ap_name = "  peer_ap        ",
         ap_desc          = "Client access point to use ( //<ip>:<port?>/<name> )\n",
@@ -83,6 +110,13 @@ public class User_IO {
         BOLD + state_name + PLAIN + state_desc + "\n\n");
   }
 
+  /**
+   * Prints the current state of the peer
+   * @param backed_up     The files that were sent for backup into the network
+   * @param stored_chunks The chunks from the network that were stored locally
+   * @param max_space     The maximum disk space the protocol is allowed to use
+   * @param used_space    The currently disk space used by the protocol
+   */
   public static void printState(ConcurrentHashMap<String, FileInfo> backed_up,
       ConcurrentHashMap<String, Vector<FileChunk> > stored_chunks, int max_space, int used_space) {
     System.out.println("\n" + BOLD + "Used " + UNDERLINE + used_space +
@@ -102,6 +136,10 @@ public class User_IO {
     });
   }
 
+  /**
+   * Prints information about a single file
+   * @param info {@link FileInfo} Holds the information of the file
+   */
   public static void printFileInfo(FileInfo info) {
     System.out.println(BOLD + info.getName() + PLAIN);
     System.out.println("  " + UNDERLINE + info.getID() + PLAIN + "  -  " + info.getDesiredRep());
@@ -110,6 +148,12 @@ public class User_IO {
     });
   }
 
+  /**
+   * Prints information about a single chunk
+   * @param indentation Number of spaces to indent information with
+   * @param chunk_id    The chunk name to display
+   * @param chunk       {@link FileChunk} Holds the information of the chunk
+   */
   public static void printChunkInfo(String indentation, String chunk_id, FileChunk chunk) {
     System.out.println(indentation +
         UNDERLINE + chunk_id + PLAIN + " | "
@@ -118,6 +162,12 @@ public class User_IO {
         + chunk.getDesiredRep());
   }
 
+  /**
+   * Centers the given text according to the given width
+   * @param  text Text to be centered
+   * @param  len  Width to use
+   * @return      Centered string based on text and width
+   */
   public static String center(String text, int len) {
     String out   = String.format("%" + len + "s%s%" + len + "s", "", text, "");
     float  mid   = (out.length() / 2);

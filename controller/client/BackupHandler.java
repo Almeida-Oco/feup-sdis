@@ -15,38 +15,71 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
+/**
+ * Handler for the Backup instruction from the client
+ * @author Gonçalo Moreno
+ * @author João Almeida
+ */
 class BackupHandler extends Handler implements Remote {
-  private static final int MAX_TRIES  = 5;
-  private static final long WAIT_TIME = 1000;
-  String file_name;
-  int rep_degree;
-  Listener mc, mdb;
-  SignalCounter signals;      System.out.println("Sent chunk #" + packet.getChunkN());
+  /**
+   * Maximum number of tries when backup fails
+   */
+  private static final int MAX_TRIES = 5;
 
-  String curr_packet = null;
+  /**
+   * Base wait time the protocol will wait for 'STORED' messages
+   */
+  private static final long WAIT_TIME = 1000;
+
+  /**
+   * The path of the file to be backed up
+   */
+  String file_name;
+
+  /**
+   * The desired replication degree of the file
+   */
+  int rep_degree;
+
+  /**
+   * Instances of the listeners of the MC and MDB channels
+   */
+  Listener mc, mdb;
+
+  /**
+   * Counter of the 'STORED' messages received
+   */
+  ConcurrentHashMap<String, FileChunk> signal_counter;
+
+  /**
+   * The {@link ScheduledThreadPoolExecutor} that starts the backup protocol for each chunk
+   */
   ScheduledThreadPoolExecutor services;
 
+  /**
+   * Initializes the necessary information for the class and run it
+   * @param f_name     Path to file to be replicated
+   * @param rep_degree Desired replication degree
+   * @param mc         MC {@link Listener} instance
+   * @param mdb        MDB {@link Listener} instance
+   */
   void start(String f_name, int rep_degree, Listener mc, Listener mdb) {
-    this.file_name  = f_name;
-    this.rep_degree = rep_degree;
-    this.mc         = mc;
-    this.mdb        = mdb;
-    this.signals    = new SignalCounter(rep_degree);
-    this.services   = new ScheduledThreadPoolExecutor(1);
+    this.file_name      = f_name;
+    this.rep_degree     = rep_degree;
+    this.mc             = mc;
+    this.mdb            = mdb;
+    this.signal_counter = new ConcurrentHashMap<String, FileChunk>();
+    this.services       = new ScheduledThreadPoolExecutor(1);
     this.run();
   }
 
-  //TODO missing saving the peer that responded
   @Override
   public void signal(PacketInfo packet) {
-    this.signals.signalValue(packet.getFileID() + "#" + packet.getChunkN(), packet.getSenderID());
+    this.signal_counter.get(packet.getFileID() + "#" + packet.getChunkN()).addPeer(packet.getSenderID());
   }
 
   @Override
   public Pair<String, Handler> register() {
-    if (this.curr_packet != null) {
-      return new Pair<String, Handler>(this.curr_packet, this);
-    }
     return null;
   }
 
@@ -67,12 +100,11 @@ class BackupHandler extends Handler implements Remote {
       packet.setRDegree(this.rep_degree);
       packet.setData(chunk.getData(), chunk.getSize());
 
-      this.signals.registerValue(file.getID(), chunk.getChunkN(), chunk);
+      this.signal_counter.put(file.getID() + "#" + chunk.getChunkN(), chunk);
       futures.add(this.sendChunk(packet));
     }
 
     File_IO.addFile(file);
-    this.curr_packet = null;
     for (ScheduledFuture<Void> future : futures) {
       try {
         future.get();
@@ -83,10 +115,14 @@ class BackupHandler extends Handler implements Remote {
     }
   }
 
+  /**
+   * Sends the given chunk to the network
+   * @param  packet The packet to be sent, containing the chunk
+   * @return        A {@link ScheduledFuture} that will actually send the chunk
+   */
   private ScheduledFuture<Void> sendChunk(PacketInfo packet) {
     String id = packet.getFileID() + "#" + packet.getChunkN();
 
-    this.curr_packet = id;
     this.mc.registerForSignal("STORED", id, this);
 
     return this.services.schedule(()->{
@@ -94,8 +130,16 @@ class BackupHandler extends Handler implements Remote {
     }, WAIT_TIME, TimeUnit.MILLISECONDS);
   }
 
+  /**
+   * Gets the needed confirmations from the network, waiting if needed
+   * @param  packet The packet to be sent, containing the chunks
+   * @param  try_n  Current try number
+   * @param  id     ID of the packet in the {@link SignalCounter}
+   * @return        null
+   */
   private Void getConfirmations(PacketInfo packet, int try_n, String id) {
-    boolean got_confirmations = this.signals.confirmations(id) >= this.signals.maxNumber();
+    FileChunk chunk             = this.signal_counter.get(id);
+    boolean   got_confirmations = chunk.getActualRep() >= chunk.getDesiredRep();
 
     if (try_n <= MAX_TRIES && !got_confirmations) {
       this.mdb.sendMsg(packet);
@@ -115,51 +159,5 @@ class BackupHandler extends Handler implements Remote {
     }
 
     return null;
-  }
-}
-
-class SignalCounter {
-  ConcurrentHashMap<String, FileChunk> signal_counter = new ConcurrentHashMap<String, FileChunk>();
-  int max_count;
-
-  public SignalCounter(int max) {
-    this.max_count = max;
-  }
-
-  public void registerValue(String file_name, int chunk_n, FileChunk chunk) {
-    this.signal_counter.put(file_name + "#" + chunk_n, chunk);
-  }
-
-  public void signalValue(String chunk_id, int peer_id) {
-    FileChunk chunk = this.signal_counter.get(chunk_id);
-
-    if (chunk == null) {
-      System.err.println("Could not get chunk '" + chunk_id + "' from signal_counter!");
-      return;
-    }
-    chunk.addPeer(peer_id);
-  }
-
-  public int confirmations(String file_id) {
-    return this.signal_counter.get(file_id).getActualRep();
-  }
-
-  public int maxNumber() {
-    return this.max_count;
-  }
-
-  public Vector<Pair<String, Integer> > getRemainder() {
-    Enumeration<String> keys = this.signal_counter.keys();
-
-    Vector<Pair<String, Integer> > chunks = new Vector<Pair<String, Integer> >();
-
-    while (keys.hasMoreElements()) {
-      String name = keys.nextElement();
-      int    hash = name.lastIndexOf('#');
-
-      chunks.addElement(new Pair<String, Integer>(name.substring(0, hash), Integer.parseInt(name.substring(hash))));
-    }
-
-    return chunks;
   }
 }

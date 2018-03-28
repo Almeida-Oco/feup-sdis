@@ -9,29 +9,51 @@ import java.net.DatagramPacket;
 import java.nio.charset.StandardCharsets;
 import java.io.UnsupportedEncodingException;
 
-
+/**
+ * The middle man between the messages exchanged by the network and the program
+ * @author Gonçalo Moreno
+ * @author João Almeida
+ */
 public class PacketInfo {
-  private static final String regex = "\\s*(?<msgT>\\w+)\\s+(?<version>\\d\\.\\d)\\s+(?<senderID>\\d+)\\s+(?<fileID>.{64})((\\s+(?<chunkN1>\\d{1,6})\\s+(?<Rdegree>\\d))|\\s+(?<chunkN2>\\d{1,6}))?\\s*\r\n(?<misc>\\w*?)\r\n(?<data>.{0,64000})?";
+  private static final String regex = "\\s*(?<msgT>\\w+)\\s+(?<version>\\d\\.\\d)\\s+(?<senderID>\\d+)\\s+(?<fileID>.{64})((\\s+(?<chunkN1>\\d{1,6})\\s+(?<Rdegree>\\d))|\\s+(?<chunkN2>\\d{1,6}))?\\s*\r\n(?<misc>.*?\r\n)*\r\n(?<data>.{0,64000})?";
 
   private static final Pattern MSG_PAT = Pattern.compile(regex, Pattern.DOTALL | Pattern.MULTILINE);
 
   private static final String CRLF   = "\r\n";
   private static final int HASH_SIZE = 64;
 
+  /** Type of message */
   String msg_type;
+  /** Version of message */
   String version;
+  /** ID of file */
   String file_id;
+  /** ID of the sender of the message */
   int sender_id;
+  /** Number of the chunk */
   int chunk_n;
+  /** Desired replication degree */
   int r_degree;
+  /** Data of message */
   String data;
 
+  /** Address to send message to */
   InetAddress addr;
+  /** Port to send message to */
   int port;
 
+  /**
+   * Initializes a new {@link PacketInfo}
+   */
   private PacketInfo() {
   }
 
+  /**
+   * Initializes a new {@link PacketInfo}
+   * @param msg_type Type of message
+   * @param file_id  ID of file
+   * @param chunk_n  Number of chunk
+   */
   public PacketInfo(String msg_type, String file_id, int chunk_n) {
     byte ver = ApplicationInfo.getVersion();
 
@@ -44,6 +66,11 @@ public class PacketInfo {
     this.port      = -1;
   }
 
+  /**
+   * Initializes a new {@link PacketInfo} from a {@link DatagramPacket}
+   * @param  packet Packet to use for initialization
+   * @return        The newly created {@link PacketInfo}
+   */
   public static PacketInfo fromPacket(DatagramPacket packet) {
     String     data       = new String(packet.getData(), packet.getOffset(), packet.getLength(), StandardCharsets.ISO_8859_1);
     Matcher    match      = MSG_PAT.matcher(data);
@@ -56,6 +83,11 @@ public class PacketInfo {
     return new_packet;
   }
 
+  /**
+   * Initializes the given members from the Regex {@link Matcher}
+   * @param  matcher Regular expression matcher
+   * @return         Whether all fields were initialized successfully or not
+   */
   private boolean fromMatcher(Matcher matcher) {
     String chunk_n;
 
@@ -90,6 +122,10 @@ public class PacketInfo {
     }
   }
 
+  /**
+   * Converts this packet into a string ready to be sent using {@link DatagramPacket}
+   * @return {@link String} representation of {@link PacketInfo}
+   */
   public String toString() {
     boolean is_putchunk = this.msg_type.equalsIgnoreCase("PUTCHUNK"),
         is_chunk        = this.msg_type.equalsIgnoreCase("CHUNK");
@@ -101,6 +137,10 @@ public class PacketInfo {
     return this.headerToString() + CRLF + CRLF + ((is_putchunk || is_chunk) ? this.data : "");
   }
 
+  /**
+   * Converts the header part of the packet to a string
+   * @return {@link String} representation of the header of {@link PacketInfo}
+   */
   private String headerToString() {
     boolean is_delete = this.msg_type.equalsIgnoreCase("DELETE"),
         is_putchunk   = this.msg_type.equalsIgnoreCase("PUTCHUNK");
@@ -113,6 +153,10 @@ public class PacketInfo {
            + (is_putchunk ? this.r_degree : "");
   }
 
+  /**
+   * Checks if packet is ready to be sent
+   * @return Whether packet is ready to be sent or not
+   */
   public boolean isReady() {
     boolean is_putchunk = this.msg_type.equalsIgnoreCase("PUTCHUNK"),
         is_stored       = this.msg_type.equalsIgnoreCase("STORED"),
@@ -141,59 +185,116 @@ public class PacketInfo {
            ((this.data != null&& (is_putchunk || is_chunk)) || (is_stored || is_getchunk || is_removed || is_delete));     // Check data
   }
 
+  /**
+   * Sets the type of message
+   * @param type Type of message
+   */
   public void setType(String type) {
     // TODO check if type is correct
     this.msg_type = type;
   }
 
+  /**
+   * Sets the version of the message
+   * @param ver Version of message
+   */
   public void setVersion(byte ver) {
     this.version = Byte.toString((byte)(ver / 10)) + "." + Byte.toString((byte)(ver % 10));
   }
 
+  /**
+   * Sets the file ID of the message
+   * @param id ID of file
+   */
   public void setFileID(String id) {
     this.file_id = id;
   }
 
+  /**
+   * Sets the sender ID of the message
+   * @param id ID of sender
+   */
   public void setSenderID(int id) {
     this.sender_id = id;
   }
 
+  /**
+   * Sets the chunk number of the message
+   * @param n Chunk number
+   */
   public void setChunkN(int n) {
     this.chunk_n = n;
   }
 
+  /**
+   * Sets the actual replication degree of the message
+   * @param degree Replication degree
+   */
   public void setRDegree(int degree) {
     this.r_degree = degree;
   }
 
+  /**
+   * Sets the data of the message
+   * @param data {@link String} representation of the data
+   */
   public void setData(String data) {
     this.data = data;
   }
 
+  /**
+   * Sets the data of the message
+   * @param data The data to be used
+   * @param size Size of data
+   */
   public void setData(byte[] data, int size) {
     this.data = new String(data, 0, size, StandardCharsets.ISO_8859_1);
   }
 
+  /**
+   * Sets the address of the message
+   * @param addr {@link InetAddress} to use
+   */
   public void setAddr(InetAddress addr) {
     this.addr = addr;
   }
 
+  /**
+   * Sets the port of the message
+   * @param port Port to use
+   */
   public void setPort(int port) {
     this.port = port;
   }
 
+  /**
+   * Gets the type of the message
+   * @return {@link PacketInfo#msg_type}
+   */
   public String getType() {
     return this.msg_type;
   }
 
+  /**
+   * Gets the sender ID of the message
+   * @return {@link PacketInfo#sender_id}
+   */
   public int getSenderID() {
     return this.sender_id;
   }
 
+  /**
+   * Gets the file ID of the message
+   * @return {@link PacketInfo#file_id}
+   */
   public String getFileID() {
     return this.file_id;
   }
 
+  /**
+   * Gets the version of the message
+   * @return Version of message, major digit = major version, minor digit = minor version
+   */
   public byte getVersion() {
     char chr1 = this.version.charAt(0),
         chr2  = this.version.charAt(2);
@@ -201,38 +302,28 @@ public class PacketInfo {
     return (byte)(Character.getNumericValue(chr1) * 10 + Character.getNumericValue(chr2));
   }
 
+  /**
+   * Gets the replication degree of the message
+   * @return {@link PacketInfo#r_degree}
+   */
   public int getRDegree() {
     return this.r_degree;
   }
 
+  /**
+   * Gets the chunk number of the message
+   * @return {@link PacketInfo#chunk_n}
+   */
   public int getChunkN() {
     return this.chunk_n;
   }
 
+  /**
+   * Gets the dat of the message
+   * @return {@link PacketInfo#data}
+   */
   public String getData() {
     return this.data;
-  }
-
-  public int dataSize() {
-    return this.data.length();
-  }
-
-  public InetAddress getAddr() {
-    return this.addr;
-  }
-
-  public int getPort() {
-    return this.port;
-  }
-
-  public void resetPacket() {
-    this.msg_type  = null;
-    this.version   = null;
-    this.file_id   = null;
-    this.sender_id = -1;
-    this.chunk_n   = -1;
-    this.r_degree  = '\0';
-    this.data      = null;
   }
 
   @Override

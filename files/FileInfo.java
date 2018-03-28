@@ -10,14 +10,36 @@ import java.security.DigestException;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 
+/**
+ * Holds information about a backed up file
+ * @author Gonçalo Moreno
+ * @author João Almeida
+ */
 public class FileInfo {
   private final static int HASH_SIZE = 32;
-  String file_name, metadata; //Used only for hashing purposes
+  private String file_name, metadata; //Used only for hashing purposes
 
+  /**
+   * ID of file
+   */
   String file_id;
+
+  /**
+   * Chunks of the file
+   */
   Vector<FileChunk> chunks;
+
+  /**
+   * Desired replication degree of file
+   */
   int desired_rep;
 
+  /**
+   * Initializes a new {@link FileInfo}
+   * @param fd           Descriptor to file
+   * @param chunk_number Number of chunks
+   * @param rep_degree   Desired replication degree
+   */
   FileInfo(File fd, int chunk_number, int rep_degree) {
     String abs_path   = fd.getAbsolutePath(),
         last_mod      = Long.toString(fd.lastModified());
@@ -31,6 +53,10 @@ public class FileInfo {
     this.desired_rep = rep_degree;
   }
 
+  /**
+   * Adds a new chunk
+   * @param chunk {@link FileChunk} to be added to {@link FileInfo#chunks}
+   */
   void addChunk(FileChunk chunk) {
     int index = Collections.binarySearch(this.chunks, chunk);
 
@@ -45,17 +71,10 @@ public class FileInfo {
     }
   }
 
-  FileChunk popChunk() {
-    if (this.chunks.size() > 0) {
-      FileChunk first = this.chunks.firstElement();
-      this.chunks.remove(0);
-
-      return first;
-    }
-
-    return null;
-  }
-
+  /**
+   * Tries to hash the metadata
+   * @param chunk Latest chunk to be added into {@link FileInfo#chunks}
+   */
   private void tryHash(FileChunk chunk) {
     if (this.chunks.size() == 0) { //Use first chunk as hash
       this.metadata += new String(chunk.getData());
@@ -67,6 +86,9 @@ public class FileInfo {
     }
   }
 
+  /**
+   * Sets the ID of the file
+   */
   private void setFileID() {
     MessageDigest intestine;
 
@@ -91,14 +113,27 @@ public class FileInfo {
     }
   }
 
+  /**
+   * Gets the name of the file
+   * @return {@link FileInfo#file_name}
+   */
   public String getName() {
     return this.file_name;
   }
 
+  /**
+   * Gets the ID of the file
+   * @return {@link FileInfo#file_id}
+   */
   public String getID() {
     return this.file_id;
   }
 
+  /**
+   * Gets a specific chunk from {@link FileInfo#chunks}
+   * @param  chunk_n Number of chunk to fetch
+   * @return         The requested chunk, null if not found
+   */
   public FileChunk getChunk(int chunk_n) {
     int index = FileChunk.binarySearch(this.chunks, chunk_n);
 
@@ -110,26 +145,27 @@ public class FileInfo {
     return this.chunks.get(index);
   }
 
+  /**
+   * Gets the file desired replication degree
+   * @return {@link FileInfo#desired_rep}
+   */
   public int getDesiredRep() {
     return this.desired_rep;
   }
 
+  /**
+   * Gets the number of chunks of the file
+   * @return Number of chunks of file
+   */
   public int chunkNumber() {
     return this.chunks.size();
   }
 
+  /**
+   * Gets all the chunks of the file
+   * @return {@link FileInfo#chunks}
+   */
   public Vector<FileChunk> getChunks() {
     return this.chunks;
-  }
-
-  Vector<Pair<String, FileChunk> > getOverlyReplicated() {
-    Vector<Pair<String, FileChunk> > chunks = new Vector<Pair<String, FileChunk> >();
-    this.chunks.forEach((chunk)->{
-      if (chunk.getActualRep() > chunk.getDesiredRep()) {
-        this.chunks.remove(chunk);
-        chunks.add(new Pair<String, FileChunk>(this.file_id, chunk));
-      }
-    });
-    return chunks;
   }
 }

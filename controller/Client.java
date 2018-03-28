@@ -10,6 +10,11 @@ import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
 
+/**
+ * Starter of the initiator-peer protocol
+ * @author Gonçalo Moreno
+ * @author João Almeida
+ */
 class Client {
   private static final String BACKUP  = "BACKUP";
   private static final String RESTORE = "RESTORE";
@@ -17,6 +22,10 @@ class Client {
   private static final String DELETE  = "DELETE";
   private static final String STATE   = "STATE";
 
+  /**
+   * Main entry point for the initiator-peer protocl
+   * @param args[] The command line arguments
+   */
   public static void main(String args[]) {
     if (!ClientParser.parseArgs(args)) {
       User_IO.clientUsage();
@@ -51,6 +60,13 @@ class Client {
     }
   }
 
+  /**
+   * Gets the RMI object from the Registry
+   * @param  ip   IP to fetch object from
+   * @param  port Port to use to fetch object
+   * @param  name Name of object to fetch
+   * @return      Instance of RMI object
+   */
   private static HandlerInterface getObj(String ip, int port, String name) {
     try {
       Registry registry = LocateRegistry.getRegistry(ip, port);

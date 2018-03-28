@@ -13,10 +13,23 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
+/**
+ * Handler for the REMOVED message from the network
+ * @author Gonçalo Moreno
+ * @author João Almeida
+ */
 public class RemovedHandler extends Handler {
   private static final int MAX_TRIES  = 5;
   private static final long WAIT_TIME = 1000;
+
+  /**
+   * ID of the chunk that got removed (<fileID>#<chunk_number>)
+   */
   String chunk_id;
+
+  /**
+   * Whether a PUTCHUNK message was received or not
+   */
   AtomicBoolean got_putchunk;
   PacketInfo packet;
   Net_IO mdb;

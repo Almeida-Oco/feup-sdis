@@ -3,6 +3,11 @@ package parser;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
+/**
+ * Parser of the Client version of the protocol
+ * @author Gonçalo Moreno
+ * @author João Almeida
+ */
 public class ClientParser {
   private static final String BACKUP  = "BACKUP";
   private static final String RESTORE = "RESTORE";
@@ -13,9 +18,18 @@ public class ClientParser {
   private static final String ap_regex = "\\s*//(?<ip1>\\d{1,4})\\.(?<ip2>\\d{1,4})\\.(?<ip3>\\d{1,4})\\.(?<ip4>\\d{1,4})(:(?<port>\\d{1,7}))?/(?<name>\\w+)";
   private static final Pattern pattern = Pattern.compile(ap_regex);
 
-  private static String ip = null, name = null;
+  /** IP of RMI registry */
+  private static String ip = null;
+  /** Name of the RMI object */
+  private static String name = null;
+  /** Port of the RMI registry */
   private static int port = -1;
 
+  /**
+   * Parses the received command line arguments
+   * @param  args arguments
+   * @return      Whether the parsing was successfull or not
+   */
   public static boolean parseArgs(String[] args) {
     if (args.length < 2) {
       return false;
@@ -34,6 +48,11 @@ public class ClientParser {
            protocol.equals(STATE) && size == 2;
   }
 
+  /**
+   * Parses the Access Point
+   * @param  ap {@link String} representation of the Acess Point
+   * @return    Whether the parsing was successfull or not
+   */
   private static boolean parseAP(String ap) {
     Matcher matcher = pattern.matcher(ap);
 
@@ -64,14 +83,26 @@ public class ClientParser {
     return true;
   }
 
+  /**
+   * Gets the IP of RMI registry
+   * @return {@link ClientParser#ip}
+   */
   public static String getIP() {
     return ip;
   }
 
+  /**
+   * Gets the name of the RMI object
+   * @return {@link ClientParser#name}
+   */
   public static String getName() {
     return name;
   }
 
+  /**
+   * Gets the port of RMI registry
+   * @return {@link ClientParser#port}
+   */
   public static int getPort() {
     return port;
   }

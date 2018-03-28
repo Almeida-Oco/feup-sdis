@@ -8,6 +8,11 @@ import network.PacketInfo;
 
 import java.rmi.Remote;
 
+/**
+ * Handler for the State instruction from the client
+ * @author Gonçalo Moreno
+ * @author João Almeida
+ */
 class StateHandler extends Handler implements Remote {
   @Override
   public void signal(PacketInfo packet) {

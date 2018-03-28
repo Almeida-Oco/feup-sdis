@@ -14,25 +14,60 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
+/**
+ * Handler for the PUTCHUNK message from the network
+ * @author Gonçalo Moreno
+ * @author João Almeida
+ */
 public class PutchunkHandler extends Handler {
-  byte version;
-  String file_id, data;
-  int chunk_n, desired_rep;
+  /**
+   * The ID of the file to store a chunk
+   */
+  String file_id;
+
+  /**
+   * The data of the chunk to be stored
+   */
+  String data;
+
+  /**
+   * Number of the chunk to be stored
+   */
+  int chunk_n;
+
+  /**
+   * Desired replication degree of the chunk
+   */
+  int desired_rep;
+
+  /**
+   * Peers who stored the chunk
+   */
   Vector<Integer> replicators;
+
+  /**
+   * Channel to send the STORED message
+   */
   Net_IO mc;
+
+  /**
+   * {@link ScheduledThreadPoolExecutor} to generate a future
+   */
   ScheduledThreadPoolExecutor services;
 
+  /**
+   * Initializes the {@link PutchunkHandler}
+   * @param packet Packet to be processed
+   * @param mc     MC channel
+   */
   public PutchunkHandler(PacketInfo packet, Net_IO mc) {
     super();
     this.mc          = mc;
     this.desired_rep = packet.getRDegree();
     this.replicators = new Vector<Integer>(this.desired_rep);
-    this.version     = packet.getVersion();
     this.file_id     = packet.getFileID();
     this.chunk_n     = packet.getChunkN();
     this.data        = packet.getData();
-    this.sender_addr = packet.getAddr();
-    this.sender_port = packet.getPort();
     this.services    = new ScheduledThreadPoolExecutor(1);
   }
 
@@ -53,6 +88,7 @@ public class PutchunkHandler extends Handler {
     return "STORED";
   }
 
+  @Override
   public void run() {
     PacketInfo      packet = new PacketInfo("STORED", this.file_id, this.chunk_n);
     int             rem_space = File_IO.getRemainingSpace(), data_size = this.data.length();

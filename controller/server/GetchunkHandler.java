@@ -12,20 +12,45 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
+/**
+ * Handler for the GETCHUNK message from the network
+ * @author Gonçalo Moreno
+ * @author João Almeida
+ */
 public class GetchunkHandler extends Handler {
+  /**
+   * Whether a CHUNK message was already sent into the network
+   */
   boolean got_chunk = false;
-  byte version;
+
+  /**
+   * The ID of the file to get a chunk from
+   */
   String file_id;
+
+  /**
+   * The number of the chunk to be sent
+   */
   int chunk_n;
+
+  /**
+   * The channel to send the chunk
+   */
   Net_IO mdr;
+
+  /**
+   * {@link ScheduledThreadPoolExecutor} to generate a future
+   */
   ScheduledThreadPoolExecutor services;
 
-  //TODO should I just store the packet then initialize?
-  // How much overhead is added with these initializations?
+  /**
+   * Initializes the {@link GetchunkHandler}
+   * @param packet Packet to be processed
+   * @param mdr    MDR channel
+   */
   public GetchunkHandler(PacketInfo packet, Net_IO mdr) {
     super();
     this.mdr      = mdr;
-    this.version  = packet.getVersion();
     this.file_id  = packet.getFileID();
     this.chunk_n  = packet.getChunkN();
     this.services = new ScheduledThreadPoolExecutor(1);
@@ -48,6 +73,7 @@ public class GetchunkHandler extends Handler {
     return "CHUNK";
   }
 
+  @Override
   public void run() {
     FileChunk       chunk = File_IO.getStoredChunk(this.file_id, this.chunk_n);
     ScheduledFuture future;

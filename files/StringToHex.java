@@ -2,6 +2,11 @@ package files;
 
 import java.util.HashMap;
 
+/**
+ * String to hexadecimal converter
+ * @author Gonçalo Moreno
+ * @author João Almeida
+ */
 class StringToHex {
   private static final HashMap<Integer, Character> chars_hex;
   static {
@@ -24,6 +29,12 @@ class StringToHex {
     chars_hex.put(15, 'F');
   }
 
+  /**
+   * Converts a String to Hexadecimal
+   * @param  text String to be converted
+   * @param  size Size of string
+   * @return      Representation of string in hexadecimal
+   */
   static String toHex(byte[] text, int size) {
     String chars = new String();
 
@@ -35,6 +46,11 @@ class StringToHex {
     return chars;
   }
 
+  /**
+   * Converts a single character to hexadecimal
+   * @param  chr Character to be converted
+   * @return     Two hexadecimal characters
+   */
   private static char[] charToHex(int chr) {
     char[] ret   = new char[2];
     int    major = chr / 16;

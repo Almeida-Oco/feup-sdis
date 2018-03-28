@@ -10,11 +10,23 @@ import controller.listener.Listener;
 import java.rmi.Remote;
 import java.util.Vector;
 
-
+/**
+ * Handler for the Reclaim instruction from the client
+ * @author Gonçalo Moreno
+ * @author João Almeida
+ */
 class ReclaimHandler extends Handler implements Remote {
+  /**
+   * Bytes in disk to be reclaimed
+   */
   int space;
   Listener mc;
 
+  /**
+   * Stores the information needed for the protocol and then executes it
+   * @param space Number of bytes to be reclaimed
+   * @param mc    MC {@link Listener}
+   */
   void start(int space, Listener mc) {
     this.space = space;
     this.mc    = mc;

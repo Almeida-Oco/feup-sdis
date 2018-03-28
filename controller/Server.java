@@ -18,11 +18,20 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.LinkedBlockingQueue;
 
+/**
+ * Starter of the peer protocol
+ * @author Gonçalo Moreno
+ * @author João Almeida
+ */
 class Server {
   private static final int cores     = Runtime.getRuntime().availableProcessors();
   private static final int MAX_TASKS = 255;
   private static final int RMI_PORT  = 1099;
 
+  /**
+   * Main entry point for the peer protocol
+   * @param args [description]
+   */
   public static void main(String[] args) {
     if (!ServerParser.parseArgs(args)) {
       User_IO.serverUsage();
@@ -32,6 +41,9 @@ class Server {
     startProgram();
   }
 
+  /**
+   * Starts the server, after the arguments were parsed
+   */
   private static void startProgram() {
     LinkedBlockingQueue<Runnable> queue      = new LinkedBlockingQueue<Runnable>(MAX_TASKS);
     ThreadPoolExecutor            task_queue = new ThreadPoolExecutor(cores, cores, 0, TimeUnit.SECONDS, queue);
@@ -61,6 +73,14 @@ class Server {
     }
   }
 
+  /**
+   * Registers the RMI object in the Registry
+   * @param  id  ID of the object to register
+   * @param  mc  MC {@link Listener}
+   * @param  mdb MDB {@link Listener}
+   * @param  mdr MDR {@link Listener}
+   * @return     Whether the object was successfully registered or not
+   */
   private static boolean registerClient(int id, Listener mc, Listener mdb, Listener mdr) {
     HandlerInterface stub;
     Registry         registry;
@@ -88,6 +108,13 @@ class Server {
     return tryBinding(registry, Integer.toString(id), stub);
   }
 
+  /**
+   * Tries to bind the ID to the registry
+   * @param  reg  {@link Registry} to bind object to
+   * @param  id   ID of object to be binded
+   * @param  stub Object to be binded
+   * @return      Whether it was successfully binded or not
+   */
   private static boolean tryBinding(Registry reg, String id, HandlerInterface stub) {
     try {
       reg.rebind(id, stub);
