@@ -85,7 +85,9 @@ public class FileChunk implements Comparable<FileChunk> {
    * @return Actual replication degree
    */
   public int getActualRep() {
-    return this.stored_in.size();
+    synchronized (this) {
+      return this.stored_in.size();
+    }
   }
 
   /**
