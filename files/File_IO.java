@@ -186,15 +186,14 @@ public class File_IO {
 
     try {
       directory.mkdir();
+      if (!addChunk(file_id, chunk)) {
+        return false;
+      }
+
       FileOutputStream writer = new FileOutputStream(chunk_file);
       writer.write(chunk.getData(), 0, chunk.getSize());
-
-      boolean ret = true;
-      if (!addChunk(file_id, chunk)) {
-        ret = false;
-      }
       writer.close();
-      return ret;
+      return true;
     }
     catch (FileNotFoundException err) {
       System.err.println("Failed to open descriptor to file\n - " + err.getCause() + ": " + err.getMessage());

@@ -77,11 +77,11 @@ class BackupHandler extends Handler implements Remote {
 
   @Override
   public void run() {
-    FileInfo file = File_IO.readFile(this.file_name, this.rep_degree);
-    boolean all_good = true;
+    FileInfo file     = File_IO.readFile(this.file_name, this.rep_degree);
+    boolean  all_good = true;
 
     Vector<FileChunk> chunks = file.getChunks();
-    this.services       = new ScheduledThreadPoolExecutor(chunks.size() * 2);
+    this.services = new ScheduledThreadPoolExecutor(chunks.size() * 2);
     Vector<Future<Boolean> > futures = new Vector<Future<Boolean> >(chunks.size());
 
     for (FileChunk chunk : chunks) {
@@ -95,12 +95,12 @@ class BackupHandler extends Handler implements Remote {
 
     try {
       for (Future<Boolean> future : futures) {
-          all_good = all_good && future.get();
-        }
+        all_good = all_good && future.get();
+      }
     }
     catch (Exception err) {
-        System.err.println("Backup::run() -> Future interrupted!\n - " + err.getMessage());
-        all_good = false;
+      System.err.println("Backup::run() -> Future interrupted!\n - " + err.getMessage());
+      all_good = false;
     }
 
     if (all_good) {
@@ -109,7 +109,7 @@ class BackupHandler extends Handler implements Remote {
     else {
       System.out.println("File '" + this.file_name + "' stored with less than desired replication degree!");
     }
-    this.services.shutdownNow();
+    this.services.shutdown();
     File_IO.addFile(file);
   }
 
@@ -120,9 +120,11 @@ class BackupHandler extends Handler implements Remote {
    */
   private Future<Boolean> sendChunk(PacketInfo packet) {
     String id = packet.getFileID() + "#" + packet.getChunkN();
-    this.mc.registerForSignal("STORED", id, this);
 
-    return this.getConfirmations(packet, 0, id);
+
+    this.mc.registerForSignal("STORED", id, this);
+    Future<Boolean> future = this.getConfirmations(packet, 0, id);
+    return future;
   }
 
   /**
@@ -136,24 +138,25 @@ class BackupHandler extends Handler implements Remote {
     FileChunk chunk             = this.signal_counter.get(id);
     boolean   got_confirmations = chunk.getActualRep() >= chunk.getDesiredRep();
 
-    return this.services.submit(() -> {
+    return this.services.submit(()->{
       for (int i = 0; i <= MAX_TRIES; i++) {
         this.mdb.sendMsg(packet);
-        ScheduledFuture<Boolean> future = this.services.schedule(() -> {
+        ScheduledFuture<Boolean> future = this.services.schedule(()->{
           return chunk.getActualRep() >= chunk.getDesiredRep();
         }, i * WAIT_TIME, TimeUnit.MILLISECONDS);
 
         try {
-          boolean over = future.get();
-          if (over) {
+          if (future.get()) {
             this.mc.removeFromSignal("STORED", id);
             return true;
           }
         }
         catch (Exception err) {
           System.err.println("Backup::getConfirmations() -> Interrupted future!\n - " + err.getMessage());
+          continue;
         }
       }
+
       this.mc.removeFromSignal("STORED", id);
       return false;
     });

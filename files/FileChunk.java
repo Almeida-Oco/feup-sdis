@@ -126,7 +126,7 @@ public class FileChunk implements Comparable<FileChunk> {
    * @return         Index of the chunk, -1 if not found
    */
   static int binarySearch(Vector<FileChunk> chunks, int chunk_n) {
-    int low = 0, high = chunks.size(), mid, number;
+    int low = 0, high = chunks.size() - 1, mid, number;
 
     while (low <= high) {
       mid    = (low + high) / 2;
