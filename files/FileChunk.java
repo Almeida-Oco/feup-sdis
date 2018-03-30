@@ -93,6 +93,14 @@ public class FileChunk implements Comparable<FileChunk> {
   }
 
   /**
+   * Gets the replicators of the chunk
+   * @return {@link FileChunk#stored_in}
+   */
+  public Vector<Integer> getReplicators() {
+    return this.stored_in;
+  }
+
+  /**
    * Gets the size of the chunk data
    * @return {@link FileChunk#chunk_size}
    */

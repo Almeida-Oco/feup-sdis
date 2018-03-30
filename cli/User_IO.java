@@ -147,11 +147,16 @@ public class User_IO {
    * @param chunk       {@link FileChunk} Holds the information of the chunk
    */
   public static void printChunkInfo(String indentation, String chunk_id, FileChunk chunk) {
-    System.out.println(indentation +
+    System.out.print(indentation +
         UNDERLINE + chunk_id + PLAIN + " | "
         + center(Integer.toString(chunk.getSize()), 5) + " | "
         + chunk.getActualRep() + "/"
-        + chunk.getDesiredRep());
+        + chunk.getDesiredRep() + " |");
+
+    for (Integer rep : chunk.getReplicators()) {
+      System.out.print(" " + rep);
+    }
+    System.out.println("");
   }
 
   /**
