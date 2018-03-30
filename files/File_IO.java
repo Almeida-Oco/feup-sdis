@@ -1,6 +1,7 @@
 package files;
 
 import controller.Pair;
+import controller.ApplicationInfo;
 
 import java.io.File;
 import java.util.Set;
