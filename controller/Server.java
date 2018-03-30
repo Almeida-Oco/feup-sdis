@@ -41,11 +41,12 @@ class Server {
    * Starts the server, after the arguments were parsed
    */
   private static void startProgram() {
-    ChannelListener mc_listener = ApplicationInfo.getMC(),
-        mdb_listener            = ApplicationInfo.getMDB(),
-        mdr_listener            = ApplicationInfo.getMDR();
+    HandlerInterface stub;
+    ChannelListener  mc_listener = ApplicationInfo.getMC(),
+        mdb_listener             = ApplicationInfo.getMDB(),
+        mdr_listener             = ApplicationInfo.getMDR();
 
-    if (!registerClient(ApplicationInfo.getServID(), mc_listener, mdb_listener, mdr_listener)) {
+    if ((stub = registerClient(ApplicationInfo.getServID(), mc_listener, mdb_listener, mdr_listener)) == null) {
       return;
     }
 
@@ -72,19 +73,20 @@ class Server {
    * @param  mc  MC {@link ChannelListener}
    * @param  mdb MDB {@link ChannelListener}
    * @param  mdr MDR {@link ChannelListener}
-   * @return     Whether the object was successfully registered or not
+   * @return     The registered object, null on error
    */
-  private static boolean registerClient(int id, ChannelListener mc, ChannelListener mdb, ChannelListener mdr) {
+  private static HandlerInterface registerClient(int id, ChannelListener mc, ChannelListener mdb, ChannelListener mdr) {
     HandlerInterface stub;
     Registry         registry;
 
     try {
       stub     = (HandlerInterface)UnicastRemoteObject.exportObject(new Dispatcher(mc, mdb, mdr), 0);
       registry = LocateRegistry.getRegistry(RMI_PORT);
+      return stub;
     }
     catch (RemoteException err) {
       System.err.println("Failed to register client handler!\n - " + err.getMessage());
-      return false;
+      return null;
     }
 
     if (!tryBinding(registry, Integer.toString(id), stub)) {
@@ -94,11 +96,14 @@ class Server {
       }
       catch (RemoteException err) {
         System.err.println("Failed to create registry!\n - " + err.getMessage());
-        return false;
+        return null;
       }
     }
 
-    return tryBinding(registry, Integer.toString(id), stub);
+    if (tryBinding(registry, Integer.toString(id), stub)) {
+      return stub;
+    }
+    return null;
   }
 
   /**
