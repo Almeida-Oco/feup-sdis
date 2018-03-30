@@ -54,10 +54,10 @@ class ReclaimHandler extends Handler implements Remote {
       return;
     }
 
-    if (max_space < this.space) {
+    if (max_space > this.space) {
       File_IO.setMaxSpace(this.space);
     }
-    else if (max_space > this.space) {
+    else if (max_space < this.space) {
       File_IO.setMaxSpace(this.space);
 
       if (used_space > this.space) { //Using more space than it should
