@@ -80,6 +80,10 @@ class BackupHandler extends Handler implements Remote {
     FileInfo file     = File_IO.readFile(this.file_name, this.rep_degree);
     boolean  all_good = true;
 
+    if (file == null) {
+      return;
+    }
+
     Vector<FileChunk> chunks = file.getChunks();
     this.services = new ScheduledThreadPoolExecutor(chunks.size() * 2);
     Vector<Future<Boolean> > futures = new Vector<Future<Boolean> >(chunks.size());

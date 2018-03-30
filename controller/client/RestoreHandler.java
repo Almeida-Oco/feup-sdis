@@ -66,14 +66,15 @@ class RestoreHandler extends Handler implements Remote {
 
   @Override
   public void run() {
-    FileInfo   file   = File_IO.getFileInfo(this.file_name);
-    PacketInfo packet = new PacketInfo("GETCHUNK", file.getID(), -1);
+    FileInfo file = File_IO.getFileInfo(this.file_name);
 
     if (file == null) {
       System.err.println("File '" + this.file_name + "' does not exist in table!");
       return;
     }
-    int expected = file.chunkNumber();
+
+    PacketInfo packet   = new PacketInfo("GETCHUNK", file.getID(), -1);
+    int        expected = file.chunkNumber();
 
 
     this.chunks = Collections.synchronizedSet(new HashSet<FileChunk>(expected, 1));

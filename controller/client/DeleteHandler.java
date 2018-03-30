@@ -53,7 +53,11 @@ class DeleteHandler extends Handler implements Remote {
 
   @Override
   public void run() {
-    FileInfo   file   = File_IO.getFileInfo(this.file_name);
+    FileInfo file = File_IO.getFileInfo(this.file_name);
+
+    if (file == null) {
+      return;
+    }
     PacketInfo packet = new PacketInfo("DELETE", file.getID(), -1);
 
     ScheduledExecutorService schedulor = Executors.newScheduledThreadPool(1);

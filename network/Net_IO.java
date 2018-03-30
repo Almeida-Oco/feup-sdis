@@ -91,9 +91,11 @@ public class Net_IO {
   public PacketInfo recvMsg() {
     try {
       DatagramPacket packet = new DatagramPacket(new byte[BUF_SIZE], BUF_SIZE);
+      System.out.println("Waiting to receive");
       this.mcast_socket.receive(packet);
+      System.out.println("Received!");
       PacketInfo recv_packet = PacketInfo.fromPacket(packet);
-
+      System.out.println("Got '" + recv_packet.getType() + "', #" + recv_packet.getChunkN() + ", sender = " + recv_packet.getSenderID());
       return recv_packet;
     }
     catch (IOException err) {

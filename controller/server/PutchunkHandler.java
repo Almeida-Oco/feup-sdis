@@ -82,8 +82,6 @@ public class PutchunkHandler extends Handler {
     Random          rand = new Random();
     ScheduledFuture future;
 
-    packet.setData(this.data);
-
     // Only stores chunk if the perceived rep degree is smaller than intended
     if (rem_space >= data_size) {
       future = this.services.schedule(()->{
