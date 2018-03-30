@@ -60,12 +60,15 @@ public class File_IO {
     if (chunks == null) {
       return;
     }
-    int index = FileChunk.binarySearch(chunks, chunk_n);
-    if (index == -1) {
-      return;
-    }
 
-    chunks.get(index).addPeer(peer_id);
+    synchronized (stored_chunks) {
+      int index = FileChunk.binarySearch(chunks, chunk_n);
+      if (index == -1) {
+        return;
+      }
+
+      chunks.get(index).addPeer(peer_id);
+    }
   }
 
   public static boolean isLocalFile(String file_id) {
