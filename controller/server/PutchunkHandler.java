@@ -78,6 +78,9 @@ public class PutchunkHandler extends Handler {
 
   @Override
   public void run() {
+    if (File_IO.isLocalFile(this.file_id)) {
+      return;
+    }
     PacketInfo      packet = new PacketInfo("STORED", this.file_id, this.chunk_n);
     int             rem_space = File_IO.getRemainingSpace(), data_size = this.data.length();
     Random          rand = new Random();
