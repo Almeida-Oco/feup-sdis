@@ -60,6 +60,7 @@ public class PutchunkHandler extends Handler {
   @Override
   public void signal(PacketInfo packet) {
     synchronized (this) {
+      System.out.println("Replicator ID " + packet.getSenderID());
       this.replicators.add(packet.getSenderID());
     }
   }
@@ -92,7 +93,6 @@ public class PutchunkHandler extends Handler {
         }
 
         if (actual_rep < this.desired_rep) {
-          this.replicators.add(ApplicationInfo.getServID());
           if (File_IO.storeChunk(this.file_id, new FileChunk(this.data.getBytes(StandardCharsets.ISO_8859_1),
           this.data.length(), this.chunk_n, this.desired_rep, this.replicators))) {
             this.mc.sendMsg(packet);

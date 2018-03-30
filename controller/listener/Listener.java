@@ -46,7 +46,7 @@ public class Listener implements Runnable {
 
     do {
       if ((packet = this.channel.recvMsg()) != null&& (packet.getSenderID() != ApplicationInfo.getServID())) {
-        System.out.println("Got '" + packet.getType() + "', #" + packet.getChunkN());
+        System.out.println("Got '" + packet.getType() + "', #" + packet.getChunkN() + ", sender = " + packet.getSenderID());
         this.handleTask(Handler.newHandler(packet), packet);
       }
     } while (txt == null);

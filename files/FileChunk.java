@@ -60,7 +60,9 @@ public class FileChunk implements Comparable<FileChunk> {
    */
   public void addPeer(int peer_id) {
     synchronized (this) {
-      this.stored_in.add(peer_id);
+      if (!this.stored_in.contains(peer_id)) {
+        this.stored_in.add(peer_id);
+      }
     }
   }
 

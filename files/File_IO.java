@@ -193,6 +193,7 @@ public class File_IO {
       FileOutputStream writer = new FileOutputStream(chunk_file);
       writer.write(chunk.getData(), 0, chunk.getSize());
       writer.close();
+      chunk.addPeer(ApplicationInfo.getServID());
       return true;
     }
     catch (FileNotFoundException err) {
@@ -400,13 +401,15 @@ public class File_IO {
    * @return         Whether the chunk was added or not (a chunk is not added if it is replicated)
    */
   private static boolean addChunk(String file_id, FileChunk chunk) {
-    Vector<FileChunk> chunks = stored_chunks.get(file_id);
-    int index = Collections.binarySearch(chunks, chunk);
+    synchronized (stored_chunks) {
+      Vector<FileChunk> chunks = stored_chunks.get(file_id);
+      int index = Collections.binarySearch(chunks, chunk);
 
-    if (index < 0) {
-      used_space.addAndGet(chunk.getSize());
-      chunks.add(-(index) - 1, chunk);
-      return true;
+      if (index < 0) {
+        used_space.addAndGet(chunk.getSize());
+        chunks.add(-(index) - 1, chunk);
+        return true;
+      }
     }
 
     return false;
