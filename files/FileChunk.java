@@ -66,7 +66,7 @@ public class FileChunk implements Comparable<FileChunk> {
     }
   }
 
-  public void removePeer(int peer_id) {
+  public void removePeer(Integer peer_id) {
     synchronized (this) {
       this.stored_in.remove(peer_id);
     }
