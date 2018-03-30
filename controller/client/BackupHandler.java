@@ -127,18 +127,17 @@ class BackupHandler extends Handler implements Remote {
 
 
     this.mc.registerForSignal("STORED", id, this);
-    Future<Boolean> future = this.getConfirmations(packet, 0, id);
+    Future<Boolean> future = this.getConfirmations(packet, id);
     return future;
   }
 
   /**
    * Gets the needed confirmations from the network, waiting if needed
    * @param  packet The packet to be sent, containing the chunks
-   * @param  try_n  Current try number
    * @param  id     ID of the packet in the {@link SignalCounter}
    * @return        null
    */
-  private Future<Boolean> getConfirmations(PacketInfo packet, int try_n, String id) {
+  private Future<Boolean> getConfirmations(PacketInfo packet, String id) {
     FileChunk chunk             = this.signal_counter.get(id);
     boolean   got_confirmations = chunk.getActualRep() >= chunk.getDesiredRep();
 

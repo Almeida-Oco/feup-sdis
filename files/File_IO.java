@@ -68,6 +68,15 @@ public class File_IO {
     chunks.get(index).addPeer(peer_id);
   }
 
+  public static boolean isLocalFile(String file_id) {
+    for (Map.Entry<String, FileInfo> entry : file_table.entrySet()) {
+      if (entry.getValue().getID().equals(file_id)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /**
    * Adds a new file to the {@link File_IO#file_table}
    * @param file File to be added to the table
@@ -238,7 +247,7 @@ public class File_IO {
       Vector<FileChunk> chunks = stored_chunks.get(file_id);
       if (rm_from_table) {
         int index = FileChunk.binarySearch(chunks, chunk_n);
-        used_space.addAndGet(chunks.get(index).getSize());
+        used_space.addAndGet(-chunks.get(index).getSize());
         chunks.remove(index);
       }
     }
@@ -514,7 +523,7 @@ public class File_IO {
       if (file_chunks != null) {
         int index = Collections.binarySearch(file_chunks, chunk);
         if (index >= 0) {
-          used_space.addAndGet(chunk.getSize());
+          used_space.addAndGet(-chunk.getSize());
           file_chunks.remove(index);
         }
       }

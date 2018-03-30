@@ -7,6 +7,7 @@ import controller.Handler;
 import controller.ChannelListener;
 
 import java.util.Random;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ExecutionException;
@@ -37,6 +38,9 @@ public class RemovedHandler extends Handler {
   /** Whether a PUTCHUNK message was received or not */
   AtomicBoolean got_putchunk = new AtomicBoolean(false);
 
+  /** Whether a STORED message was received or not */
+  AtomicBoolean got_stored = new AtomicBoolean(false);
+
   /** If {@link RemovedHandler} is still waiting for putchunk */
   AtomicBoolean waiting_for_putchunk = new AtomicBoolean(true);
 
@@ -62,6 +66,7 @@ public class RemovedHandler extends Handler {
       this.got_putchunk.set(true);
     }
     else {
+      this.got_stored.set(true);
     }
   }
 
@@ -76,8 +81,11 @@ public class RemovedHandler extends Handler {
   }
 
   public void run() {
+    if (File_IO.isLocalFile(this.file_id)) {
+      return;
+    }
     Random rand = new Random();
-    ScheduledThreadPoolExecutor services = new ScheduledThreadPoolExecutor(1);
+    ScheduledThreadPoolExecutor services = new ScheduledThreadPoolExecutor(2);
     ScheduledFuture             future;
 
     ChannelListener.registerForSignal("PUTCHUNK", this.chunk_id, this);
@@ -92,7 +100,7 @@ public class RemovedHandler extends Handler {
           packet.setData(chunk.getData(), chunk.getSize());
           packet.setRDegree(chunk.getDesiredRep());
 
-          this.services.schedule(()->this.getConfirmations(packet, 1), WAIT_TIME, TimeUnit.MILLISECONDS).get();
+          this.getConfirmations(packet).get();
         }
         catch (InterruptedException | ExecutionException err) {
           System.err.println("Removed::run() -> Interruped inner scheduler!\n - " + err.getMessage());
@@ -109,23 +117,18 @@ public class RemovedHandler extends Handler {
     }
   }
 
-  private void getConfirmations(PacketInfo packet, int try_n) {
-    this.mdb.sendMsg(packet);
-    if (try_n <= MAX_TRIES && !this.got_putchunk.get()) {
-      try {
-        this.services.schedule(()->{
-          this.getConfirmations(packet, try_n + 1);
-        }, WAIT_TIME * try_n, TimeUnit.MILLISECONDS).get();
+  private Future<Boolean> getConfirmations(PacketInfo packet) throws InterruptedException, ExecutionException {
+    return this.services.submit(()->{
+      for (int i = 0; i <= MAX_TRIES; i++) {
+        this.mdb.sendMsg(packet);
+        ScheduledFuture<Boolean> future = this.services.schedule(()->{
+          return this.got_stored.get();
+        }, i * WAIT_TIME, TimeUnit.MILLISECONDS);
+        if (future.get()) {
+          return true;
+        }
       }
-      catch (InterruptedException | ExecutionException err) {
-        System.err.println("Removed::getConfirmations -> Interruped scheduler!\n - " + err.getMessage());
-        return;
-      }
-    }
-    else {
-      this.services.shutdownNow();
-    }
-
-    ChannelListener.removeFromSignal("STORED", this.chunk_id);
+      return false;
+    });
   }
 }
