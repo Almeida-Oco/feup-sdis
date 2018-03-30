@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class File_IO {
   public final static int MAX_CHUNK_SIZE = 64000;
   private final static int MAX_N_CHUNKS  = 999999;
-  private final static String PATH       = "./stored_files/";
+  private final static String PATH       = "./stored_files";
 
   /** Maximum space allocated to the program in bytes */
   private static AtomicInteger max_space = new AtomicInteger(8192000);  //Equivalent to 8MB
@@ -196,8 +196,8 @@ public class File_IO {
    */
   public static boolean storeChunk(String file_id, FileChunk chunk) {
     stored_chunks.putIfAbsent(file_id, new Vector<FileChunk>());
-    File chunk_file = new File(PATH + ApplicationInfo.getServID() + file_id + '#' + chunk.getChunkN());
-    File directory  = new File(PATH + ApplicationInfo.getServID());
+    File chunk_file = new File(PATH + ApplicationInfo.getServID() + "/" + file_id + '#' + chunk.getChunkN());
+    File directory  = new File(PATH + ApplicationInfo.getServID() + "/");
 
     try {
       directory.mkdir();
@@ -244,7 +244,7 @@ public class File_IO {
    * @param rm_from_table Whether to remove the chunk from {@link File_IO#stored_chunks} or not
    */
   public static void eraseChunk(String file_id, int chunk_n, boolean rm_from_table) {
-    String path = PATH + ApplicationInfo.getServID() + file_id + "#" + chunk_n;
+    String path = PATH + ApplicationInfo.getServID() + "/" + file_id + "#" + chunk_n;
 
     try {
       File chunk = new File(path);
