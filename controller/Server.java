@@ -82,7 +82,6 @@ class Server {
     try {
       stub     = (HandlerInterface)UnicastRemoteObject.exportObject(new Dispatcher(mc, mdb, mdr), 0);
       registry = LocateRegistry.getRegistry(RMI_PORT);
-      return stub;
     }
     catch (RemoteException err) {
       System.err.println("Failed to register client handler!\n - " + err.getMessage());
@@ -98,6 +97,9 @@ class Server {
         System.err.println("Failed to create registry!\n - " + err.getMessage());
         return null;
       }
+    }
+    else {
+      return stub;
     }
 
     if (tryBinding(registry, Integer.toString(id), stub)) {
