@@ -5,7 +5,7 @@ import files.File_IO;
 import controller.Pair;
 import files.FileChunk;
 import controller.Handler;
-import controller.listener.Listener;
+import controller.ChannelListener;
 
 import java.rmi.Remote;
 import java.util.Vector;
@@ -18,14 +18,14 @@ import java.util.Vector;
 class ReclaimHandler extends Handler implements Remote {
   /** Bytes in disk to be reclaimed */
   int space;
-  Listener mc;
+  ChannelListener mc;
 
   /**
    * Stores the information needed for the protocol and then executes it
    * @param space Number of bytes to be reclaimed
-   * @param mc    MC {@link Listener}
+   * @param mc    MC {@link ChannelListener}
    */
-  void start(int space, Listener mc) {
+  void start(int space, ChannelListener mc) {
     this.space = space;
     this.mc    = mc;
     this.run();

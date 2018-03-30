@@ -1,4 +1,4 @@
-package controller.listener;
+package controller;
 
 import network.Net_IO;
 import controller.Pair;
@@ -15,7 +15,7 @@ import java.util.concurrent.ThreadPoolExecutor;
  * @author Gonçalo Moreno
  * @author João Almeida
  */
-public class Listener implements Runnable {
+public class ChannelListener implements Runnable {
   /** The channel to listen to */
   Net_IO channel;
 
@@ -30,11 +30,11 @@ public class Listener implements Runnable {
   private static ConcurrentHashMap<String, ConcurrentHashMap<String, Handler> > signals = new ConcurrentHashMap<String, ConcurrentHashMap<String, Handler> >(4);
 
   /**
-   * Initializes the {@link Listener}
+   * Initializes the {@link ChannelListener}
    * @param channel Channel to listen to
    * @param tasks   Queue to store to be processed messages
    */
-  public Listener(Net_IO channel, ThreadPoolExecutor tasks) {
+  public ChannelListener(Net_IO channel, ThreadPoolExecutor tasks) {
     this.channel    = channel;
     this.task_queue = tasks;
   }
@@ -58,7 +58,7 @@ public class Listener implements Runnable {
    * Processes the {@link Handler} generated to process the {@link PacketInfo}
    * @param task   {@link Handler} generated
    * @param packet Message received
-   * If the task is not null, then the packet needs to be processed, so it is sent to {@link Listener#task_queue}
+   * If the task is not null, then the packet needs to be processed, so it is sent to {@link ChannelListener#task_queue}
    * IF the task is null, then there might be some {@link Handler} which wishes to be notified that the packet has arrived, so we check for that case
    */
   private void handleTask(Handler task, PacketInfo packet) {
@@ -91,7 +91,7 @@ public class Listener implements Runnable {
    * Sends a message to the {@link Net_IO} channel
    * @param  packet Message to be sent to channel
    * @return        Whether the message was sent successfully or not
-   * This function is never called by the main {@link Listener#run()} thread, only by {@link Handler#run()}
+   * This function is never called by the main {@link ChannelListener#run()} thread, only by {@link Handler#run()}
    */
   public boolean sendMsg(PacketInfo packet) {
     return this.channel.sendMsg(packet);
@@ -101,7 +101,7 @@ public class Listener implements Runnable {
    * Registers the given {@link Handler} to be notified of certain received messages
    * @param task {@link Handler} to be notified
    * The decision of whether the {@link Handler} needs to be notified or not is in each implementation of {@link Handler}
-   * This method is only called by the main {@link Listener#run()} thread, for Handlers which immediatelly know what messages they want to be notified of
+   * This method is only called by the main {@link ChannelListener#run()} thread, for Handlers which immediatelly know what messages they want to be notified of
    */
   public static void registerForSignal(Pair<String, Handler> task) {
     if (task != null) {
@@ -139,7 +139,7 @@ public class Listener implements Runnable {
   }
 
   /**
-   * Removes the {@link Handler} from {@link Listener#signals}
+   * Removes the {@link Handler} from {@link ChannelListener#signals}
    * @param signal_type Type of message the {@link Handler} was being notified
    * @param chunk_id    ID of the chunk {@link Handler} was being notified (<fileID>#<chunk_number>)
    * This method is only called by {@link Handler#run()}

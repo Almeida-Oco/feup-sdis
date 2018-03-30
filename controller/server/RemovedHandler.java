@@ -4,7 +4,7 @@ import files.*;
 import network.*;
 import controller.Pair;
 import controller.Handler;
-import controller.listener.Listener;
+import controller.ChannelListener;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -41,12 +41,12 @@ public class RemovedHandler extends Handler {
   AtomicBoolean waiting_for_putchunk = new AtomicBoolean(true);
 
   /**  Channel to send the PUTCHUNK message */
-  Net_IO mdb;
+  ChannelListener mdb;
 
   /**  {@link ScheduledThreadPoolExecutor} to generate a future */
   ScheduledThreadPoolExecutor services;
 
-  public RemovedHandler(PacketInfo packet, FileChunk chunk, Net_IO mdb) {
+  public RemovedHandler(PacketInfo packet, FileChunk chunk, ChannelListener mdb) {
     super();
     this.chunk    = chunk;
     this.services = new ScheduledThreadPoolExecutor(1);
@@ -80,12 +80,12 @@ public class RemovedHandler extends Handler {
     ScheduledThreadPoolExecutor services = new ScheduledThreadPoolExecutor(1);
     ScheduledFuture             future;
 
-    Listener.registerForSignal("PUTCHUNK", this.chunk_id, this);
+    ChannelListener.registerForSignal("PUTCHUNK", this.chunk_id, this);
     future = services.schedule(()->{
       if (!this.got_putchunk.get()) {
         waiting_for_putchunk.set(false);
-        Listener.removeFromSignal("PUTCHUNK", this.chunk_id);
-        Listener.registerForSignal("STORED", this.chunk_id, this);
+        ChannelListener.removeFromSignal("PUTCHUNK", this.chunk_id);
+        ChannelListener.registerForSignal("STORED", this.chunk_id, this);
 
         try {
           PacketInfo packet = new PacketInfo("PUTCHUNK", this.file_id, this.chunk_n);
@@ -126,6 +126,6 @@ public class RemovedHandler extends Handler {
       this.services.shutdownNow();
     }
 
-    Listener.removeFromSignal("STORED", this.chunk_id);
+    ChannelListener.removeFromSignal("STORED", this.chunk_id);
   }
 }

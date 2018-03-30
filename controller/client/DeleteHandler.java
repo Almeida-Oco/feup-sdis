@@ -5,7 +5,7 @@ import files.File_IO;
 import files.FileInfo;
 import controller.Pair;
 import controller.Handler;
-import controller.listener.Listener;
+import controller.ChannelListener;
 
 import java.rmi.Remote;
 import java.util.concurrent.TimeUnit;
@@ -23,15 +23,15 @@ class DeleteHandler extends Handler implements Remote {
   /** The path to the file to be deleted */
   String file_name;
 
-  /** The instance of MC {@link Listener} */
-  Listener mc;
+  /** The instance of MC {@link ChannelListener} */
+  ChannelListener mc;
 
   /**
    * Initializes the {@link DeleteHandler} with the given arguments and runs it
    * @param f_name Path to file to be deleted
-   * @param mc     Instance of MC {@link Listener}
+   * @param mc     Instance of MC {@link ChannelListener}
    */
-  void start(String f_name, Listener mc) {
+  void start(String f_name, ChannelListener mc) {
     this.file_name = f_name;
     this.mc        = mc;
     this.run();

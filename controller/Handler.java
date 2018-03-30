@@ -17,7 +17,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 public abstract class Handler implements Runnable {
   /**
    * Signals the {@link Handler} that the packet was received
-   * @param packet The packet received by the {@link Listener}
+   * @param packet The packet received by the {@link ChannelListener}
    */
   public abstract void signal(PacketInfo packet);
 

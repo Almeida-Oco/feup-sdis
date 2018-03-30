@@ -4,7 +4,7 @@ import files.*;
 import network.*;
 import controller.Pair;
 import controller.Handler;
-import controller.listener.Listener;
+import controller.ChannelListener;
 
 import java.rmi.Remote;
 import java.util.Vector;
@@ -35,7 +35,7 @@ class BackupHandler extends Handler implements Remote {
   int rep_degree;
 
   /** Instances of the listeners of the MC and MDB channels */
-  Listener mc, mdb;
+  ChannelListener mc, mdb;
 
   /** Counter of the 'STORED' messages received */
   ConcurrentHashMap<String, FileChunk> signal_counter;
@@ -47,10 +47,10 @@ class BackupHandler extends Handler implements Remote {
    * Initializes the necessary information for the class and run it
    * @param f_name     Path to file to be replicated
    * @param rep_degree Desired replication degree
-   * @param mc         MC {@link Listener} instance
-   * @param mdb        MDB {@link Listener} instance
+   * @param mc         MC {@link ChannelListener} instance
+   * @param mdb        MDB {@link ChannelListener} instance
    */
-  void start(String f_name, int rep_degree, Listener mc, Listener mdb) {
+  void start(String f_name, int rep_degree, ChannelListener mc, ChannelListener mdb) {
     this.file_name      = f_name;
     this.rep_degree     = rep_degree;
     this.mc             = mc;

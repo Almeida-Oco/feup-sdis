@@ -5,18 +5,16 @@ import parser.ServerParser;
 import controller.ApplicationInfo;
 import controller.HandlerInterface;
 import controller.client.Dispatcher;
-import controller.listener.Listener;
+import controller.ChannelListener;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
-import java.util.concurrent.TimeUnit;
+
 import java.rmi.AlreadyBoundException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Starter of the peer protocol
@@ -24,9 +22,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @author João Almeida
  */
 class Server {
-  private static final int cores     = Runtime.getRuntime().availableProcessors();
-  private static final int MAX_TASKS = 255;
-  private static final int RMI_PORT  = 1099;
+  private static final int RMI_PORT = 1099;
 
   /**
    * Main entry point for the peer protocol
@@ -45,12 +41,9 @@ class Server {
    * Starts the server, after the arguments were parsed
    */
   private static void startProgram() {
-    LinkedBlockingQueue<Runnable> queue      = new LinkedBlockingQueue<Runnable>(MAX_TASKS);
-    ThreadPoolExecutor            task_queue = new ThreadPoolExecutor(cores, cores, 0, TimeUnit.SECONDS, queue);
-
-    Listener mc_listener  = new Listener(ApplicationInfo.getMC(), task_queue);
-    Listener mdb_listener = new Listener(ApplicationInfo.getMDB(), task_queue);
-    Listener mdr_listener = new Listener(ApplicationInfo.getMDR(), task_queue);
+    ChannelListener mc_listener = ApplicationInfo.getMC(),
+        mdb_listener            = ApplicationInfo.getMDB(),
+        mdr_listener            = ApplicationInfo.getMDR();
 
     if (!registerClient(ApplicationInfo.getServID(), mc_listener, mdb_listener, mdr_listener)) {
       return;
@@ -76,12 +69,12 @@ class Server {
   /**
    * Registers the RMI object in the Registry
    * @param  id  ID of the object to register
-   * @param  mc  MC {@link Listener}
-   * @param  mdb MDB {@link Listener}
-   * @param  mdr MDR {@link Listener}
+   * @param  mc  MC {@link ChannelListener}
+   * @param  mdb MDB {@link ChannelListener}
+   * @param  mdr MDR {@link ChannelListener}
    * @return     Whether the object was successfully registered or not
    */
-  private static boolean registerClient(int id, Listener mc, Listener mdb, Listener mdr) {
+  private static boolean registerClient(int id, ChannelListener mc, ChannelListener mdb, ChannelListener mdr) {
     HandlerInterface stub;
     Registry         registry;
 

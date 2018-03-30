@@ -5,6 +5,7 @@ import network.*;
 import controller.Pair;
 import controller.Handler;
 import network.PacketInfo;
+import controller.ChannelListener;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +29,7 @@ public class GetchunkHandler extends Handler {
   int chunk_n;
 
   /** The channel to send the chunk */
-  Net_IO mdr;
+  ChannelListener mdr;
 
   /** {@link ScheduledThreadPoolExecutor} to generate a future */
   ScheduledThreadPoolExecutor services;
@@ -38,7 +39,7 @@ public class GetchunkHandler extends Handler {
    * @param packet Packet to be processed
    * @param mdr    MDR channel
    */
-  public GetchunkHandler(PacketInfo packet, Net_IO mdr) {
+  public GetchunkHandler(PacketInfo packet, ChannelListener mdr) {
     super();
     this.mdr      = mdr;
     this.file_id  = packet.getFileID();

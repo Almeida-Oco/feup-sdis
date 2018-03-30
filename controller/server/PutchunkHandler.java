@@ -4,6 +4,7 @@ import files.*;
 import network.*;
 import controller.Pair;
 import controller.Handler;
+import controller.ChannelListener;
 import controller.ApplicationInfo;
 
 import java.util.Random;
@@ -36,7 +37,7 @@ public class PutchunkHandler extends Handler {
   Vector<Integer> replicators;
 
   /**  Channel to send the STORED message */
-  Net_IO mc;
+  ChannelListener mc;
 
   /**  {@link ScheduledThreadPoolExecutor} to generate a future */
   ScheduledThreadPoolExecutor services;
@@ -46,7 +47,7 @@ public class PutchunkHandler extends Handler {
    * @param packet Packet to be processed
    * @param mc     MC channel
    */
-  public PutchunkHandler(PacketInfo packet, Net_IO mc) {
+  public PutchunkHandler(PacketInfo packet, ChannelListener mc) {
     super();
     this.mc          = mc;
     this.desired_rep = packet.getRDegree();
@@ -104,6 +105,7 @@ public class PutchunkHandler extends Handler {
       catch (Exception err) {
         System.err.println("Putchunk::run() -> Future interrupted!\n - " + err.getMessage());
       }
+      this.mc.removeFromSignal("STORED", this.file_id + "#" + this.chunk_n);
     }
     else {
       System.out.println("Not enough space to store " + data_size +

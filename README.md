@@ -30,4 +30,4 @@ All command-line related actions, such as printing and reading user input, is ha
 
 
 ### Teacher answer
- - Have a static state machine for each handler that is updated everytime a Listener receives a packet that may interest the given state machine.
+ - Have a static state machine for each handler that is updated everytime a ChannelListener receives a packet that may interest the given state machine.

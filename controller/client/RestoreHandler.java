@@ -4,7 +4,7 @@ import files.*;
 import network.*;
 import controller.Pair;
 import controller.Handler;
-import controller.listener.Listener;
+import controller.ChannelListener;
 
 import java.util.Set;
 import java.rmi.Remote;
@@ -25,7 +25,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 class RestoreHandler extends Handler implements Remote {
   /** Path to file to be restored */
   String file_name;
-  Listener mc, mdr;
+  ChannelListener mc, mdr;
 
   /** Number of expected chunks to receive */
   int expected_chunks;
@@ -36,10 +36,10 @@ class RestoreHandler extends Handler implements Remote {
   /**
    * Initializes the {@link RestoreHandler} with the given arguments and executes it
    * @param file_name Path to file to be Restored
-   * @param mc        MC {@link Listener}
-   * @param mdr       MDR {@link Listener}
+   * @param mc        MC {@link ChannelListener}
+   * @param mdr       MDR {@link ChannelListener}
    */
-  void start(String file_name, Listener mc, Listener mdr) {
+  void start(String file_name, ChannelListener mc, ChannelListener mdr) {
     this.file_name = file_name;
     this.mc        = mc;
     this.mdr       = mdr;

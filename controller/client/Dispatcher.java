@@ -2,7 +2,7 @@ package controller.client;
 
 import controller.ApplicationInfo;
 import controller.HandlerInterface;
-import controller.listener.Listener;
+import controller.ChannelListener;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -13,7 +13,7 @@ import java.rmi.RemoteException;
  * @author João Almeida
  */
 public class Dispatcher implements HandlerInterface {
-  Listener mc, mdb, mdr;
+  ChannelListener mc, mdb, mdr;
   private BackupHandler backup;
   private RestoreHandler restore;
   private DeleteHandler delete;
@@ -21,12 +21,12 @@ public class Dispatcher implements HandlerInterface {
   private StateHandler state;
 
   /**
-   * Creates a new {@link Dispatcher} with the given Listeners
-   * @param mc  MC {@link Listener}
-   * @param mdb MDB {@link Listener}
-   * @param mdr MDR {@link Listener}
+   * Creates a new {@link Dispatcher} with the given ChannelListeners
+   * @param mc  MC {@link ChannelListener}
+   * @param mdb MDB {@link ChannelListener}
+   * @param mdr MDR {@link ChannelListener}
    */
-  public Dispatcher(Listener mc, Listener mdb, Listener mdr) {
+  public Dispatcher(ChannelListener mc, ChannelListener mdb, ChannelListener mdr) {
     this.mc      = mc;
     this.mdr     = mdr;
     this.mdb     = mdb;
