@@ -60,7 +60,7 @@ public class PutchunkHandler extends Handler {
   @Override
   public void signal(PacketInfo packet) {
     synchronized (this) {
-      System.out.println("Replicator ID " + packet.getSenderID());
+      System.out.println("Chunk #" + packet.getChunkN() + "Replicator ID " + packet.getSenderID());
       this.replicators.add(packet.getSenderID());
     }
   }
