@@ -196,8 +196,8 @@ public class File_IO {
    */
   public static boolean storeChunk(String file_id, FileChunk chunk) {
     stored_chunks.putIfAbsent(file_id, new Vector<FileChunk>());
-    File chunk_file = new File(PATH + file_id + '#' + chunk.getChunkN());
-    File directory  = new File(PATH);
+    File chunk_file = new File(PATH + ApplicationInfo.getServID() + file_id + '#' + chunk.getChunkN());
+    File directory  = new File(PATH + ApplicationInfo.getServID());
 
     try {
       directory.mkdir();
@@ -244,7 +244,7 @@ public class File_IO {
    * @param rm_from_table Whether to remove the chunk from {@link File_IO#stored_chunks} or not
    */
   public static void eraseChunk(String file_id, int chunk_n, boolean rm_from_table) {
-    String path = PATH + file_id + "#" + chunk_n;
+    String path = PATH + ApplicationInfo.getServID() + file_id + "#" + chunk_n;
 
     try {
       File chunk = new File(path);
