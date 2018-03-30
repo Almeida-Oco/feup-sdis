@@ -153,8 +153,11 @@ public class User_IO {
         + chunk.getActualRep() + "/"
         + chunk.getDesiredRep() + " |");
 
-    for (Integer rep : chunk.getReplicators()) {
-      System.out.print(" " + rep);
+    Vector<Integer> reps = chunk.getReplicators();
+    synchronized (reps) {
+      for (Integer rep : reps) {
+        System.out.print(" " + rep);
+      }
     }
     System.out.println("");
   }

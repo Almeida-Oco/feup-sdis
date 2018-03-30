@@ -60,8 +60,8 @@ public class PutchunkHandler extends Handler {
 
   @Override
   public void signal(PacketInfo packet) {
-    synchronized (this) {
-      System.out.println("Chunk #" + packet.getChunkN() + "Replicator ID " + packet.getSenderID());
+    System.out.println("Chunk #" + packet.getChunkN() + "Replicator ID " + packet.getSenderID());
+    synchronized (this.replicators) {
       this.replicators.add(packet.getSenderID());
     }
   }
@@ -87,10 +87,10 @@ public class PutchunkHandler extends Handler {
     if (rem_space >= data_size) {
       future = this.services.schedule(()->{
         int actual_rep;
-        synchronized (this) {
+        synchronized (this.replicators) {
           actual_rep = this.replicators.size();
         }
-        System.out.println("Actual = " + actual_rep + ", desired = " + this.desired_rep);
+        System.out.println("Actual = " + actual_rep + ", desired = " + this.desired_rep + " #" + this.chunk_n);
         if (actual_rep < this.desired_rep) {
           if (File_IO.storeChunk(this.file_id, new FileChunk(this.data.getBytes(StandardCharsets.ISO_8859_1),
           this.data.length(), this.chunk_n, this.desired_rep, this.replicators))) {

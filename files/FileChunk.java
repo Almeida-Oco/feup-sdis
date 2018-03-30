@@ -9,7 +9,7 @@ import java.util.Vector;
  */
 public class FileChunk implements Comparable<FileChunk> {
   /** Peers that replicated this chunk */
-  Vector<Integer> stored_in;
+  Vector<Integer> stored_in = new Vector<Integer>();
 
   /** Data of the chunk */
   byte[] chunk_data;
@@ -32,7 +32,9 @@ public class FileChunk implements Comparable<FileChunk> {
    * @param peers       Peers that already stored the chunk
    */
   public FileChunk(byte[] data, int size, int chunk_n, int desired_rep, Vector<Integer> peers) {
-    this.stored_in  = peers;
+    synchronized (peers) {
+      this.stored_in.addAll(peers);
+    }
     this.chunk_data = data;
     this.chunk_size = size;
     this.chunk_n    = chunk_n;
@@ -47,7 +49,6 @@ public class FileChunk implements Comparable<FileChunk> {
    * @param desired_rep Desired replication degre
    */
   public FileChunk(byte[] data, int size, int chunk_n, int desired_rep) {
-    this.stored_in  = new Vector<Integer>();
     this.chunk_data = data;
     this.chunk_size = size;
     this.chunk_n    = chunk_n;
@@ -59,7 +60,7 @@ public class FileChunk implements Comparable<FileChunk> {
    * @param peer_id Peer ID
    */
   public void addPeer(int peer_id) {
-    synchronized (this) {
+    synchronized (this.stored_in) {
       if (!this.stored_in.contains(peer_id)) {
         this.stored_in.add(peer_id);
       }
@@ -67,7 +68,7 @@ public class FileChunk implements Comparable<FileChunk> {
   }
 
   public void removePeer(Integer peer_id) {
-    synchronized (this) {
+    synchronized (this.stored_in) {
       this.stored_in.remove(peer_id);
     }
   }
@@ -93,7 +94,7 @@ public class FileChunk implements Comparable<FileChunk> {
    * @return Actual replication degree
    */
   public int getActualRep() {
-    synchronized (this) {
+    synchronized (this.stored_in) {
       return this.stored_in.size();
     }
   }
