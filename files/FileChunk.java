@@ -66,6 +66,12 @@ public class FileChunk implements Comparable<FileChunk> {
     }
   }
 
+  public void removePeer(int peer_id) {
+    synchronized (this) {
+      this.stored_in.remove(peer_id);
+    }
+  }
+
   /**
    * Gets the chunk data
    * @return {@link FileChunk#chunk_data}

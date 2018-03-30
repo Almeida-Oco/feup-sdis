@@ -90,7 +90,7 @@ public class PutchunkHandler extends Handler {
         synchronized (this) {
           actual_rep = this.replicators.size();
         }
-
+        System.out.println("Actual = " + actual_rep + ", desired = " + this.desired_rep);
         if (actual_rep < this.desired_rep) {
           if (File_IO.storeChunk(this.file_id, new FileChunk(this.data.getBytes(StandardCharsets.ISO_8859_1),
           this.data.length(), this.chunk_n, this.desired_rep, this.replicators))) {

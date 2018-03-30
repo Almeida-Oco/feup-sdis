@@ -23,6 +23,9 @@ public class RemovedHandler extends Handler {
   private static final int MAX_TRIES  = 5;
   private static final long WAIT_TIME = 1000;
 
+  /** ID of peer that removed file */
+  int peer_id;
+
   /**  ID of the chunk that got removed (<fileID>#<chunk_number>) */
   String chunk_id;
 
@@ -57,6 +60,7 @@ public class RemovedHandler extends Handler {
     this.file_id  = packet.getFileID();
     this.chunk_n  = packet.getChunkN();
     this.chunk_id = this.file_id + "#" + this.chunk_n;
+    this.peer_id  = packet.getSenderID();
     this.mdb      = mdb;
   }
 
@@ -81,8 +85,13 @@ public class RemovedHandler extends Handler {
   }
 
   public void run() {
+    this.chunk.removePeer(this.peer_id);
     if (File_IO.isLocalFile(this.file_id)) {
+      System.out.println("Peer removed local file");
       return;
+    }
+    else {
+      System.out.println("Peer removed NON local file");
     }
     Random rand = new Random();
     ScheduledThreadPoolExecutor services = new ScheduledThreadPoolExecutor(2);

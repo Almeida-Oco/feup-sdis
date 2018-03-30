@@ -70,6 +70,8 @@ public class File_IO {
 
   public static boolean isLocalFile(String file_id) {
     for (Map.Entry<String, FileInfo> entry : file_table.entrySet()) {
+      System.out.println("---\nID in table '" + entry.getValue().getID() + "'");
+      System.out.println("ID received '" + file_id + "'\n---");
       if (entry.getValue().getID().equals(file_id)) {
         return true;
       }
@@ -245,9 +247,10 @@ public class File_IO {
       File chunk = new File(path);
       chunk.delete();
       Vector<FileChunk> chunks = stored_chunks.get(file_id);
+      int index = FileChunk.binarySearch(chunks, chunk_n);
+      used_space.addAndGet(-chunks.get(index).getSize());
+
       if (rm_from_table) {
-        int index = FileChunk.binarySearch(chunks, chunk_n);
-        used_space.addAndGet(-chunks.get(index).getSize());
         chunks.remove(index);
       }
     }
@@ -509,24 +512,5 @@ public class File_IO {
    */
   public static void setMaxSpace(int max) {
     max_space.set(max);
-  }
-
-  /**
-   * Removes the chunks present in the vector
-   * @param chunks Vector of chunks to be removed
-   */
-  private static void removeChunks(Vector<Pair<String, FileChunk> > chunks) {
-    chunks.forEach((pair)->{
-      FileChunk chunk = pair.second();
-      Vector<FileChunk> file_chunks = stored_chunks.get(pair.first());
-
-      if (file_chunks != null) {
-        int index = Collections.binarySearch(file_chunks, chunk);
-        if (index >= 0) {
-          used_space.addAndGet(-chunk.getSize());
-          file_chunks.remove(index);
-        }
-      }
-    });
   }
 }
