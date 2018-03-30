@@ -129,6 +129,15 @@ public class FileChunk implements Comparable<FileChunk> {
     return Integer.compare(this.chunk_n, ((FileChunk)chunk).chunk_n);
   }
 
+  @Override
+  public boolean equals(Object obj) {
+    if (obj instanceof FileChunk) {
+      FileChunk chunk = (FileChunk)obj;
+      return chunk.chunk_n == this.chunk_n;
+    }
+    return false;
+  }
+
   /**
    * Binary searches a chunk by chunk number
    * @param  chunks  Vector of chunks (chunks need to be of same file)
