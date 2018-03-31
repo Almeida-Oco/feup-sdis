@@ -4,7 +4,7 @@ import files.*;
 import network.*;
 import controller.Pair;
 import controller.Handler;
-import controller.ChannelListener;
+import controller.SignalHandler;
 
 import java.util.Set;
 import java.rmi.Remote;
@@ -25,24 +25,26 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 class RestoreHandler extends Handler implements Remote {
   /** Path to file to be restored */
   String file_name;
-  ChannelListener mc, mdr;
+
+  /** Instances of MC and MDR channels */
+  Net_IO mc, mdr;
 
   /** Number of expected chunks to receive */
   int expected_chunks;
 
   /** The chunks received from the network */
-  Set<FileChunk> got_chunks;
+  byte[][] got_chunks;
 
   /** The chunks that were not received by the network */
-  Set<FileChunk> rem_chunks;
+  Set<Integer> rem_chunks;
 
   /**
    * Initializes the {@link RestoreHandler} with the given arguments and executes it
    * @param file_name Path to file to be Restored
-   * @param mc        MC {@link ChannelListener}
-   * @param mdr       MDR {@link ChannelListener}
+   * @param mc        MC {@link Net_IO}
+   * @param mdr       MDR {@link Net_IO}
    */
-  void start(String file_name, ChannelListener mc, ChannelListener mdr) {
+  void start(String file_name, Net_IO mc, Net_IO mdr) {
     this.file_name  = file_name;
     this.mc         = mc;
     this.mdr        = mdr;
@@ -53,28 +55,18 @@ class RestoreHandler extends Handler implements Remote {
 
   @Override
   public void signal(PacketInfo packet) {
-    int data_size = packet.getData().length();
+    int index = packet.getChunkN();
 
-    FileChunk chunk = new FileChunk(packet.getData().getBytes(StandardCharsets.ISO_8859_1), data_size, packet.getChunkN(), 0);
-
-    this.got_chunks.add(chunk);
-    this.rem_chunks.remove(chunk);
-    this.mdr.registerForSignal("CHUNK", packet.getSenderID() + "#" + packet.getChunkN(), this);
-  }
-
-  @Override
-  public Pair<String, Handler> register() {
-    return null;
-  }
-
-  @Override
-  public String signalType() {
-    return null;
+    if (this.got_chunks[index] == null) {
+      this.got_chunks[index] = packet.getData().getBytes(StandardCharsets.ISO_8859_1);
+      this.rem_chunks.remove(new Integer(index));
+      SignalHandler.removeSignal("CHUNK", packet.getSenderID() + "#" + packet.getChunkN());
+    }
   }
 
   @Override
   public void run() {
-    FileInfo file = File_IO.getFileInfo(this.file_name);
+    FileInfo file = FileHandler.getBackedFile(this.file_name);
 
     if (file == null) {
       System.err.println("File '" + this.file_name + "' does not exist in table!");
@@ -83,21 +75,20 @@ class RestoreHandler extends Handler implements Remote {
 
     PacketInfo packet   = new PacketInfo("GETCHUNK", file.getID(), -1);
     int        expected = file.chunkNumber();
+    this.got_chunks = new byte[expected][];
 
-
-    this.got_chunks = Collections.synchronizedSet(new HashSet<FileChunk>(expected, 1));
-    this.rem_chunks = Collections.synchronizedSet(new HashSet<FileChunk>(expected, 1));
-    for (FileChunk chunk : file.getChunks()) {
+    this.rem_chunks = Collections.synchronizedSet(new HashSet<Integer>(expected, 1));
+    for (Chunk chunk : file.getChunks()) {
       String chunk_id = file.getID() + "#" + chunk.getChunkN();
       packet.setChunkN(chunk.getChunkN());
-      this.rem_chunks.add(chunk);
+      this.rem_chunks.add(chunk.getChunkN());
 
-      this.mdr.registerForSignal("CHUNK", chunk_id, this);
+      SignalHandler.addSignal("CHUNK", chunk_id, this);
       this.mc.sendMsg(packet);
     }
 
     if (this.waitForRemaining(expected, packet)) {
-      File_IO.restoreFile(file.getName(), new Vector<FileChunk>(this.got_chunks));
+      FileHandler.restoreFile(file.getName(), this.got_chunks);
       System.out.println("Restored file '" + this.file_name + "'!");
     }
     else {
@@ -115,7 +106,7 @@ class RestoreHandler extends Handler implements Remote {
 
     ScheduledFuture<Boolean>    future;
     ScheduledThreadPoolExecutor schedulor = new ScheduledThreadPoolExecutor(1);
-    Waiter wait_task = new Waiter(this.got_chunks, expected_chunks, packet, this.mc, this.rem_chunks);
+    Waiter wait_task = new Waiter(expected_chunks, packet, this.mc, this.rem_chunks);
 
     for (i = 0; i < 5; i++) {
       future = schedulor.schedule(wait_task, 2, TimeUnit.SECONDS);
@@ -139,9 +130,6 @@ class RestoreHandler extends Handler implements Remote {
  * @author João Almeida
  */
 class Waiter implements Callable<Boolean> {
-  /** Currently received chunks */
-  Set<FileChunk> chunks;
-
   /** Number of expected chunks */
   int expected_chunks;
 
@@ -149,18 +137,17 @@ class Waiter implements Callable<Boolean> {
   PacketInfo packet;
 
   /** Channel to send messages */
-  ChannelListener mc;
+  Net_IO mc;
 
   /** Remaining chunks to send */
-  Set<FileChunk> rem_chunks;
+  Set<Integer> rem_chunks;
 
   /**
    * Initializes the {@link Waiter}
    * @param chunks   Chunks received
    * @param expected Number of chunks expected to receive
    */
-  Waiter(Set<FileChunk> chunks, int expected, PacketInfo packet, ChannelListener mc, Set<FileChunk> rem_chunks) {
-    this.chunks          = chunks;
+  Waiter(int expected, PacketInfo packet, Net_IO mc, Set<Integer> rem_chunks) {
     this.expected_chunks = expected;
     this.packet          = packet;
     this.rem_chunks      = rem_chunks;
@@ -169,10 +156,10 @@ class Waiter implements Callable<Boolean> {
 
   @Override
   public Boolean call() {
-    int size = this.chunks.size();
+    int size = this.rem_chunks.size();
 
-    for (FileChunk chunk : this.rem_chunks) {
-      this.packet.setChunkN(chunk.getChunkN());
+    for (Integer chunk_n : this.rem_chunks) {
+      this.packet.setChunkN(chunk_n);
       this.mc.sendMsg(this.packet);
     }
 

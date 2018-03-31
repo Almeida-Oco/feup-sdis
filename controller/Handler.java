@@ -1,8 +1,8 @@
 package controller;
 
-import files.*;
 import network.*;
 import controller.Pair;
+import files.FileHandler;
 import controller.server.*;
 import controller.ApplicationInfo;
 
@@ -22,19 +22,6 @@ public abstract class Handler implements Runnable {
   public abstract void signal(PacketInfo packet);
 
   /**
-   * Registers the {@link Handler} to receive signals when certain messages are received
-   * @return {@link Pair} containing a {@link String} representing the fileID and the chunk number of the messages to be signalled,
-   *  and a {@link Handler} to be notified, null if {@link Handler} need not be signalled
-   */
-  public abstract Pair<String, Handler> register();
-
-  /**
-   * The type of messages the {@link Handler} wants to be notified of
-   * @return {@link String} with type of message, null if {@link Handler} need not be signalled
-   */
-  public abstract String signalType();
-
-  /**
    * Creates a new {@link Handler} for the given {@link PacketInfo}
    * @param  packet Packet that needs to be processed
    * @return        The new {@link Handler} to process the packet
@@ -52,16 +39,9 @@ public abstract class Handler implements Runnable {
       return new DeleteHandler(packet);
     }
     else if (type.equals("REMOVED")) {
-      FileChunk chunk = File_IO.getStoredChunk(packet.getFileID(), packet.getChunkN());
-      if (chunk != null) {
-        return new RemovedHandler(packet, chunk, ApplicationInfo.getMDB());
-      }
-      return null;
+      return new RemovedHandler(packet, ApplicationInfo.getMDB());
     }
-    else if (type.equals("STORED")) {
-      File_IO.tryIncRep(packet.getFileID(), packet.getChunkN(), packet.getSenderID());
-      return null;
-    }
+
     return null;
   }
 }

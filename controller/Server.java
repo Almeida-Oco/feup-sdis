@@ -1,17 +1,16 @@
 package controller;
 
 import cli.User_IO;
+import network.Net_IO;
 import parser.ServerParser;
 import controller.ApplicationInfo;
 import controller.HandlerInterface;
 import controller.client.Dispatcher;
-import controller.ChannelListener;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
-
 import java.rmi.AlreadyBoundException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
@@ -41,18 +40,21 @@ class Server {
    * Starts the server, after the arguments were parsed
    */
   private static void startProgram() {
-    HandlerInterface stub;
-    ChannelListener  mc_listener = ApplicationInfo.getMC(),
-        mdb_listener             = ApplicationInfo.getMDB(),
-        mdr_listener             = ApplicationInfo.getMDR();
+    Net_IO mc_channel  = ApplicationInfo.getMC();
+    Net_IO mdb_channel = ApplicationInfo.getMDB();
+    Net_IO mdr_channel = ApplicationInfo.getMDR();
 
-    if ((stub = registerClient(ApplicationInfo.getServID(), mc_listener, mdb_listener, mdr_listener)) == null) {
+    HandlerInterface stub;
+
+    if ((stub = registerClient(ApplicationInfo.getServID(), mc_channel, mdb_channel, mdr_channel)) == null) {
       return;
     }
 
-    Thread mc  = new Thread(mc_listener);
-    Thread mdb = new Thread(mdb_listener);
-    Thread mdr = new Thread(mdr_listener);
+
+
+    Thread mc  = new Thread(new ChannelListener(mc_channel));
+    Thread mdb = new Thread(new ChannelListener(mdb_channel));
+    Thread mdr = new Thread(new ChannelListener(mdr_channel));
     mc.start();
     mdb.start();
     mdr.start();
@@ -75,7 +77,7 @@ class Server {
    * @param  mdr MDR {@link ChannelListener}
    * @return     The registered object, null on error
    */
-  private static HandlerInterface registerClient(int id, ChannelListener mc, ChannelListener mdb, ChannelListener mdr) {
+  private static HandlerInterface registerClient(int id, Net_IO mc, Net_IO mdb, Net_IO mdr) {
     HandlerInterface stub;
     Registry         registry;
 

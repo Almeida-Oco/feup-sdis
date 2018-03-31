@@ -4,7 +4,7 @@ import files.*;
 import network.*;
 import controller.Pair;
 import controller.Handler;
-import controller.ChannelListener;
+import controller.SignalHandler;
 
 import java.util.Random;
 import java.util.concurrent.Future;
@@ -26,17 +26,11 @@ public class RemovedHandler extends Handler {
   /** ID of peer that removed file */
   int peer_id;
 
-  /**  ID of the chunk that got removed (<fileID>#<chunk_number>) */
-  String chunk_id;
-
   /** ID of the file */
   String file_id;
 
   /** Number of the chunk */
   int chunk_n;
-
-  /** The chunk another peer removed */
-  FileChunk chunk;
 
   /** Whether a PUTCHUNK message was received or not */
   AtomicBoolean got_putchunk = new AtomicBoolean(false);
@@ -48,20 +42,17 @@ public class RemovedHandler extends Handler {
   AtomicBoolean waiting_for_putchunk = new AtomicBoolean(true);
 
   /**  Channel to send the PUTCHUNK message */
-  ChannelListener mdb;
+  Net_IO mdb;
 
   /**  {@link ScheduledThreadPoolExecutor} to generate a future */
   ScheduledThreadPoolExecutor services;
 
-  public RemovedHandler(PacketInfo packet, FileChunk chunk, ChannelListener mdb) {
+  public RemovedHandler(PacketInfo packet, Net_IO mdb) {
     super();
-    this.chunk    = chunk;
-    this.services = new ScheduledThreadPoolExecutor(1);
-    this.file_id  = packet.getFileID();
-    this.chunk_n  = packet.getChunkN();
-    this.chunk_id = this.file_id + "#" + this.chunk_n;
-    this.peer_id  = packet.getSenderID();
-    this.mdb      = mdb;
+    this.file_id = packet.getFileID();
+    this.chunk_n = packet.getChunkN();
+    this.peer_id = packet.getSenderID();
+    this.mdb     = mdb;
   }
 
   @Override
@@ -74,42 +65,40 @@ public class RemovedHandler extends Handler {
     }
   }
 
-  @Override
-  public Pair<String, Handler> register() {
-    return null;
-  }
-
-  @Override
-  public String signalType() {
-    return null;
-  }
-
   public void run() {
-    this.chunk.removePeer(this.peer_id);
-    if (File_IO.isLocalFile(this.file_id)) {
-      System.out.println("Peer removed local file");
+    Chunk  stored_chunk = FileHandler.getStoredChunk(this.file_id, this.chunk_n);
+    Chunk  backed_chunk = FileHandler.getBackedChunk(this.file_id, this.chunk_n);
+    Chunk  chunk;
+    String chunk_id = this.file_id + "#" + this.chunk_n;
+
+    if (stored_chunk == null&& backed_chunk == null) {
       return;
     }
-    else {
-      System.out.println("Peer removed NON local file");
+    else if (stored_chunk == null&& backed_chunk != null) {
+      chunk = backed_chunk;
     }
+    else {
+      chunk = stored_chunk;
+    }
+
+    chunk.removePeer(this.peer_id);
     Random rand = new Random();
     ScheduledThreadPoolExecutor services = new ScheduledThreadPoolExecutor(2);
     ScheduledFuture             future;
 
-    ChannelListener.registerForSignal("PUTCHUNK", this.chunk_id, this);
+    SignalHandler.addSignal("PUTCHUNK", chunk_id, this);
     future = services.schedule(()->{
       if (!this.got_putchunk.get()) {
         waiting_for_putchunk.set(false);
-        ChannelListener.removeFromSignal("PUTCHUNK", this.chunk_id);
-        ChannelListener.registerForSignal("STORED", this.chunk_id, this);
+        SignalHandler.removeSignal("PUTCHUNK", chunk_id);
+        SignalHandler.addSignal("STORED", chunk_id, this);
 
         try {
           PacketInfo packet = new PacketInfo("PUTCHUNK", this.file_id, this.chunk_n);
           packet.setData(chunk.getData(), chunk.getSize());
           packet.setRDegree(chunk.getDesiredRep());
 
-          this.getConfirmations(packet).get();
+          this.getConfirmations(services, packet).get();
         }
         catch (InterruptedException | ExecutionException err) {
           System.err.println("Removed::run() -> Interruped inner scheduler!\n - " + err.getMessage());
@@ -124,13 +113,14 @@ public class RemovedHandler extends Handler {
     catch (Exception err) {
       System.err.println("Removed::run() -> Interruped outer scheduler!\n - " + err.getMessage());
     }
+    SignalHandler.removeSignal("STORED", chunk_id);
   }
 
-  private Future<Boolean> getConfirmations(PacketInfo packet) throws InterruptedException, ExecutionException {
-    return this.services.submit(()->{
+  private Future<Boolean> getConfirmations(ScheduledThreadPoolExecutor services, PacketInfo packet) throws InterruptedException, ExecutionException {
+    return services.submit(()->{
       for (int i = 0; i <= MAX_TRIES; i++) {
         this.mdb.sendMsg(packet);
-        ScheduledFuture<Boolean> future = this.services.schedule(()->{
+        ScheduledFuture<Boolean> future = services.schedule(()->{
           return this.got_stored.get();
         }, i * WAIT_TIME, TimeUnit.MILLISECONDS);
         if (future.get()) {

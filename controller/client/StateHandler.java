@@ -19,18 +19,8 @@ class StateHandler extends Handler implements Remote {
   }
 
   @Override
-  public Pair<String, Handler> register() {
-    return null;
-  }
-
-  @Override
-  public String signalType() {
-    return null;
-  }
-
-  @Override
   public void run() {
-    User_IO.printState(File_IO.getBackedUpTable(), File_IO.getChunksTable(),
-        File_IO.getMaxSpace(), File_IO.getUsedSpace());
+    User_IO.printState(FileHandler.getBackedUpTable(), FileHandler.getChunksTable(),
+        FileHandler.getMaxSpace(), FileHandler.getUsedSpace());
   }
 }

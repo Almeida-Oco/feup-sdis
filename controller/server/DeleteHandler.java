@@ -1,7 +1,6 @@
 package controller.server;
 
-import files.*;
-import controller.Pair;
+import files.FileHandler;
 import controller.Handler;
 import network.PacketInfo;
 
@@ -28,18 +27,8 @@ public class DeleteHandler extends Handler {
   }
 
   @Override
-  public Pair<String, Handler> register() {
-    return null;
-  }
-
-  @Override
-  public String signalType() {
-    return null;
-  }
-
-  @Override
   public void run() {
-    if (File_IO.eraseFileChunks(this.file_id)) {
+    if (FileHandler.eraseFileChunks(this.file_id)) {
       System.out.println("Erased chunks of file '" + this.file_id + "'");
     }
   }

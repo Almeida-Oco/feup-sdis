@@ -110,7 +110,7 @@ public class User_IO {
    * @param used_space    The currently disk space used by the protocol
    */
   public static void printState(ConcurrentHashMap<String, FileInfo> backed_up,
-      ConcurrentHashMap<String, Vector<FileChunk> > stored_chunks, int max_space, int used_space) {
+      ConcurrentHashMap<String, Vector<Chunk> > stored_chunks, int max_space, int used_space) {
     System.out.println("\n" + BOLD + "Used " + UNDERLINE + used_space +
         BOLD + " of " + UNDERLINE + max_space + BOLD + " bytes");
 
@@ -144,9 +144,9 @@ public class User_IO {
    * Prints information about a single chunk
    * @param indentation Number of spaces to indent information with
    * @param chunk_id    The chunk name to display
-   * @param chunk       {@link FileChunk} Holds the information of the chunk
+   * @param chunk       {@link Chunk} Holds the information of the chunk
    */
-  public static void printChunkInfo(String indentation, String chunk_id, FileChunk chunk) {
+  public static void printChunkInfo(String indentation, String chunk_id, Chunk chunk) {
     System.out.print(indentation +
         UNDERLINE + chunk_id + PLAIN + " | "
         + center(Integer.toString(chunk.getSize()), 5) + " | "

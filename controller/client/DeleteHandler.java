@@ -1,11 +1,9 @@
 package controller.client;
 
 import network.*;
-import files.File_IO;
+import files.FileHandler;
 import files.FileInfo;
-import controller.Pair;
 import controller.Handler;
-import controller.ChannelListener;
 
 import java.rmi.Remote;
 import java.util.concurrent.TimeUnit;
@@ -23,15 +21,15 @@ class DeleteHandler extends Handler implements Remote {
   /** The path to the file to be deleted */
   String file_name;
 
-  /** The instance of MC {@link ChannelListener} */
-  ChannelListener mc;
+  /** The instance of MC {@link Net_IO} */
+  Net_IO mc;
 
   /**
    * Initializes the {@link DeleteHandler} with the given arguments and runs it
    * @param f_name Path to file to be deleted
-   * @param mc     Instance of MC {@link ChannelListener}
+   * @param mc     Instance of MC {@link Net_IO}
    */
-  void start(String f_name, ChannelListener mc) {
+  void start(String f_name, Net_IO mc) {
     this.file_name = f_name;
     this.mc        = mc;
     this.run();
@@ -42,18 +40,8 @@ class DeleteHandler extends Handler implements Remote {
   }
 
   @Override
-  public Pair<String, Handler> register() {
-    return null;
-  }
-
-  @Override
-  public String signalType() {
-    return null;
-  }
-
-  @Override
   public void run() {
-    FileInfo file = File_IO.getFileInfo(this.file_name);
+    FileInfo file = FileHandler.getBackedFile(this.file_name);
 
     if (file == null) {
       return;
@@ -74,7 +62,7 @@ class DeleteHandler extends Handler implements Remote {
       }
     }
 
-    File_IO.eraseLocalFile(this.file_name);
+    FileHandler.eraseBackedFile(this.file_name);
     System.out.println("Erased file '" + this.file_name + "'");
   }
 }

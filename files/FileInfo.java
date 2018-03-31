@@ -23,7 +23,7 @@ public class FileInfo {
   String file_id;
 
   /** Chunks of the file */
-  Vector<FileChunk> chunks;
+  Vector<Chunk> chunks;
 
   /** Desired replication degree of file */
   int desired_rep;
@@ -42,17 +42,17 @@ public class FileInfo {
     this.metadata    = new String(new byte[metadata_size]);
     this.metadata   += abs_path + last_mod;
     this.file_name   = abs_path;
-    this.chunks      = new Vector<FileChunk>(chunk_number);
+    this.chunks      = new Vector<Chunk>(chunk_number);
     this.file_id     = null;
     this.desired_rep = rep_degree;
   }
 
   /**
    * Adds a new chunk
-   * @param chunk {@link FileChunk} to be added to {@link FileInfo#chunks}
+   * @param chunk {@link Chunk} to be added to {@link FileInfo#chunks}
    */
-  void addChunk(FileChunk chunk) {
-    int index = Collections.binarySearch(this.chunks, chunk);
+  void addChunk(Chunk chunk) {
+    int index = Collections.binarySearch(this.chunks, chunk.getChunkN());
 
     if (this.file_id == null) { // Still reading from file
       this.tryHash(chunk);
@@ -69,7 +69,7 @@ public class FileInfo {
    * Tries to hash the metadata
    * @param chunk Latest chunk to be added into {@link FileInfo#chunks}
    */
-  private void tryHash(FileChunk chunk) {
+  private void tryHash(Chunk chunk) {
     if (this.chunks.size() == 0) { //Use first chunk as hash
       this.metadata += new String(chunk.getData());
     }
@@ -128,10 +128,10 @@ public class FileInfo {
    * @param  chunk_n Number of chunk to fetch
    * @return         The requested chunk, null if not found
    */
-  public FileChunk getChunk(int chunk_n) {
-    int index = FileChunk.binarySearch(this.chunks, chunk_n);
+  public Chunk getChunk(int chunk_n) {
+    int index = Collections.binarySearch(this.chunks, chunk_n);
 
-    if (index == -1) {
+    if (index < 0) {
       System.err.println("Chunk #" + chunk_n + " not stored in file " + this.file_name);
       return null;
     }
@@ -159,7 +159,7 @@ public class FileInfo {
    * Gets all the chunks of the file
    * @return {@link FileInfo#chunks}
    */
-  public Vector<FileChunk> getChunks() {
+  public Vector<Chunk> getChunks() {
     return this.chunks;
   }
 }

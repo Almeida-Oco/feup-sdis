@@ -4,7 +4,7 @@ import files.*;
 import network.*;
 import controller.Pair;
 import controller.Handler;
-import controller.ChannelListener;
+import controller.SignalHandler;
 
 import java.rmi.Remote;
 import java.util.Vector;
@@ -35,10 +35,10 @@ class BackupHandler extends Handler implements Remote {
   int rep_degree;
 
   /** Instances of the listeners of the MC and MDB channels */
-  ChannelListener mc, mdb;
+  Net_IO mc, mdb;
 
   /** Counter of the 'STORED' messages received */
-  ConcurrentHashMap<String, FileChunk> signal_counter;
+  ConcurrentHashMap<String, Chunk> signal_counter;
 
   /** The {@link ScheduledThreadPoolExecutor} that starts the backup protocol for each chunk */
   ScheduledThreadPoolExecutor services;
@@ -47,15 +47,15 @@ class BackupHandler extends Handler implements Remote {
    * Initializes the necessary information for the class and run it
    * @param f_name     Path to file to be replicated
    * @param rep_degree Desired replication degree
-   * @param mc         MC {@link ChannelListener} instance
-   * @param mdb        MDB {@link ChannelListener} instance
+   * @param mc         MC {@link Net_IO} instance
+   * @param mdb        MDB {@link Net_IO} instance
    */
-  void start(String f_name, int rep_degree, ChannelListener mc, ChannelListener mdb) {
+  void start(String f_name, int rep_degree, Net_IO mc, Net_IO mdb) {
     this.file_name      = f_name;
     this.rep_degree     = rep_degree;
     this.mc             = mc;
     this.mdb            = mdb;
-    this.signal_counter = new ConcurrentHashMap<String, FileChunk>();
+    this.signal_counter = new ConcurrentHashMap<String, Chunk>();
     this.run();
   }
 
@@ -66,69 +66,36 @@ class BackupHandler extends Handler implements Remote {
   }
 
   @Override
-  public Pair<String, Handler> register() {
-    return null;
-  }
-
-  @Override
-  public String signalType() {
-    return "STORED";
-  }
-
-  @Override
   public void run() {
-    FileInfo file     = File_IO.readFile(this.file_name, this.rep_degree);
+    FileInfo file     = FileHandler.readFile(this.file_name, this.rep_degree);
     boolean  all_good = true;
 
     if (file == null) {
       return;
     }
 
-    Vector<FileChunk> chunks = file.getChunks();
+    Vector<Chunk> chunks = file.getChunks();
     this.services = new ScheduledThreadPoolExecutor(chunks.size() * 2);
     Vector<Future<Boolean> > futures = new Vector<Future<Boolean> >(chunks.size());
 
-    for (FileChunk chunk : chunks) {
-      PacketInfo packet = new PacketInfo("PUTCHUNK", file.getID(), chunk.getChunkN());
+    for (Chunk chunk : chunks) {
+      PacketInfo packet   = new PacketInfo("PUTCHUNK", file.getID(), chunk.getChunkN());
+      String     chunk_id = file.getID() + "#" + chunk.getChunkN();
       packet.setRDegree(this.rep_degree);
       packet.setData(chunk.getData(), chunk.getSize());
 
       this.signal_counter.put(file.getID() + "#" + chunk.getChunkN(), chunk);
-      futures.add(this.sendChunk(packet));
+      SignalHandler.addSignal("STORED", chunk_id, this);
+      futures.add(this.getConfirmations(packet, chunk_id));
     }
 
-    try {
-      for (Future<Boolean> future : futures) {
-        all_good = all_good && future.get();
-      }
-    }
-    catch (Exception err) {
-      System.err.println("Backup::run() -> Future interrupted!\n - " + err.getMessage());
-      all_good = false;
-    }
-
-    if (all_good) {
+    if (this.allGood(futures)) {
       System.out.println("File '" + this.file_name + "' stored!");
     }
     else {
       System.out.println("File '" + this.file_name + "' stored with less than desired replication degree!");
     }
     this.services.shutdown();
-    File_IO.addFile(file);
-  }
-
-  /**
-   * Sends the given chunk to the network
-   * @param  packet The packet to be sent, containing the chunk
-   * @return        A {@link Future} that will actually send the chunk
-   */
-  private Future<Boolean> sendChunk(PacketInfo packet) {
-    String id = packet.getFileID() + "#" + packet.getChunkN();
-
-
-    this.mc.registerForSignal("STORED", id, this);
-    Future<Boolean> future = this.getConfirmations(packet, id);
-    return future;
   }
 
   /**
@@ -138,8 +105,8 @@ class BackupHandler extends Handler implements Remote {
    * @return        null
    */
   private Future<Boolean> getConfirmations(PacketInfo packet, String id) {
-    FileChunk chunk             = this.signal_counter.get(id);
-    boolean   got_confirmations = chunk.getActualRep() >= chunk.getDesiredRep();
+    Chunk   chunk             = this.signal_counter.get(id);
+    boolean got_confirmations = chunk.getActualRep() >= chunk.getDesiredRep();
 
     return this.services.submit(()->{
       for (int i = 0; i <= MAX_TRIES; i++) {
@@ -150,7 +117,7 @@ class BackupHandler extends Handler implements Remote {
 
         try {
           if (future.get()) {
-            this.mc.removeFromSignal("STORED", id);
+            SignalHandler.removeSignal("STORED", id);
             return true;
           }
         }
@@ -160,8 +127,23 @@ class BackupHandler extends Handler implements Remote {
         }
       }
 
-      this.mc.removeFromSignal("STORED", id);
+      SignalHandler.removeSignal("STORED", id);
       return false;
     });
+  }
+
+  private boolean allGood(Vector<Future<Boolean> > futures) {
+    boolean all_good = true;
+
+    try {
+      for (Future<Boolean> future : futures) {
+        all_good = all_good && future.get();
+      }
+      return all_good;
+    }
+    catch (Exception err) {
+      System.err.println("Backup::allGood() -> Future interrupted!\n - " + err.getMessage());
+      return false;
+    }
   }
 }

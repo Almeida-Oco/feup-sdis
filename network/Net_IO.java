@@ -15,7 +15,7 @@ import java.nio.charset.StandardCharsets;
  */
 public class Net_IO {
   private static final int TTL      = 1;
-  private static final int BUF_SIZE = 66000;
+  private static final int BUF_SIZE = 64500;
 
   /** Multicast socket to read and write from */
   MulticastSocket mcast_socket;

@@ -2,9 +2,8 @@ package controller.server;
 
 import files.*;
 import network.*;
-import controller.Pair;
 import controller.Handler;
-import controller.ChannelListener;
+import controller.SignalHandler;
 import controller.ApplicationInfo;
 
 import java.util.Random;
@@ -37,7 +36,7 @@ public class PutchunkHandler extends Handler {
   Vector<Integer> replicators;
 
   /**  Channel to send the STORED message */
-  ChannelListener mc;
+  Net_IO mc;
 
   /**  {@link ScheduledThreadPoolExecutor} to generate a future */
   ScheduledThreadPoolExecutor services;
@@ -47,42 +46,36 @@ public class PutchunkHandler extends Handler {
    * @param packet Packet to be processed
    * @param mc     MC channel
    */
-  public PutchunkHandler(PacketInfo packet, ChannelListener mc) {
-    super();
+  public PutchunkHandler(PacketInfo packet, Net_IO mc) {
     this.mc          = mc;
     this.desired_rep = packet.getRDegree();
-    this.replicators = new Vector<Integer>(this.desired_rep);
     this.file_id     = packet.getFileID();
     this.chunk_n     = packet.getChunkN();
     this.data        = packet.getData();
-    this.services    = new ScheduledThreadPoolExecutor(1);
   }
 
   @Override
   public void signal(PacketInfo packet) {
-    System.out.println("Chunk #" + packet.getChunkN() + "Replicator ID " + packet.getSenderID());
     synchronized (this.replicators) {
       this.replicators.add(packet.getSenderID());
     }
   }
 
   @Override
-  public Pair<String, Handler> register() {
-    return new Pair<String, Handler>(this.file_id + "#" + this.chunk_n, this);
-  }
-
-  @Override
-  public String signalType() {
-    return "STORED";
-  }
-
-  @Override
   public void run() {
-    if (File_IO.isLocalFile(this.file_id)) {
+    //Lengthy creations leave to this thread not Listener thread
+    this.services    = new ScheduledThreadPoolExecutor(1);
+    this.replicators = new Vector<Integer>(this.desired_rep);
+    String chunk_id = this.file_id + "#" + this.chunk_n;
+
+    //before isLocalFile() just in case that delay interferes with protocol
+    SignalHandler.addSignal("STORED", chunk_id, this);
+    if (FileHandler.isLocalFile(this.file_id)) {
+      SignalHandler.removeSignal("STORED", chunk_id);
       return;
     }
     PacketInfo      packet = new PacketInfo("STORED", this.file_id, this.chunk_n);
-    int             rem_space = File_IO.getRemainingSpace(), data_size = this.data.length();
+    int             rem_space = FileHandler.getRemainingSpace(), data_size = this.data.length();
     Random          rand = new Random();
     ScheduledFuture future;
 
@@ -93,10 +86,10 @@ public class PutchunkHandler extends Handler {
         synchronized (this.replicators) {
           actual_rep = this.replicators.size();
         }
-        System.out.println("Actual = " + actual_rep + ", desired = " + this.desired_rep + " #" + this.chunk_n);
+
         if (actual_rep < this.desired_rep) {
-          if (File_IO.storeChunk(this.file_id, new FileChunk(this.data.getBytes(StandardCharsets.ISO_8859_1),
-          this.data.length(), this.chunk_n, this.desired_rep, this.replicators))) {
+          if (FileHandler.storeLocalChunk(this.file_id, this.chunk_n, this.desired_rep,
+          this.data.getBytes(StandardCharsets.ISO_8859_1), this.data.length())) {
             this.mc.sendMsg(packet);
           }
         }
@@ -108,11 +101,12 @@ public class PutchunkHandler extends Handler {
       catch (Exception err) {
         System.err.println("Putchunk::run() -> Future interrupted!\n - " + err.getMessage());
       }
-      this.mc.removeFromSignal("STORED", this.file_id + "#" + this.chunk_n);
+      SignalHandler.removeSignal("STORED", this.file_id + "#" + this.chunk_n);
     }
     else {
       System.out.println("Not enough space to store " + data_size +
-          " bytes!\n Space remaining: " + rem_space + " bytes");
+          " bytes!\n - Space remaining: " + rem_space + " bytes");
     }
+    SignalHandler.removeSignal("STORED", chunk_id);
   }
 }

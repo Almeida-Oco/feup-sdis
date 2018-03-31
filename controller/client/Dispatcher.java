@@ -1,8 +1,8 @@
 package controller.client;
 
+import network.Net_IO;
 import controller.ApplicationInfo;
 import controller.HandlerInterface;
-import controller.ChannelListener;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -13,7 +13,7 @@ import java.rmi.RemoteException;
  * @author João Almeida
  */
 public class Dispatcher implements HandlerInterface {
-  ChannelListener mc, mdb, mdr;
+  Net_IO mc, mdb, mdr;
   private BackupHandler backup;
   private RestoreHandler restore;
   private DeleteHandler delete;
@@ -21,12 +21,12 @@ public class Dispatcher implements HandlerInterface {
   private StateHandler state;
 
   /**
-   * Creates a new {@link Dispatcher} with the given ChannelListeners
-   * @param mc  MC {@link ChannelListener}
-   * @param mdb MDB {@link ChannelListener}
-   * @param mdr MDR {@link ChannelListener}
+   * Creates a new {@link Dispatcher} with the given Multicast Channels
+   * @param mc  MC {@link Net_IO}
+   * @param mdb MDB {@link Net_IO}
+   * @param mdr MDR {@link Net_IO}
    */
-  public Dispatcher(ChannelListener mc, ChannelListener mdb, ChannelListener mdr) {
+  public Dispatcher(Net_IO mc, Net_IO mdb, Net_IO mdr) {
     this.mc      = mc;
     this.mdr     = mdr;
     this.mdb     = mdb;

@@ -1,6 +1,5 @@
 package controller;
 
-import controller.ChannelListener;
 import network.Net_IO;
 
 import java.util.concurrent.TimeUnit;
@@ -15,9 +14,6 @@ import java.util.concurrent.LinkedBlockingQueue;
  * This class follows the singleton design pattern so there is only one instance throughout the entire program
  */
 public class ApplicationInfo {
-  private static final int cores     = Runtime.getRuntime().availableProcessors();
-  private static final int MAX_TASKS = 255;
-
   /** The ID of the running server */
   static int serv_id;
 
@@ -25,7 +21,7 @@ public class ApplicationInfo {
   static byte version;
 
   /** The multicast channels listeners */
-  static ChannelListener mc, mdb, mdr;
+  static Net_IO mc, mdb, mdr;
 
   /** The sole instance of {@link ApplicationInfo} */
   static ApplicationInfo instance;
@@ -71,12 +67,9 @@ public class ApplicationInfo {
     if (instance == null) {
       instance = new ApplicationInfo();
     }
-    LinkedBlockingQueue<Runnable> queue      = new LinkedBlockingQueue<Runnable>(MAX_TASKS);
-    ThreadPoolExecutor            task_queue = new ThreadPoolExecutor(cores, cores, 0, TimeUnit.SECONDS, queue);
-
-    instance.mc  = new ChannelListener(mc, task_queue);
-    instance.mdb = new ChannelListener(mdb, task_queue);
-    instance.mdr = new ChannelListener(mdr, task_queue);
+    instance.mc  = mc;
+    instance.mdb = mdb;
+    instance.mdr = mdr;
   }
 
   /**
@@ -99,7 +92,7 @@ public class ApplicationInfo {
    * Gets the MC channel
    * @return {@link ApplicationInfo#mc}
    */
-  public static ChannelListener getMC() {
+  public static Net_IO getMC() {
     return instance.mc;
   }
 
@@ -107,7 +100,7 @@ public class ApplicationInfo {
    * Gets the MDB channel
    * @return {@link ApplicationInfo#mdb}
    */
-  public static ChannelListener getMDB() {
+  public static Net_IO getMDB() {
     return instance.mdb;
   }
 
@@ -115,7 +108,7 @@ public class ApplicationInfo {
    * Gets the MDR channel
    * @return {@link ApplicationInfo#mdr}
    */
-  public static ChannelListener getMDR() {
+  public static Net_IO getMDR() {
     return instance.mdr;
   }
 }
