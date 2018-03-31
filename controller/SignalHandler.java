@@ -27,10 +27,11 @@ public class SignalHandler implements Runnable {
 
   static {
     packets = new ArrayBlockingQueue<PacketInfo>(MAX_PACKETS);
-    signals = new ConcurrentHashMap<String, ConcurrentHashMap<String, Handler> >(3);
+    signals = new ConcurrentHashMap<String, ConcurrentHashMap<String, Handler> >(4);
     signals.put("STORED", new ConcurrentHashMap<String, Handler>());
     signals.put("CHUNK", new ConcurrentHashMap<String, Handler>());
     signals.put("PUTCHUNK", new ConcurrentHashMap<String, Handler>());
+    signals.put("CHUNKCHKS", new ConcurrentHashMap<String, Handler>());
   }
 
   /**

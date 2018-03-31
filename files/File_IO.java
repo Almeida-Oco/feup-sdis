@@ -83,6 +83,20 @@ class File_IO {
     return file;
   }
 
+  static LocalChunk readChunk(String chunk_id, int chunk_n, int desired_rep) {
+    File            file = new File(PATH + chunk_id);
+    FileInputStream in   = openFileReader(file);
+
+    if (in != null) {
+      byte[] data       = new byte[(int)file.length()];
+      int    bytes_read = readFromFile(in, data);
+      if (bytes_read >= 0) {
+        return new LocalChunk(data, bytes_read, chunk_n, desired_rep);
+      }
+    }
+    return null;
+  }
+
   /**
    * Computes the number of chunks the given file will be split into
    * @param  file File to be used
@@ -243,5 +257,26 @@ class File_IO {
     }
 
     return null;
+  }
+
+  /**
+   * Gets all the files previously stored by the peer, present in its directory
+   * @return Vector with all the names of the previously stored files, if none then vector contains no element
+   */
+  static Vector<String> getPeerStoredChunks() {
+    File dir = new File(PATH);
+
+    File[] files = dir.listFiles();
+    if (files == null) {
+      return new Vector<String>();
+    }
+    Vector<String> names = new Vector<String>(files.length);
+
+
+    for (int i = 0; i < files.length; i++) {
+      names.add(files[i].getAbsolutePath());
+    }
+
+    return names;
   }
 }

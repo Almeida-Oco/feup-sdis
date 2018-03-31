@@ -47,4 +47,12 @@ public class Pair<A, B> {
   public B second() {
     return this.nd;
   }
+
+  public void setFirst(A first) {
+    this.st = first;
+  }
+
+  public void setSecond(B second) {
+    this.nd = second;
+  }
 }

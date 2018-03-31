@@ -110,7 +110,9 @@ public class User_IO {
    * @param used_space    The currently disk space used by the protocol
    */
   public static void printState(ConcurrentHashMap<String, FileInfo> backed_up,
-      ConcurrentHashMap<String, Vector<Chunk> > stored_chunks, int max_space, int used_space) {
+      ConcurrentHashMap<String, Vector<Chunk> > stored_chunks,
+      ConcurrentHashMap<String, Vector<Chunk> > network_chunks,
+      int max_space, int used_space) {
     System.out.println("\n" + BOLD + "Used " + UNDERLINE + used_space +
         BOLD + " of " + UNDERLINE + max_space + BOLD + " bytes");
 
@@ -121,6 +123,14 @@ public class User_IO {
 
     System.out.println(BOLD + "\n" + center("STORED CHUNKS", MAX_LINE_SIZE) + "\n" + PLAIN);
     stored_chunks.forEach((file_id, chunks)->{
+      System.out.println(BOLD + file_id + PLAIN);
+      chunks.forEach((chunk)->{
+        printChunkInfo("      ", "#" + chunk.getChunkN(), chunk);
+      });
+    });
+
+    System.out.println(BOLD + "\n" + center("NETWORK CHUNKS", MAX_LINE_SIZE) + "\n" + PLAIN);
+    network_chunks.forEach((file_id, chunks)->{
       System.out.println(BOLD + file_id + PLAIN);
       chunks.forEach((chunk)->{
         printChunkInfo("      ", "#" + chunk.getChunkN(), chunk);
@@ -147,11 +157,14 @@ public class User_IO {
    * @param chunk       {@link Chunk} Holds the information of the chunk
    */
   public static void printChunkInfo(String indentation, String chunk_id, Chunk chunk) {
+    int    desired_rep = chunk.getDesiredRep();
+    String actual      = Integer.toString(chunk.getActualRep());
+    String desired     = (desired_rep == 0) ? "?" : Integer.toString(desired_rep);
+
     System.out.print(indentation +
         UNDERLINE + chunk_id + PLAIN + " | "
         + center(Integer.toString(chunk.getSize()), 5) + " | "
-        + chunk.getActualRep() + "/"
-        + chunk.getDesiredRep() + " |");
+        + actual + "/" + desired + " | ");
 
     Vector<Integer> reps = chunk.getReplicators();
     synchronized (reps) {

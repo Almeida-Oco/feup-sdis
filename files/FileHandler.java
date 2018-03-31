@@ -3,6 +3,7 @@ package files;
 import controller.Pair;
 import controller.ApplicationInfo;
 
+import java.util.Set;
 import java.util.Map;
 import java.util.List;
 import java.util.Vector;
@@ -39,11 +40,43 @@ public class FileHandler {
    */
   private static ChunkStorer network_storer = new ChunkStorer();
 
-  public static void setup() {
+  /**
+   * Sets up the underlying file system for the peer
+   * @return Vector with previously stored chunks
+   * Checks if there were any previously stored chunks by the peer and returns them
+   */
+  public static Vector<Pair<String, Integer> > setup() {
     File_IO.setup(ApplicationInfo.getServID());
+    Vector<String> file_names            = File_IO.getPeerStoredChunks();
+    Vector<Pair<String, Integer> > names = new Vector<Pair<String, Integer> >(file_names.size());
+    for (String name : file_names) {
+      int hashtag = name.lastIndexOf('#');
+      if (hashtag == -1) {
+        System.err.println("File '" + name + "' has no '#'!!");
+        continue;
+      }
+      String file_id = name.substring(0, hashtag);
+      int    chunk_n = Integer.parseInt(name.substring(hashtag + 1));
+      names.add(new Pair<String, Integer>(file_id, chunk_n));
+    }
+
+    return names;
   }
 
-  // ----- ADD METHODS --------
+  // ----- ADD METHODS ------
+
+  public static void reuseChunk(String chunk_id, int desired_rep, Set<Integer> replicators) {
+    int        hashtag = chunk_id.lastIndexOf('#');
+    String     file_id = chunk_id.substring(0, hashtag);
+    int        chunk_n = Integer.parseInt(chunk_id.substring(hashtag + 1));
+    LocalChunk chunk   = File_IO.readChunk(chunk_id, chunk_n, desired_rep);
+
+    for (Integer rep : replicators) {
+      chunk.addPeer(rep);
+    }
+
+    local_storer.addChunk(file_id, chunk);
+  }
 
   /**
    * Stores a chunk in memory
@@ -133,7 +166,7 @@ public class FileHandler {
     return File_IO.restoreFile(file_name, chunks);
   }
 
-  // ----- REMOVE METHODS ---------
+  // ----- REMOVE METHODS ------
 
   /**
    * Erases a previously backed up file
@@ -246,6 +279,32 @@ public class FileHandler {
 
   // ------ GETTERS SETTERS ---------
 
+  public static boolean isLocalChunk(String file_id, int chunk_n) {
+    return local_storer.getChunk(file_id, chunk_n) != null;
+  }
+
+  /**
+   * Gets information about the given chunk
+   * @param  file_id ID of file
+   * @param  chunk_n Number of the chunk
+   * @return         Desired replication degree of chunk and current replicators
+   * First checks the {@link FileHandler#local_storer}, if not found then checks {@link FileHandler#network_storer}
+   */
+  public static Pair<Integer, Vector<Integer> > getChunkInfo(String file_id, int chunk_n) {
+    Chunk chunk = local_storer.getChunk(file_id, chunk_n);
+
+    if (chunk != null) {
+      return new Pair<Integer, Vector<Integer> >(chunk.getDesiredRep(), chunk.getReplicators());
+    }
+
+    chunk = network_storer.getChunk(file_id, chunk_n);
+    if (chunk != null) {
+      return new Pair<Integer, Vector<Integer> >(chunk.getDesiredRep(), chunk.getReplicators());
+    }
+
+    return null;
+  }
+
   /**
    * Checks if file exists in backed up files table
    * @param  file_id File name
@@ -311,6 +370,12 @@ public class FileHandler {
     return local_storer.getChunk(file_id, chunk_n);
   }
 
+  /**
+   * Gets a chunk that was backed up into the networ
+   * @param  file_id ID of the file
+   * @param  chunk_n Number of the chunk
+   * @return         {@link Chunk}, null on error
+   */
   public static Chunk getBackedChunk(String file_id, int chunk_n) {
     FileInfo info = backed_files.get(file_id);
 
@@ -349,6 +414,14 @@ public class FileHandler {
    */
   public static ConcurrentHashMap<String, Vector<Chunk> > getChunksTable() {
     return local_storer.getChunks();
+  }
+
+  /**
+   * Gets the chunks stored in the network, not stored locally
+   * @return {@link ChunkStorer#stored_chunks}
+   */
+  public static ConcurrentHashMap<String, Vector<Chunk> > getNetworkTable() {
+    return network_storer.getChunks();
   }
 
   /**

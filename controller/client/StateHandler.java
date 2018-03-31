@@ -20,7 +20,7 @@ class StateHandler extends Handler implements Remote {
 
   @Override
   public void run() {
-    User_IO.printState(FileHandler.getBackedUpTable(), FileHandler.getChunksTable(),
+    User_IO.printState(FileHandler.getBackedUpTable(), FileHandler.getChunksTable(), FileHandler.getNetworkTable(),
         FileHandler.getMaxSpace(), FileHandler.getUsedSpace());
   }
 }

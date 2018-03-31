@@ -2,10 +2,13 @@ package network;
 
 import controller.ApplicationInfo;
 
+import java.util.List;
+import java.util.Scanner;
 import java.net.InetAddress;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.net.DatagramPacket;
+import java.util.InputMismatchException;
 import java.nio.charset.StandardCharsets;
 import java.io.UnsupportedEncodingException;
 
@@ -15,7 +18,7 @@ import java.io.UnsupportedEncodingException;
  * @author João Almeida
  */
 public class PacketInfo {
-  private static final String regex = "\\s*(?<msgT>\\w+)\\s+(?<version>\\d\\.\\d)\\s+(?<senderID>\\d+)\\s+(?<fileID>.{64})((\\s+(?<chunkN1>\\d{1,6})\\s+(?<Rdegree>\\d))|\\s+(?<chunkN2>\\d{1,6}))?\\s*\r\n(?<misc>.*?\r\n)*\r\n(?<data>.{0,64000})?";
+  private static final String regex = "\\s*(?<msgT>\\w+)\\s+(?<version>\\d\\.\\d)\\s+(?<senderID>\\d+)\\s+(?<fileID>.{64})((\\s+(?<chunkN1>\\d{1,6})\\s+(?<Rdegree>\\d))|\\s+(?<chunkN2>\\d{1,6}))?\\s*\r\n(?<misc>.*?)\r\n\r\n(?<data>.{0,64000})?";
 
   private static final Pattern MSG_PAT = Pattern.compile(regex, Pattern.DOTALL | Pattern.MULTILINE);
 
@@ -36,6 +39,9 @@ public class PacketInfo {
   int r_degree;
   /** Data of message */
   String data;
+
+  /** The replicators of the chunk */
+  int[] replicators;
 
   /**
    * Initializes a new {@link PacketInfo}
@@ -83,6 +89,7 @@ public class PacketInfo {
    */
   private boolean fromMatcher(Matcher matcher) {
     String chunk_n;
+    String misc;
 
     if (!matcher.matches()) {
       System.err.println("Message does not match pattern!");
@@ -98,10 +105,14 @@ public class PacketInfo {
       if ((chunk_n = matcher.group("chunkN1")) != null) {
         this.chunk_n  = Integer.parseInt(chunk_n);
         this.r_degree = Integer.parseInt(matcher.group("Rdegree"));
+        if (this.msg_type.equalsIgnoreCase("CHUNKCHKS") && this.r_degree > 0) {
+          this.parseReplicators(matcher.group("misc"), this.r_degree);
+        }
       }
       else if ((chunk_n = matcher.group("chunkN2")) != null) {
         this.chunk_n = Integer.parseInt(chunk_n);
       }
+
 
       return true;
     }
@@ -113,6 +124,25 @@ public class PacketInfo {
       System.err.println("Match failed or not done yet!\n - " + err.getMessage());
       return false;
     }
+  }
+
+  private boolean parseReplicators(String reps, int rep_number) {
+    this.replicators = new int[rep_number];
+    Scanner scan = new Scanner(reps);
+    int     i = 0, rep;
+    try {
+      while (scan.hasNextInt()) {
+        rep = scan.nextInt();
+        this.replicators[i++] = rep;
+      }
+    }
+    catch (InputMismatchException err) {
+      System.err.println("Not a CHUNKCHKS packet!");
+      this.replicators = null;
+      return false;
+    }
+
+    return true;
   }
 
   /**
@@ -156,16 +186,19 @@ public class PacketInfo {
         is_removed      = this.msg_type.equalsIgnoreCase("REMOVED"),
         is_getchunk     = this.msg_type.equalsIgnoreCase("GETCHUNK"),
         is_delete       = this.msg_type.equalsIgnoreCase("DELETE"),
-        is_chunk        = this.msg_type.equalsIgnoreCase("CHUNK");
+        is_chunk        = this.msg_type.equalsIgnoreCase("CHUNK"),
+        is_chkchunk     = this.msg_type.equalsIgnoreCase("CHKCHUNK"),
+        is_chunkchks    = this.msg_type.equalsIgnoreCase("CHUNKCHKS");
 
     return
-      (is_putchunk || is_stored || is_removed || is_getchunk || is_delete || is_chunk) &&                                  // Check message type
-      (this.version != null) &&                                                                                            // Check version
-      (this.file_id != null) &&                                                                                            // Check file_id
-      (this.sender_id != -1) &&                                                                                            // Check sender id
-      ((this.chunk_n != -1 && (is_putchunk || is_stored || is_getchunk || is_removed || is_chunk)) || (is_delete)) &&      // Check chunk number
-      ((this.r_degree != -1 && is_putchunk) || (is_stored || is_getchunk || is_removed || is_delete || is_chunk)) &&       // Check replication degree
-      ((this.data != null&& (is_putchunk || is_chunk)) || (is_stored || is_getchunk || is_removed || is_delete));          // Check data
+      (is_putchunk || is_stored || is_removed || is_getchunk || is_delete || is_chunk || is_chkchunk || is_chunkchks) &&                             // Check message type
+      (this.version != null) &&                                                                                                                      // Check version
+      (this.file_id != null) &&                                                                                                                      // Check file_id
+      (this.sender_id != -1) &&                                                                                                                      // Check sender id
+      ((this.chunk_n != -1 && (is_putchunk || is_stored || is_getchunk || is_removed || is_chunk || is_chkchunk || is_chunkchks)) || (is_delete)) && // Check chunk number
+      ((this.r_degree != -1 && is_putchunk || is_chunkchks) || (is_stored || is_getchunk || is_removed || is_delete || is_chunk || is_chkchunk)) &&  // Check replication degree
+      ((this.data != null&& (is_putchunk || is_chunk)) || (is_stored || is_getchunk || is_removed || is_delete || is_chkchunk || is_chunkchks)) &&   // Check data
+      ((this.replicators != null&& is_chunkchks) || !is_chunkchks);
   }
 
   /**
@@ -215,6 +248,14 @@ public class PacketInfo {
    */
   public void setRDegree(int degree) {
     this.r_degree = degree;
+  }
+
+  public void setReplicators(List<Integer> reps) {
+    this.replicators = new int[reps.size()];
+    int i = 0;
+    for (Integer rep : reps) {
+      this.replicators[i++] = rep;
+    }
   }
 
   /**
@@ -267,6 +308,10 @@ public class PacketInfo {
         chr2  = this.version.charAt(2);
 
     return (byte)(Character.getNumericValue(chr1) * 10 + Character.getNumericValue(chr2));
+  }
+
+  public int[] getReplicators() {
+    return this.replicators;
   }
 
   /**

@@ -74,39 +74,48 @@ public class PutchunkHandler extends Handler {
       SignalHandler.removeSignal("STORED", chunk_id);
       return;
     }
-    PacketInfo      packet = new PacketInfo("STORED", this.file_id, this.chunk_n);
-    int             rem_space = FileHandler.getRemainingSpace(), data_size = this.data.length();
-    Random          rand = new Random();
-    ScheduledFuture future;
+    PacketInfo packet = new PacketInfo("STORED", this.file_id, this.chunk_n);
+    int        rem_space = FileHandler.getRemainingSpace(), data_size = this.data.length();
+
+
+    if (FileHandler.isLocalChunk(this.file_id, this.chunk_n)) { //If chunk is already stored, send stored message
+      SignalHandler.removeSignal("STORED", chunk_id);
+      this.mc.sendMsg(packet);
+      return;
+    }
 
     // Only stores chunk if the perceived rep degree is smaller than intended
     if (rem_space >= data_size) {
-      future = this.services.schedule(()->{
-        int actual_rep;
-        synchronized (this.replicators) {
-          actual_rep = this.replicators.size();
-        }
-
-        if (actual_rep < this.desired_rep) {
-          if (FileHandler.storeLocalChunk(this.file_id, this.chunk_n, this.desired_rep,
-          this.data.getBytes(StandardCharsets.ISO_8859_1), this.data.length())) {
-            this.mc.sendMsg(packet);
-          }
-        }
-      }, rand.nextInt(401), TimeUnit.MILLISECONDS);
-
-      try {
-        future.get();
-      }
-      catch (Exception err) {
-        System.err.println("Putchunk::run() -> Future interrupted!\n - " + err.getMessage());
-      }
-      SignalHandler.removeSignal("STORED", this.file_id + "#" + this.chunk_n);
+      this.storeFile(packet);
     }
     else {
       System.out.println("Not enough space to store " + data_size +
           " bytes!\n - Space remaining: " + rem_space + " bytes");
     }
     SignalHandler.removeSignal("STORED", chunk_id);
+  }
+
+  private void storeFile(PacketInfo packet) {
+    Random          rand   = new Random();
+    ScheduledFuture future = this.services.schedule(()->{
+      int actual_rep;
+      synchronized (this.replicators) {
+        actual_rep = this.replicators.size();
+      }
+
+      if (actual_rep < this.desired_rep) {
+        if (FileHandler.storeLocalChunk(this.file_id, this.chunk_n, this.desired_rep,
+        this.data.getBytes(StandardCharsets.ISO_8859_1), this.data.length())) {
+          this.mc.sendMsg(packet);
+        }
+      }
+    }, rand.nextInt(401), TimeUnit.MILLISECONDS);
+
+    try {
+      future.get();
+    }
+    catch (Exception err) {
+      System.err.println("Putchunk::run() -> Future interrupted!\n - " + err.getMessage());
+    }
   }
 }
