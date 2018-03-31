@@ -15,9 +15,11 @@ class NetworkChunk extends Chunk {
    * @param chunk_n     Number of the chunk
    * @param desired_rep Desired replication degre
    */
-  NetworkChunk(int chunk_n, int desired_rep, int peer_id) {
+  NetworkChunk(int chunk_n, int desired_rep, Integer peer_id) {
     super(chunk_n, desired_rep);
-    super.addPeer(peer_id);
+    if (peer_id != null) {
+      super.addPeer(peer_id);
+    }
   }
 
   LocalChunk toLocalChunk(byte[] data, int size, int peer_id) {

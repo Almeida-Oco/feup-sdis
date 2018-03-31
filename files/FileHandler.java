@@ -39,6 +39,10 @@ public class FileHandler {
    */
   private static ChunkStorer network_storer = new ChunkStorer();
 
+  public static void setup() {
+    File_IO.setup(ApplicationInfo.getServID());
+  }
+
   // ----- ADD METHODS --------
 
   /**

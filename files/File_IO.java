@@ -136,10 +136,10 @@ class File_IO {
    * @return      A new stream of bytes of the file
    */
   private static FileInputStream openFileReader(File file) {
-    String f_name = file.getName();
+    String f_name = file.getAbsolutePath();
 
     try {
-      return new FileInputStream(f_name);
+      return new FileInputStream(file);
     }
     catch (FileNotFoundException err) {
       System.err.println("Failed to open file '" + f_name + "'\n - " + err.getMessage());
@@ -196,10 +196,9 @@ class File_IO {
    * @return           Whether the file was successfully restored or not
    */
   static boolean restoreFile(String file_name, byte[][] chunks) {
-    String file_path = PATH + file_name;
     AsynchronousFileChannel out;
 
-    if ((out = openFileWriter(file_path)) == null) {
+    if ((out = openFileWriter(file_name)) == null) {
       return false;
     }
     Vector<Future<Integer> > futures = new Vector<Future<Integer> >(chunks.length);

@@ -163,7 +163,7 @@ class Waiter implements Callable<Boolean> {
       this.mc.sendMsg(this.packet);
     }
 
-    System.out.println("Waiting for chunks (" + size + "/" + this.expected_chunks + ")");
-    return size < this.expected_chunks;
+    System.out.println("Waiting for chunks (" + (this.expected_chunks - size) + "/" + this.expected_chunks + ")");
+    return size > 0;
   }
 }

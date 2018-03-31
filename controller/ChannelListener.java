@@ -44,19 +44,19 @@ public class ChannelListener implements Runnable {
 
   @Override
   public void run() {
-    String     txt = null;
     PacketInfo packet;
 
-    do {
+    while (true) {
       if ((packet = this.channel.recvMsg()) != null&& (packet.getSenderID() != ApplicationInfo.getServID())) {
         System.out.println("Got '" + packet.getType() + "', chunk #" + packet.getChunkN() + ", peer " + packet.getSenderID());
 
         SignalHandler.addPacket(packet);
-        this.task_queue.execute((Runnable)Handler.newHandler(packet));
+        Runnable task = (Runnable)Handler.newHandler(packet);
+        if (task != null) {
+          this.task_queue.execute(task);
+        }
       }
-    } while (txt == null);
-
-    this.task_queue.shutdown();
+    }
   }
 
   /**

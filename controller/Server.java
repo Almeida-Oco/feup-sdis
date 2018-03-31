@@ -1,6 +1,7 @@
 package controller;
 
 import cli.User_IO;
+import files.FileHandler;
 import network.Net_IO;
 import parser.ServerParser;
 import controller.ApplicationInfo;
@@ -51,15 +52,18 @@ class Server {
     }
 
 
-
-    Thread mc  = new Thread(new ChannelListener(mc_channel));
-    Thread mdb = new Thread(new ChannelListener(mdb_channel));
-    Thread mdr = new Thread(new ChannelListener(mdr_channel));
+    FileHandler.setup();
+    Thread mc          = new Thread(new ChannelListener(mc_channel));
+    Thread mdb         = new Thread(new ChannelListener(mdb_channel));
+    Thread mdr         = new Thread(new ChannelListener(mdr_channel));
+    Thread sig_handler = new Thread(new SignalHandler());
+    sig_handler.start();
     mc.start();
     mdb.start();
     mdr.start();
     System.out.println("Ready");
     try {
+      sig_handler.join();
       mc.join();
       mdb.join();
       mdr.join();
