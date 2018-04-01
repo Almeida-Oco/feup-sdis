@@ -2,6 +2,7 @@ package files;
 
 import java.util.Vector;
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Holds information about an abstract chunk
@@ -22,7 +23,7 @@ public abstract class Chunk implements Comparable<Integer> {
   int size;
 
   /** Desired replication degree */
-  int desired_rep;
+  AtomicInteger desired_rep;
 
   /**
    * Initializes a new {@link Chunk}
@@ -34,7 +35,7 @@ public abstract class Chunk implements Comparable<Integer> {
     this.chunk_n     = chunk_n;
     this.data        = null;
     this.size        = 0;
-    this.desired_rep = desired_rep;
+    this.desired_rep = new AtomicInteger(desired_rep);
   }
 
   /**
@@ -78,7 +79,7 @@ public abstract class Chunk implements Comparable<Integer> {
    * @return {@link FileChunk#desired_rep}
    */
   public int getDesiredRep() {
-    return this.desired_rep;
+    return this.desired_rep.get();
   }
 
   /**
@@ -120,7 +121,7 @@ public abstract class Chunk implements Comparable<Integer> {
    * @param rep_degree Desired replication degree
    */
   public void setRepDegree(int rep_degree) {
-    this.desired_rep = rep_degree;
+    this.desired_rep.set(rep_degree);
   }
 
   /**

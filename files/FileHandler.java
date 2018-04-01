@@ -149,6 +149,9 @@ public class FileHandler {
       }
     }
 
+    if (rep_degree > 0) {
+      chunk.setRepDegree(rep_degree);
+    }
     chunk.addPeer(peer_id);
     return true;
   }

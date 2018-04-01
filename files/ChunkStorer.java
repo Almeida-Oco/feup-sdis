@@ -42,6 +42,10 @@ class ChunkStorer {
         if (index >= 0) {
           int size = chunks.get(index).getSize();
           chunks.remove(index);
+
+          if (chunks.size() == 0) {
+            this.stored_chunks.remove(file_id);
+          }
           return size;
         }
         return -1;
