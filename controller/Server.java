@@ -25,6 +25,7 @@ import java.rmi.server.UnicastRemoteObject;
  */
 class Server {
   private static final int RMI_PORT = 1099;
+  private static Registry reg;
 
   /**
    * Main entry point for the peer protocol
@@ -93,21 +94,20 @@ class Server {
    */
   private static DispatcherInterface registerClient(int id, Net_IO mc, Net_IO mdb, Net_IO mdr) {
     DispatcherInterface stub;
-    Registry            registry;
 
     try {
-      stub     = (DispatcherInterface)UnicastRemoteObject.exportObject(new Dispatcher(mc, mdb, mdr), 0);
-      registry = LocateRegistry.getRegistry(ApplicationInfo.getAP());
+      stub     = UnicastRemoteObject.exportObject(new Dispatcher(mc, mdb, mdr), 0);
+      this.reg = LocateRegistry.getRegistry(ApplicationInfo.getAP());
     }
     catch (RemoteException err) {
       System.err.println("Failed to register client handler!\n - " + err.getMessage());
       return null;
     }
 
-    if (!tryBinding(registry, Integer.toString(id), stub)) {
+    if (!tryBinding(Integer.toString(id), stub)) {
       System.out.println("Creating registry...");
       try {
-        registry = LocateRegistry.createRegistry(ApplicationInfo.getAP());
+        this.reg = LocateRegistry.createRegistry(ApplicationInfo.getAP());
       }
       catch (RemoteException err) {
         System.err.println("Failed to create registry!\n - " + err.getMessage());
@@ -118,7 +118,7 @@ class Server {
       return stub;
     }
 
-    if (tryBinding(registry, Integer.toString(id), stub)) {
+    if (tryBinding(Integer.toString(id), stub)) {
       return stub;
     }
     return null;
@@ -131,9 +131,9 @@ class Server {
    * @param  stub Object to be binded
    * @return      Whether it was successfully binded or not
    */
-  private static boolean tryBinding(Registry reg, String id, DispatcherInterface stub) {
+  private static boolean tryBinding(String id, DispatcherInterface stub) {
     try {
-      reg.rebind(id, stub);
+      this.reg.rebind(id, stub);
       return true;
     }
     catch (RemoteException err) {
