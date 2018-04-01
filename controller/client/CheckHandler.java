@@ -115,8 +115,8 @@ public class CheckHandler extends Handler implements Remote {
       }
     }
 
-    this.checked_chunks.forEach(1, (chunk_id, info)->{
-      if (info.first() != null) {
+    this.checked_chunks.forEach(5, (chunk_id, info)->{
+      if (info != null&& info.first() != null) {
         FileHandler.reuseChunk(chunk_id, info.first(), info.second());
       }
       else {

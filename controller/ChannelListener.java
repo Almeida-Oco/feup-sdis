@@ -44,10 +44,12 @@ public class ChannelListener implements Runnable {
 
   @Override
   public void run() {
-    PacketInfo packet;
+    PacketInfo packet = null;
+    int        own_id = ApplicationInfo.getServID();
 
+    System.out.println("Listening");
     while (true) {
-      if ((packet = this.channel.recvMsg()) != null&& (packet.getSenderID() != ApplicationInfo.getServID())) {
+      if ((packet = this.channel.recvMsg()) != null&& (packet.getSenderID() != own_id)) {
         System.out.println("Got '" + packet.getType() + "', chunk #" + packet.getChunkN() + ", peer " + packet.getSenderID());
 
         SignalHandler.addPacket(packet);

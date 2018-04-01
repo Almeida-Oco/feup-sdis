@@ -53,23 +53,23 @@ class Server {
       return;
     }
 
-    System.out.println("Version = " + ApplicationInfo.getVersion());
+
+    Thread mc          = new Thread(new ChannelListener(mc_channel));
+    Thread mdb         = new Thread(new ChannelListener(mdb_channel));
+    Thread mdr         = new Thread(new ChannelListener(mdr_channel));
+    Thread sig_handler = new Thread(new SignalHandler());
+    mc.start();
+    mdb.start();
+    mdr.start();
+    sig_handler.start();
+
     Vector<Pair<String, Integer> > reused_chunks = FileHandler.setup();
     if (ApplicationInfo.getVersion() >= 20) {
       CheckHandler check = new CheckHandler();
       check.start(reused_chunks, ApplicationInfo.getMC());
     }
 
-
-    Thread mc          = new Thread(new ChannelListener(mc_channel));
-    Thread mdb         = new Thread(new ChannelListener(mdb_channel));
-    Thread mdr         = new Thread(new ChannelListener(mdr_channel));
-    Thread sig_handler = new Thread(new SignalHandler());
-    sig_handler.start();
-    mc.start();
-    mdb.start();
-    mdr.start();
-    System.out.println("Ready");
+    System.out.println("Ready!");
     try {
       sig_handler.join();
       mc.join();

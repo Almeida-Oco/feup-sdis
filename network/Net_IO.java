@@ -93,6 +93,7 @@ public class Net_IO {
       DatagramPacket packet = new DatagramPacket(new byte[BUF_SIZE], BUF_SIZE);
       this.mcast_socket.receive(packet);
       PacketInfo recv_packet = PacketInfo.fromPacket(packet);
+      System.out.println("GOT PACKET TYPE '" + recv_packet.getType() + "'");
       return recv_packet;
     }
     catch (IOException err) {

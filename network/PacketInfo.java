@@ -151,13 +151,25 @@ public class PacketInfo {
    */
   public String toString() {
     boolean is_putchunk = this.msg_type.equalsIgnoreCase("PUTCHUNK"),
-        is_chunk        = this.msg_type.equalsIgnoreCase("CHUNK");
+        is_chunk        = this.msg_type.equalsIgnoreCase("CHUNK"),
+        is_chunkchks    = this.msg_type.equalsIgnoreCase("CHUNKCHKS");
 
     if (!this.isReady()) {
       return null;
     }
 
-    return this.headerToString() + CRLF + CRLF + ((is_putchunk || is_chunk) ? this.data : "");
+    return this.headerToString() + CRLF +
+           (is_chunkchks ? this.repsToString() : "") + CRLF +
+           ((is_putchunk || is_chunk) ? this.data : "");
+  }
+
+  private String repsToString() {
+    String reps = new String();
+
+    for (int i = 0; i < this.replicators.length; i++) {
+      reps += Integer.toString(this.replicators[i]) + " ";
+    }
+    return reps;
   }
 
   /**
@@ -166,14 +178,15 @@ public class PacketInfo {
    */
   private String headerToString() {
     boolean is_delete = this.msg_type.equalsIgnoreCase("DELETE"),
-        is_putchunk   = this.msg_type.equalsIgnoreCase("PUTCHUNK");
+        is_putchunk   = this.msg_type.equalsIgnoreCase("PUTCHUNK"),
+        is_chunkchks  = this.msg_type.equalsIgnoreCase("CHUNKCHKS");
 
     return this.msg_type + " "
            + this.version + " "
            + this.sender_id + " "
            + this.file_id + " "
            + (is_delete ? "" : (Integer.toString(this.chunk_n) + " "))
-           + (is_putchunk ? this.r_degree : "");
+           + ((is_putchunk || is_chunkchks) ? this.r_degree : "");
   }
 
   /**
