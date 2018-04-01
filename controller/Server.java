@@ -42,7 +42,7 @@ class Server {
   /**
    * Starts the server, after the arguments were parsed
    */
-  private static void startProgram() {
+  private static DispatcherInterface startProgram() {
     Net_IO mc_channel  = ApplicationInfo.getMC();
     Net_IO mdb_channel = ApplicationInfo.getMDB();
     Net_IO mdr_channel = ApplicationInfo.getMDR();
@@ -79,6 +79,8 @@ class Server {
     catch (InterruptedException err) {
       System.err.println("Failed to join thread!\n - " + err.getMessage());
     }
+
+    return stub;
   }
 
   /**
