@@ -159,7 +159,7 @@ public class PacketInfo {
     }
 
     return this.headerToString() + CRLF +
-           (is_chunkchks ? this.repsToString() : "") + CRLF +
+           (is_chunkchks ? this.repsToString() : "") + CRLF + CRLF +
            ((is_putchunk || is_chunk) ? this.data : "");
   }
 
