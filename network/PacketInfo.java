@@ -18,7 +18,7 @@ import java.io.UnsupportedEncodingException;
  * @author João Almeida
  */
 public class PacketInfo {
-  private static final String regex = "\\s*(?<msgT>\\w+)\\s+(?<version>\\d\\.\\d)\\s+(?<senderID>\\d+)\\s+(?<fileID>.{64})((\\s+(?<chunkN1>\\d{1,6})\\s+(?<Rdegree>\\d))|\\s+(?<chunkN2>\\d{1,6}))?\\s*\r\n(?<misc>.*?)\r\n\r\n(?<data>.{0,64000})?";
+  private static final String regex = "\\s*(?<msgT>\\w+)\\s+(?<version>\\d\\.\\d)\\s+(?<senderID>\\d+)\\s+(?<fileID>.{64})((\\s+(?<chunkN1>\\d{1,6})\\s+(?<Rdegree>\\d))|\\s+(?<chunkN2>\\d{1,6}))?\\s*\r\n(?<misc>.*?\r\n)*\r\n(?<data>.{0,64000})?";
 
   private static final Pattern MSG_PAT = Pattern.compile(regex, Pattern.DOTALL | Pattern.MULTILINE);
 
@@ -106,7 +106,7 @@ public class PacketInfo {
         this.chunk_n  = Integer.parseInt(chunk_n);
         this.r_degree = Integer.parseInt(matcher.group("Rdegree"));
         if (this.msg_type.equalsIgnoreCase("CHUNKCHKS") && this.r_degree > 0) {
-          this.parseReplicators(matcher.group("misc"), this.r_degree);
+          return this.parseReplicators(matcher.group("misc"), this.r_degree);
         }
       }
       else if ((chunk_n = matcher.group("chunkN2")) != null) {
