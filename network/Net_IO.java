@@ -118,6 +118,7 @@ public class Net_IO {
     DatagramPacket dgram_packet = new DatagramPacket(new byte[size], size, this.mcast_addr, this.mcast_port);
 
     try {
+      System.out.println("Sending:\n" + packet.toString());
       dgram_packet.setData(data.getBytes(StandardCharsets.ISO_8859_1), 0, size);
       this.mcast_socket.send(dgram_packet);
       return true;
