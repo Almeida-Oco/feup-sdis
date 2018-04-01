@@ -351,7 +351,9 @@ public class FileHandler {
 
     if (info != null) {
       Chunk chunk = info.getChunk(chunk_n);
-      return new Pair<Integer, Vector<Integer> >(chunk.getDesiredRep(), chunk.getReplicators());
+      if (chunk != null) {
+        return new Pair<Integer, Vector<Integer> >(chunk.getDesiredRep(), chunk.getReplicators());
+      }
     }
 
     Chunk chunk = local_storer.getChunk(file_id, chunk_n);

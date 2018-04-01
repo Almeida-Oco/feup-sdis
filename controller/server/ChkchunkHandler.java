@@ -30,6 +30,7 @@ public class ChkchunkHandler extends Handler {
   public ChkchunkHandler(PacketInfo packet, Net_IO mc) {
     this.file_id = packet.getFileID();
     this.chunk_n = packet.getChunkN();
+    this.mc      = mc;
   }
 
   @Override
