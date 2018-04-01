@@ -23,7 +23,7 @@ class NetworkChunk extends Chunk {
   }
 
   LocalChunk toLocalChunk(byte[] data, int size, int peer_id) {
-    LocalChunk chunk = new LocalChunk(data, size, this.chunk_n, this.desired_rep, peer_id);
+    LocalChunk chunk = new LocalChunk(data, size, this.chunk_n, this.desired_rep.get(), peer_id);
 
     for (Integer replicator : this.replicators) {
       chunk.addPeer(replicator);
