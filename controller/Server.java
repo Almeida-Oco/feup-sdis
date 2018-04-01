@@ -50,7 +50,7 @@ class Server {
     DispatcherInterface stub;
 
     if ((stub = registerClient(ApplicationInfo.getServID(), mc_channel, mdb_channel, mdr_channel)) == null) {
-      return;
+      return null;
     }
 
 
