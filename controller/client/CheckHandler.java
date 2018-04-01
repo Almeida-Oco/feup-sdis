@@ -36,9 +36,14 @@ class CheckHandler extends Handler implements Remote {
   /** The chunks that were checked by the network, this hashmap is initialized with all false */
   ConcurrentHashMap<String, Pair<Integer, HashSet<Integer> > > checked_chunks;
 
+  /** Pool of threads */
   ScheduledThreadPoolExecutor services;
 
-
+  /**
+   * Starts the protocol
+   * @param chunks Chunks to check
+   * @param mc     Channel to send messages
+   */
   void start(Vector<Pair<String, Integer> > chunks, Net_IO mc) {
     this.chunks         = chunks;
     this.mc             = mc;
@@ -75,6 +80,11 @@ class CheckHandler extends Handler implements Remote {
     }
   }
 
+  /**
+   * Creates a new HashSet based on array
+   * @param  replicators Array to use as base
+   * @return             Newly created HashSet
+   */
   private HashSet<Integer> createHashSet(int[] replicators) {
     HashSet<Integer> reps = new HashSet<Integer>(replicators.length);
     for (int rep : replicators) {
