@@ -66,22 +66,13 @@ public class RemovedHandler extends Handler {
   }
 
   public void run() {
-    Chunk  stored_chunk = FileHandler.getStoredChunk(this.file_id, this.chunk_n);
-    Chunk  backed_chunk = FileHandler.getBackedChunk(this.file_id, this.chunk_n);
-    Chunk  chunk;
+    Chunk  chunk    = this.getChunk();
     String chunk_id = this.file_id + "#" + this.chunk_n;
 
-    if (stored_chunk == null&& backed_chunk == null) {
+    if (chunk == null) { //not a chunk to worry about
       return;
     }
-    else if (stored_chunk == null&& backed_chunk != null) {
-      chunk = backed_chunk;
-    }
-    else {
-      chunk = stored_chunk;
-    }
 
-    chunk.removePeer(this.peer_id);
     Random rand = new Random();
     ScheduledThreadPoolExecutor services = new ScheduledThreadPoolExecutor(2);
     ScheduledFuture             future;
@@ -89,8 +80,8 @@ public class RemovedHandler extends Handler {
     SignalHandler.addSignal("PUTCHUNK", chunk_id, this);
     future = services.schedule(()->{
       if (!this.got_putchunk.get()) {
-        waiting_for_putchunk.set(false);
         SignalHandler.removeSignal("PUTCHUNK", chunk_id);
+        waiting_for_putchunk.set(false);
         SignalHandler.addSignal("STORED", chunk_id, this);
 
         try {
@@ -129,5 +120,23 @@ public class RemovedHandler extends Handler {
       }
       return false;
     });
+  }
+
+  private Chunk getChunk() {
+    Chunk stored_chunk = FileHandler.getStoredChunk(this.file_id, this.chunk_n);
+    Chunk backed_chunk = FileHandler.getBackedChunk(this.file_id, this.chunk_n);
+
+    if (stored_chunk == null&& backed_chunk == null) {
+      return null;
+    }
+    else if (stored_chunk == null&& backed_chunk != null) {
+      return backed_chunk;
+    }
+    else if (stored_chunk != null&& backed_chunk == null) {
+      return stored_chunk;
+    }
+
+    System.err.println("Both stored and backed up?!");
+    return null;
   }
 }

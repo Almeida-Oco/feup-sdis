@@ -106,6 +106,10 @@ class CheckHandler extends Handler implements Remote {
       if (info != null) {
         FileHandler.reuseChunk(chunk_id, info.first(), info.second());
       }
+      else {
+        FileHandler.remFilesystemChunk(chunk_id);
+      }
+      SignalHandler.removeSignal("CHUNKCHKS", chunk_id);
     });
   }
 

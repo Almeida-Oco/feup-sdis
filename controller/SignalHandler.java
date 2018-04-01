@@ -110,6 +110,9 @@ public class SignalHandler implements Runnable {
     else if (type.equals("PUTCHUNK")) {
       FileHandler.addNetworkPeer(packet.getFileID(), packet.getChunkN(), packet.getRDegree(), null);
     }
+    else if (type.equals("REMOVED")) {
+      FileHandler.remNetworkPeer(packet.getFileID(), packet.getChunkN(), packet.getSenderID());
+    }
   }
 
   /**

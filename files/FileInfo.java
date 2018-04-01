@@ -65,6 +65,25 @@ public class FileInfo {
     }
   }
 
+  boolean addPeer(int chunk_n, Integer peer_id) {
+    int index = Collections.binarySearch(this.chunks, chunk_n);
+
+    if (index >= 0) {
+      this.chunks.get(index).addPeer(peer_id);
+    }
+    return index >= 0;
+  }
+
+  boolean removePeer(int chunk_n, Integer peer_id) {
+    int index = Collections.binarySearch(this.chunks, chunk_n);
+
+    if (index >= 0) {
+      this.chunks.get(index).removePeer(peer_id);
+    }
+
+    return index >= 0;
+  }
+
   /**
    * Tries to hash the metadata
    * @param chunk Latest chunk to be added into {@link FileInfo#chunks}
@@ -153,6 +172,17 @@ public class FileInfo {
    */
   public int chunkNumber() {
     return this.chunks.size();
+  }
+
+  public Vector<Chunk> underlyReplicated() {
+    Vector<Chunk> underly_chunks = new Vector<Chunk>();
+    for (Chunk chunk : this.chunks) {
+      if (chunk.getActualRep() < chunk.getDesiredRep()) {
+        underly_chunks.add(chunk);
+      }
+    }
+
+    return underly_chunks;
   }
 
   /**

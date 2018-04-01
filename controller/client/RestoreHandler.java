@@ -23,6 +23,9 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
  * @author João Almeida
  */
 class RestoreHandler extends Handler implements Remote {
+  private static final int MAX_RESENDS = 5;
+  private static final int WAIT_TIME   = 2;
+
   /** Path to file to be restored */
   String file_name;
 
@@ -108,8 +111,8 @@ class RestoreHandler extends Handler implements Remote {
     ScheduledThreadPoolExecutor schedulor = new ScheduledThreadPoolExecutor(1);
     Waiter wait_task = new Waiter(expected_chunks, packet, this.mc, this.rem_chunks);
 
-    for (i = 0; i < 5; i++) {
-      future = schedulor.schedule(wait_task, 2, TimeUnit.SECONDS);
+    for (i = 0; i < MAX_RESENDS; i++) {
+      future = schedulor.schedule(wait_task, WAIT_TIME, TimeUnit.SECONDS);
       try {
         if (!future.get()) { //Meaning it has received all chunks
           break;

@@ -8,7 +8,7 @@ import java.rmi.RemoteException;
  * @author Gonçalo Moreno
  * @author João Almeida
  */
-public interface HandlerInterface extends Remote {
+public interface DispatcherInterface extends Remote {
   /**
    * Initializes the backup protocol
    * @param  file_name       Path to file to be backed up

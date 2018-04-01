@@ -12,6 +12,7 @@ import java.net.InetAddress;
 import java.util.concurrent.TimeUnit;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 /**
@@ -31,9 +32,6 @@ public class PutchunkHandler extends Handler {
 
   /**  Desired replication degree of the chunk */
   int desired_rep;
-
-  /**  Peers who stored the chunk */
-  Vector<Integer> replicators;
 
   /**  Channel to send the STORED message */
   Net_IO mc;
@@ -56,22 +54,16 @@ public class PutchunkHandler extends Handler {
 
   @Override
   public void signal(PacketInfo packet) {
-    synchronized (this.replicators) {
-      this.replicators.add(packet.getSenderID());
-    }
   }
 
   @Override
   public void run() {
     //Lengthy creations leave to this thread not Listener thread
-    this.services    = new ScheduledThreadPoolExecutor(1);
-    this.replicators = new Vector<Integer>(this.desired_rep);
+    this.services = new ScheduledThreadPoolExecutor(1);
     String chunk_id = this.file_id + "#" + this.chunk_n;
 
-    //before isLocalFile() just in case that delay interferes with protocol
-    SignalHandler.addSignal("STORED", chunk_id, this);
-    if (FileHandler.isLocalFile(this.file_id)) {
-      SignalHandler.removeSignal("STORED", chunk_id);
+    //before getBackedUpFile() just in case that delay interferes with protocol
+    if (FileHandler.getBackedUpFile(this.file_id) != null) {
       return;
     }
     PacketInfo packet = new PacketInfo("STORED", this.file_id, this.chunk_n);
@@ -79,7 +71,6 @@ public class PutchunkHandler extends Handler {
 
 
     if (FileHandler.isLocalChunk(this.file_id, this.chunk_n)) { //If chunk is already stored, send stored message
-      SignalHandler.removeSignal("STORED", chunk_id);
       this.mc.sendMsg(packet);
       return;
     }
@@ -92,22 +83,17 @@ public class PutchunkHandler extends Handler {
       System.out.println("Not enough space to store " + data_size +
           " bytes!\n - Space remaining: " + rem_space + " bytes");
     }
-    SignalHandler.removeSignal("STORED", chunk_id);
   }
 
   private void storeFile(PacketInfo packet) {
-    Random          rand   = new Random();
-    ScheduledFuture future = this.services.schedule(()->{
-      int actual_rep;
-      synchronized (this.replicators) {
-        actual_rep = this.replicators.size();
-      }
+    Random rand = new Random();
 
-      if (actual_rep < this.desired_rep) {
-        if (FileHandler.storeLocalChunk(this.file_id, this.chunk_n, this.desired_rep,
-        this.data.getBytes(StandardCharsets.ISO_8859_1), this.data.length())) {
-          this.mc.sendMsg(packet);
-        }
+    byte[] data = this.data.getBytes(StandardCharsets.ISO_8859_1);
+
+    ScheduledFuture future = this.services.schedule(()->{
+      if (FileHandler.chunkRepDegree(this.file_id, this.chunk_n) < this.desired_rep &&
+      FileHandler.storeLocalChunk(this.file_id, this.chunk_n, this.desired_rep, data, data.length)) {
+        this.mc.sendMsg(packet);
       }
     }, rand.nextInt(401), TimeUnit.MILLISECONDS);
 

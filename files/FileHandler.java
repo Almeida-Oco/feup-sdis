@@ -75,7 +75,10 @@ public class FileHandler {
       chunk.addPeer(rep);
     }
 
-    local_storer.addChunk(file_id, chunk);
+    int bytes = local_storer.addChunk(file_id, chunk);
+    if (bytes != -1) {
+      used_space.addAndGet(bytes);
+    }
   }
 
   /**
@@ -108,7 +111,11 @@ public class FileHandler {
     if (!File_IO.storeFile(file_id + "#" + chunk_n, data, data_size)) {
       return false;
     }
-    return local_storer.addChunk(file_id, chunk);
+    int bytes = local_storer.addChunk(file_id, chunk);
+    if (bytes != -1) {
+      used_space.addAndGet(bytes);
+    }
+    return bytes != -1;
   }
 
   /**
@@ -124,13 +131,20 @@ public class FileHandler {
    * Other states are not possible
    */
   public static boolean addNetworkPeer(String file_id, int chunk_n, int rep_degree, Integer peer_id) {
-    Chunk chunk;
+    Chunk    chunk;
+    FileInfo info;
+
+    if ((info = getBackedUpFile(file_id)) != null) {
+      return info.addPeer(chunk_n, peer_id);
+    }
 
     synchronized (local_storer) {
-      if ((chunk = local_storer.getChunk(file_id, chunk_n)) == null) {
-        if ((chunk = network_storer.getChunk(file_id, chunk_n)) == null) {
-          chunk = new NetworkChunk(chunk_n, rep_degree, peer_id);
-          return network_storer.addChunk(file_id, chunk);
+      synchronized (network_storer) {
+        if ((chunk = local_storer.getChunk(file_id, chunk_n)) == null) {
+          if ((chunk = network_storer.getChunk(file_id, chunk_n)) == null) {
+            chunk = new NetworkChunk(chunk_n, rep_degree, peer_id);
+            return network_storer.addChunk(file_id, chunk) != -1;
+          }
         }
       }
     }
@@ -139,11 +153,37 @@ public class FileHandler {
     return true;
   }
 
+  public static boolean remNetworkPeer(String file_id, int chunk_n, Integer peer_id) {
+    Chunk    chunk;
+    FileInfo info;
+
+    if ((info = getBackedFile(file_id)) != null) {
+      return info.removePeer(chunk_n, peer_id);
+    }
+
+    synchronized (local_storer) {
+      synchronized (network_storer) {
+        chunk = local_storer.getChunk(file_id, chunk_n);
+        if (chunk == null) {
+          chunk = network_storer.getChunk(file_id, chunk_n);
+        }
+
+        if (chunk != null) {
+          chunk.removePeer(peer_id);
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
   /**
    * Reads the file from the file system
    * @param  file_name  Name of file to read
    * @param  rep_degree Desired replication degree of file
    * @return            Information of file in {@link FileInfo}, null on error
+   * If this method is successfull it adds the FileInfo to {@link FileHandler#backed_files}
    */
   public static FileInfo readFile(String file_name, int rep_degree) {
     FileInfo info = File_IO.readFile(file_name, rep_degree);
@@ -185,10 +225,19 @@ public class FileHandler {
    * @return         Whether the chunk was removed or not
    */
   public static boolean remLocalChunk(String file_id, int chunk_n) {
-    if (local_storer.removeChunk(file_id, chunk_n)) {
-      return File_IO.eraseFile(file_id + "#" + chunk_n);
+    int bytes;
+
+    if ((bytes = local_storer.removeChunk(file_id, chunk_n)) != -1) {
+      if (File_IO.eraseFile(file_id + "#" + chunk_n)) {
+        used_space.addAndGet(-bytes);
+        return true;
+      }
     }
     return false;
+  }
+
+  public static boolean remFilesystemChunk(String chunk_id) {
+    return File_IO.eraseFile(chunk_id);
   }
 
   /**
@@ -203,7 +252,7 @@ public class FileHandler {
       return false;
     }
 
-    chunks.forEach((chunk)->File_IO.eraseFile(file_id + "#" + chunk.getChunkN()));
+    chunks.forEach((chunk)->remLocalChunk(file_id, chunk.getChunkN()));
     return local_storer.removeFile(file_id);
   }
 
@@ -279,6 +328,13 @@ public class FileHandler {
 
   // ------ GETTERS SETTERS ---------
 
+
+  /**
+   * Checks if the given chunks is stored locally
+   * @param  file_id ID of file
+   * @param  chunk_n Number of chunk to check
+   * @return         Whether it is stored or not
+   */
   public static boolean isLocalChunk(String file_id, int chunk_n) {
     return local_storer.getChunk(file_id, chunk_n) != null;
   }
@@ -310,13 +366,13 @@ public class FileHandler {
    * @param  file_id File name
    * @return         Whether file was previously backed up or not
    */
-  public static boolean isLocalFile(String file_id) {
+  public static FileInfo getBackedUpFile(String file_id) {
     for (Map.Entry<String, FileInfo> entry : backed_files.entrySet()) {
       if (entry.getValue().getID().equals(file_id)) {
-        return true;
+        return entry.getValue();
       }
     }
-    return false;
+    return null;
   }
 
   /**
@@ -397,7 +453,13 @@ public class FileHandler {
     if (chunk != null) {
       return chunk.getActualRep();
     }
-    return -1;
+
+    chunk = network_storer.getChunk(file_id, chunk_n);
+    if (chunk != null) {
+      return chunk.getActualRep();
+    }
+
+    return 0;
   }
 
   /**

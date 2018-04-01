@@ -21,30 +21,33 @@ class ChunkStorer {
     return chunks;
   }
 
-  boolean addChunk(String file_id, Chunk chunk) {
+  int addChunk(String file_id, Chunk chunk) {
     Vector<Chunk> chunks = this.createIfAbsent(file_id, chunk.getDesiredRep());
 
     synchronized (chunks) {
       int index = Collections.binarySearch(chunks, chunk.getChunkN());
       if (index < 0) {
         chunks.add((-(index) - 1), chunk);
+        return chunk.getSize();
       }
-      return index < 0;
+      return -1;
     }
   }
 
-  boolean removeChunk(String file_id, int chunk_n) {
+  int removeChunk(String file_id, int chunk_n) {
     Vector<Chunk> chunks = this.stored_chunks.get(file_id);
     if (chunks != null) {
       synchronized (chunks) {
         int index = Collections.binarySearch(chunks, chunk_n);
         if (index >= 0) {
+          int size = chunks.get(index).getSize();
           chunks.remove(index);
+          return size;
         }
-        return index >= 0;
+        return -1;
       }
     }
-    return false;
+    return -1;
   }
 
   boolean removeFile(String file_id) {

@@ -5,7 +5,7 @@ import files.FileHandler;
 import network.Net_IO;
 import parser.ServerParser;
 import controller.ApplicationInfo;
-import controller.HandlerInterface;
+import controller.DispatcherInterface;
 import controller.client.Dispatcher;
 
 import java.util.regex.Matcher;
@@ -45,7 +45,7 @@ class Server {
     Net_IO mdb_channel = ApplicationInfo.getMDB();
     Net_IO mdr_channel = ApplicationInfo.getMDR();
 
-    HandlerInterface stub;
+    DispatcherInterface stub;
 
     if ((stub = registerClient(ApplicationInfo.getServID(), mc_channel, mdb_channel, mdr_channel)) == null) {
       return;
@@ -81,12 +81,12 @@ class Server {
    * @param  mdr MDR {@link ChannelListener}
    * @return     The registered object, null on error
    */
-  private static HandlerInterface registerClient(int id, Net_IO mc, Net_IO mdb, Net_IO mdr) {
-    HandlerInterface stub;
+  private static DispatcherInterface registerClient(int id, Net_IO mc, Net_IO mdb, Net_IO mdr) {
+    DispatcherInterface stub;
     Registry         registry;
 
     try {
-      stub     = (HandlerInterface)UnicastRemoteObject.exportObject(new Dispatcher(mc, mdb, mdr), 0);
+      stub     = (DispatcherInterface)UnicastRemoteObject.exportObject(new Dispatcher(mc, mdb, mdr), 0);
       registry = LocateRegistry.getRegistry(RMI_PORT);
     }
     catch (RemoteException err) {
@@ -121,7 +121,7 @@ class Server {
    * @param  stub Object to be binded
    * @return      Whether it was successfully binded or not
    */
-  private static boolean tryBinding(Registry reg, String id, HandlerInterface stub) {
+  private static boolean tryBinding(Registry reg, String id, DispatcherInterface stub) {
     try {
       reg.rebind(id, stub);
       return true;

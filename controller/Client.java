@@ -2,7 +2,7 @@ package controller;
 
 import cli.User_IO;
 import parser.ClientParser;
-import controller.HandlerInterface;
+import controller.DispatcherInterface;
 
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
@@ -31,7 +31,7 @@ class Client {
       User_IO.clientUsage();
       return;
     }
-    HandlerInterface handler = getObj(ClientParser.getIP(), ClientParser.getPort(), ClientParser.getName());
+    DispatcherInterface handler = getObj(ClientParser.getIP(), ClientParser.getPort(), ClientParser.getName());
     if (handler == null) {
       return;
     }
@@ -67,14 +67,14 @@ class Client {
    * @param  name Name of object to fetch
    * @return      Instance of RMI object
    */
-  private static HandlerInterface getObj(String ip, int port, String name) {
+  private static DispatcherInterface getObj(String ip, int port, String name) {
     try {
       Registry registry = LocateRegistry.getRegistry(ip, port);
       if (registry == null) {
         System.err.println("Failed to get registry from " + ip + ":" + port);
         return null;
       }
-      HandlerInterface handler = (HandlerInterface)registry.lookup(name);
+      DispatcherInterface handler = (DispatcherInterface)registry.lookup(name);
       return handler;
     }
     catch (RemoteException err) {

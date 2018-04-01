@@ -2,7 +2,7 @@ package controller.client;
 
 import network.Net_IO;
 import controller.ApplicationInfo;
-import controller.HandlerInterface;
+import controller.DispatcherInterface;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -12,7 +12,7 @@ import java.rmi.RemoteException;
  * @author Gonçalo Moreno
  * @author João Almeida
  */
-public class Dispatcher implements HandlerInterface {
+public class Dispatcher implements DispatcherInterface {
   Net_IO mc, mdb, mdr;
   private BackupHandler backup;
   private RestoreHandler restore;
