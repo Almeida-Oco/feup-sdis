@@ -51,6 +51,7 @@ public class ChannelListener implements Runnable {
         System.out.println("Got '" + packet.getType() + "', chunk #" + packet.getChunkN() + ", peer " + packet.getSenderID());
 
         SignalHandler.addPacket(packet);
+
         Runnable task = (Runnable)Handler.newHandler(packet);
         if (task != null) {
           this.task_queue.execute(task);

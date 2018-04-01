@@ -14,11 +14,9 @@ all: $(classes)
 #removes .class files
 clean :
 	@rm -f $(classes)
-	@rm -rf stored_files*
 
 
 #what happens when trying to make a .class file
 #@ hides the commands from console (they are not printed)
 %.class : %.java
 	@$(JAVAC) $<
-	@rm -rf stored_files*

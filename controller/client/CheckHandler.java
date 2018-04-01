@@ -63,6 +63,8 @@ public class CheckHandler extends Handler implements Remote {
     String chunk_id   = packet.getFileID() + "#" + packet.getChunkN();
     int    rep_degree = packet.getRDegree();
 
+    System.out.println("CHUNKCHKS " + chunk_id);
+
     Pair<Integer, HashSet<Integer> > reps = this.checked_chunks.get(chunk_id);
 
     if (reps.first() == null) {

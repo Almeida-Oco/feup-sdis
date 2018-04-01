@@ -347,8 +347,14 @@ public class FileHandler {
    * First checks the {@link FileHandler#local_storer}, if not found then checks {@link FileHandler#network_storer}
    */
   public static Pair<Integer, Vector<Integer> > getChunkInfo(String file_id, int chunk_n) {
-    Chunk chunk = local_storer.getChunk(file_id, chunk_n);
+    FileInfo info = getBackedUpFile(file_id);
 
+    if (info != null) {
+      Chunk chunk = info.getChunk(chunk_n);
+      return new Pair<Integer, Vector<Integer> >(chunk.getDesiredRep(), chunk.getReplicators());
+    }
+
+    Chunk chunk = local_storer.getChunk(file_id, chunk_n);
     if (chunk != null) {
       return new Pair<Integer, Vector<Integer> >(chunk.getDesiredRep(), chunk.getReplicators());
     }
