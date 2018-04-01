@@ -2,7 +2,8 @@
 
 FILE='/home/jalmeida/Pictures/Example.png'
 FILE_BACKUP='/home/jalmeida/Pictures/Example2.png'
-RMI='8000'
+VERSION='2.0'
+RMI='1099'
 MC='224.0.0.1:8001'
 MDR='224.0.0.2:8002'
 MDB='224.0.0.3:8003'
@@ -37,7 +38,7 @@ function state() {
 }
 
 function peer() {
-  java controller.Server 1.0 $1 $RMI $MC $MDR $MDB
+  java controller.Server $VERSION $1 $RMI $MC $MDR $MDB
 }
 
 function printUsage() {
