@@ -138,8 +138,8 @@ public abstract class Chunk implements Comparable<Integer> {
 
   @Override
   public boolean equals(Object obj) {
-    if (obj instanceof FileChunk) {
-      FileChunk chunk = (FileChunk)obj;
+    if (obj instanceof Chunk) {
+      Chunk chunk = (Chunk)obj;
       return chunk.chunk_n == this.chunk_n;
     }
     return false;
