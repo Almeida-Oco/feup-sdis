@@ -96,8 +96,8 @@ class Server {
     DispatcherInterface stub;
 
     try {
-      stub     = UnicastRemoteObject.exportObject(new Dispatcher(mc, mdb, mdr), 0);
-      this.reg = LocateRegistry.getRegistry(ApplicationInfo.getAP());
+      stub = (DispatcherInterface)UnicastRemoteObject.exportObject(new Dispatcher(mc, mdb, mdr), 0);
+      reg  = LocateRegistry.getRegistry(ApplicationInfo.getAP());
     }
     catch (RemoteException err) {
       System.err.println("Failed to register client handler!\n - " + err.getMessage());
@@ -107,7 +107,7 @@ class Server {
     if (!tryBinding(Integer.toString(id), stub)) {
       System.out.println("Creating registry...");
       try {
-        this.reg = LocateRegistry.createRegistry(ApplicationInfo.getAP());
+        reg = LocateRegistry.createRegistry(ApplicationInfo.getAP());
       }
       catch (RemoteException err) {
         System.err.println("Failed to create registry!\n - " + err.getMessage());
@@ -133,7 +133,7 @@ class Server {
    */
   private static boolean tryBinding(String id, DispatcherInterface stub) {
     try {
-      this.reg.rebind(id, stub);
+      reg.rebind(id, stub);
       return true;
     }
     catch (RemoteException err) {
