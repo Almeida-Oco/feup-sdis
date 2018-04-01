@@ -41,7 +41,6 @@ public class SignalHandler implements Runnable {
    */
   static boolean addPacket(PacketInfo packet) {
     try {
-      System.out.println("Adding packet!" + packet.getType());
       return packets.add(packet);
     }
     catch (IllegalStateException err) {
@@ -62,7 +61,6 @@ public class SignalHandler implements Runnable {
       chunk_task = new ConcurrentHashMap<String, Handler>();
       signals.put(signal_type, chunk_task);
     }
-    System.out.println("Registered '" + signal_type + "' -> '" + chunk_id + "'");
 
     chunk_task.put(chunk_id, task);
   }
@@ -123,14 +121,11 @@ public class SignalHandler implements Runnable {
    * @param packet Packet to check
    */
   private static void checkSignal(PacketInfo packet) {
-    System.out.println("Signal '" + packet.getType() + "'");
     ConcurrentHashMap<String, Handler> chunk_tasks = signals.get(packet.getType());
     if (chunk_tasks != null) {
-      System.out.println("  ChunkID = '" + packet.getFileID() + "#" + packet.getChunkN() + "'");
       Handler task = chunk_tasks.get(packet.getFileID() + "#" + packet.getChunkN());
 
       if (task != null) {
-        System.out.println("    Signalled task!");
         task.signal(packet);
       }
     }

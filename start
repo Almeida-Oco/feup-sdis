@@ -4,7 +4,7 @@ FILE='/home/jalmeida/Pictures/Example.png'
 FILE_BACKUP='/home/jalmeida/Pictures/Example2.png'
 VERSION='2.0'
 RMI='1099'
-MC='224.0.0.1:8001'
+MC='224.0.0.1:8004'
 MDR='224.0.0.2:8002'
 MDB='224.0.0.3:8003'
 
