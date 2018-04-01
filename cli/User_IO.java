@@ -33,7 +33,7 @@ public class User_IO {
         id_name            = "  server id        ",
         id_desc            = "ID to assign to the server ( [0-9]+ )\n",
         ap_name            = "  access point     ",
-        ap_desc            = "Service access point to use ( [0-9]+ ) \n",
+        ap_desc            = "RMI port to use ( [0-9]+ ) \n",
         mc_name            = "  MC               ",
         mc_desc            = "Name of the multicast control channel to use ( <ip>?:?<port> )\n",
         mdr_name           = "  MDR              ",

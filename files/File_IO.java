@@ -274,7 +274,7 @@ class File_IO {
 
 
     for (int i = 0; i < files.length; i++) {
-      names.add(files[i].getAbsolutePath());
+      names.add(files[i].getName());
     }
 
     return names;

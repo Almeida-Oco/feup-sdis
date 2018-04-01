@@ -1,10 +1,12 @@
 package controller.client;
 
 import network.Net_IO;
+import controller.Pair;
 import controller.ApplicationInfo;
 import controller.DispatcherInterface;
 
 import java.rmi.Remote;
+import java.util.Vector;
 import java.rmi.RemoteException;
 
 /**
@@ -19,6 +21,7 @@ public class Dispatcher implements DispatcherInterface {
   private DeleteHandler delete;
   private ReclaimHandler reclaim;
   private StateHandler state;
+  private CheckHandler check;
 
   /**
    * Creates a new {@link Dispatcher} with the given Multicast Channels
@@ -35,6 +38,7 @@ public class Dispatcher implements DispatcherInterface {
     this.delete  = new DeleteHandler();
     this.reclaim = new ReclaimHandler();
     this.state   = new StateHandler();
+    this.check   = new CheckHandler();
   }
 
   /**
@@ -80,5 +84,9 @@ public class Dispatcher implements DispatcherInterface {
    */
   public void state() throws RemoteException {
     this.state.run();
+  }
+
+  public void check(Vector<Pair<String, Integer> > chunks) {
+    this.check.start(chunks, mc);
   }
 }

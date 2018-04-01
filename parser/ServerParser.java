@@ -49,6 +49,7 @@ public class ServerParser {
     ApplicationInfo.setServId(serv_id);
     ApplicationInfo.setVersion(version);
     ApplicationInfo.setChannels(mc, mdb, mdr);
+    ApplicationInfo.setAP(ap);
     return true;
   }
 

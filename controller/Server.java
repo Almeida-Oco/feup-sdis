@@ -5,9 +5,11 @@ import files.FileHandler;
 import network.Net_IO;
 import parser.ServerParser;
 import controller.ApplicationInfo;
-import controller.DispatcherInterface;
 import controller.client.Dispatcher;
+import controller.DispatcherInterface;
+import controller.client.CheckHandler;
 
+import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.rmi.RemoteException;
@@ -51,8 +53,14 @@ class Server {
       return;
     }
 
+    System.out.println("Version = " + ApplicationInfo.getVersion());
+    Vector<Pair<String, Integer> > reused_chunks = FileHandler.setup();
+    if (ApplicationInfo.getVersion() >= 20) {
+      CheckHandler check = new CheckHandler();
+      check.start(reused_chunks, ApplicationInfo.getMC());
+    }
 
-    FileHandler.setup();
+
     Thread mc          = new Thread(new ChannelListener(mc_channel));
     Thread mdb         = new Thread(new ChannelListener(mdb_channel));
     Thread mdr         = new Thread(new ChannelListener(mdr_channel));
@@ -83,11 +91,11 @@ class Server {
    */
   private static DispatcherInterface registerClient(int id, Net_IO mc, Net_IO mdb, Net_IO mdr) {
     DispatcherInterface stub;
-    Registry         registry;
+    Registry            registry;
 
     try {
       stub     = (DispatcherInterface)UnicastRemoteObject.exportObject(new Dispatcher(mc, mdb, mdr), 0);
-      registry = LocateRegistry.getRegistry(RMI_PORT);
+      registry = LocateRegistry.getRegistry(ApplicationInfo.getAP());
     }
     catch (RemoteException err) {
       System.err.println("Failed to register client handler!\n - " + err.getMessage());
@@ -97,7 +105,7 @@ class Server {
     if (!tryBinding(registry, Integer.toString(id), stub)) {
       System.out.println("Creating registry...");
       try {
-        registry = LocateRegistry.createRegistry(RMI_PORT);
+        registry = LocateRegistry.createRegistry(ApplicationInfo.getAP());
       }
       catch (RemoteException err) {
         System.err.println("Failed to create registry!\n - " + err.getMessage());

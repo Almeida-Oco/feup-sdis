@@ -15,13 +15,16 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class ApplicationInfo {
   /** The ID of the running server */
-  static int serv_id;
+  int serv_id;
+
+  /** RMI port to use */
+  int ap;
 
   /** The version of the protocol */
-  static byte version;
+  byte version;
 
   /** The multicast channels listeners */
-  static Net_IO mc, mdb, mdr;
+  Net_IO mc, mdb, mdr;
 
   /** The sole instance of {@link ApplicationInfo} */
   static ApplicationInfo instance;
@@ -58,6 +61,14 @@ public class ApplicationInfo {
   }
 
   /**
+   * Sets access point
+   * @param ap RMI port to use
+   */
+  public static void setAP(int ap) {
+    instance.ap = ap;
+  }
+
+  /**
    * Sets the Multicast communication channels
    * @param mc  Multicast Control Channel
    * @param mdb Multicast Data Channel
@@ -78,6 +89,14 @@ public class ApplicationInfo {
    */
   public static int getServID() {
     return instance.serv_id;
+  }
+
+  /**
+   * Gets the RMI port to use
+   * @return Port to use
+   */
+  public static int getAP() {
+    return instance.ap;
   }
 
   /**

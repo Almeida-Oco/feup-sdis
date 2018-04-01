@@ -1,5 +1,7 @@
 package controller;
 
+import java.util.Vector;
+
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
@@ -43,4 +45,11 @@ public interface DispatcherInterface extends Remote {
    * @throws RemoteException Exception thrown when something goes wrong with RMI
    */
   public void state() throws RemoteException;
+
+  /**
+   * Initializes the chunk checker protocol
+   * @param chunks           Chunks to be checked
+   * @throws RemoteException Exception thrown when something goes wrong with RMI
+   */
+  public void check(Vector<Pair<String, Integer> > chunks) throws RemoteException;
 }

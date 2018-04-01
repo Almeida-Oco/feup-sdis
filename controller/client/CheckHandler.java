@@ -24,7 +24,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
  * @author João Almeida
  * This handler is only used at the beginning of the execution, to see which chunks the peer should mantain and which should it store
  */
-class CheckHandler extends Handler implements Remote {
+public class CheckHandler extends Handler implements Remote {
   private static final int MAX_TRIES = 3;
 
   /** Channel to send CHKCHUNK */
@@ -44,14 +44,15 @@ class CheckHandler extends Handler implements Remote {
    * @param chunks Chunks to check
    * @param mc     Channel to send messages
    */
-  void start(Vector<Pair<String, Integer> > chunks, Net_IO mc) {
+  public void start(Vector<Pair<String, Integer> > chunks, Net_IO mc) {
+    System.out.println("Checking " + chunks.size() + " chunks");
     this.chunks         = chunks;
     this.mc             = mc;
     this.services       = new ScheduledThreadPoolExecutor(chunks.size() * 2);
     this.checked_chunks = new ConcurrentHashMap<String, Pair<Integer, HashSet<Integer> > >(chunks.size(), 1);
     for (Pair<String, Integer> pair : chunks) {
       String chunk_id = pair.first() + "#" + pair.second();
-      this.checked_chunks.put(chunk_id, null);
+      this.checked_chunks.put(chunk_id, new Pair<Integer, HashSet<Integer> >(null, null));
       SignalHandler.addSignal("CHUNKCHKS", chunk_id, this);
     }
     this.run();
@@ -64,9 +65,9 @@ class CheckHandler extends Handler implements Remote {
 
     Pair<Integer, HashSet<Integer> > reps = this.checked_chunks.get(chunk_id);
 
-    if (reps == null) {
-      Pair<Integer, HashSet<Integer> > info = new Pair<Integer, HashSet<Integer> >(packet.getRDegree(), this.createHashSet(packet.getReplicators()));
-      this.checked_chunks.put(chunk_id, info);
+    if (reps.first() == null) {
+      reps.setFirst(packet.getRDegree());
+      reps.setSecond(this.createHashSet(packet.getReplicators()));
     }
     else {                               //IF already present update information
       synchronized (reps) {
@@ -113,7 +114,7 @@ class CheckHandler extends Handler implements Remote {
     }
 
     this.checked_chunks.forEach(1, (chunk_id, info)->{
-      if (info != null) {
+      if (info.first() != null) {
         FileHandler.reuseChunk(chunk_id, info.first(), info.second());
       }
       else {

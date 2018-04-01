@@ -75,6 +75,7 @@ public class PacketInfo {
     Matcher    match      = MSG_PAT.matcher(data);
     PacketInfo new_packet = new PacketInfo();
 
+    System.out.println("GOT \n" + data);
     if (!new_packet.fromMatcher(match)) { //TODO should fromMatcher return a PacketInfo?
       return null;
     }
