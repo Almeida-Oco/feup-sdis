@@ -90,6 +90,12 @@ public class Dispatcher implements DispatcherInterface {
    * Initializes the Check protocol
    */
   public void check() {
-    this.check.start(mc);
+    if (ApplicationInfo.getVersion() >= 20) {
+      this.check.start(mc);
+    }
+    else {
+      System.out.println("Version number not big enough!\n - Current - "
+          + ApplicationInfo.getVersion() + ", needed = 20");
+    }
   }
 }

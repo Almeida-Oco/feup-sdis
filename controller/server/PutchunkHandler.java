@@ -63,7 +63,7 @@ public class PutchunkHandler extends Handler {
     String chunk_id = this.file_id + "#" + this.chunk_n;
 
     //before getBackedUpFile() just in case that delay interferes with protocol
-    if (FileHandler.getBackedUpFile(this.file_id) != null) {
+    if (FileHandler.getBackedFileByID(this.file_id) != null) {
       return;
     }
     PacketInfo packet = new PacketInfo("STORED", this.file_id, this.chunk_n);
@@ -91,7 +91,8 @@ public class PutchunkHandler extends Handler {
     byte[] data = this.data.getBytes(StandardCharsets.ISO_8859_1);
 
     ScheduledFuture future = this.services.schedule(()->{
-      if (FileHandler.chunkRepDegree(this.file_id, this.chunk_n) < this.desired_rep &&
+      int actual_rep = FileHandler.chunkRepDegree(this.file_id, this.chunk_n);
+      if ((actual_rep < this.desired_rep || ApplicationInfo.getVersion() < 20) &&
       FileHandler.storeLocalChunk(this.file_id, this.chunk_n, this.desired_rep, data, data.length)) {
         this.mc.sendMsg(packet);
       }

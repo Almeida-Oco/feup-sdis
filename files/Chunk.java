@@ -58,9 +58,11 @@ public abstract class Chunk implements Comparable<Integer> {
    * @param peer_id [description]
    */
   public void removePeer(Integer peer_id) {
+    System.out.println("Removing peer " + peer_id);
     synchronized (this.replicators) {
       int index = Collections.binarySearch(this.replicators, peer_id);
-      if (index > 0) {
+      System.out.println("Index = " + index);
+      if (index >= 0) {
         this.replicators.remove(index);
       }
     }

@@ -77,6 +77,7 @@ public class FileInfo {
   boolean removePeer(int chunk_n, Integer peer_id) {
     int index = Collections.binarySearch(this.chunks, chunk_n);
 
+    System.out.println("Info index = " + index);
     if (index >= 0) {
       this.chunks.get(index).removePeer(peer_id);
     }

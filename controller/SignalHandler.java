@@ -111,6 +111,7 @@ public class SignalHandler implements Runnable {
       FileHandler.addNetworkPeer(packet.getFileID(), packet.getChunkN(), packet.getRDegree(), null);
     }
     else if (type.equals("REMOVED")) {
+      System.out.println("REm netpeer(" + packet.getFileID() + ", " + packet.getChunkN() + ", " + packet.getSenderID() + ")");
       FileHandler.remNetworkPeer(packet.getFileID(), packet.getChunkN(), packet.getSenderID());
     }
   }

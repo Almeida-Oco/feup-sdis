@@ -69,7 +69,7 @@ class RestoreHandler extends Handler implements Remote {
 
   @Override
   public void run() {
-    FileInfo file = FileHandler.getBackedFile(this.file_name);
+    FileInfo file = FileHandler.getBackedFileByName(this.file_name);
 
     if (file == null) {
       System.err.println("File '" + this.file_name + "' does not exist in table!");

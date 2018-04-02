@@ -70,6 +70,7 @@ public class RemovedHandler extends Handler {
     String chunk_id = this.file_id + "#" + this.chunk_n;
 
     if (chunk == null) { //not a chunk to worry about
+      System.out.println("Ignoring removed chunk #" + this.chunk_n);
       return;
     }
 

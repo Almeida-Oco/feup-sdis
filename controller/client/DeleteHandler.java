@@ -41,7 +41,7 @@ class DeleteHandler extends Handler implements Remote {
 
   @Override
   public void run() {
-    FileInfo file = FileHandler.getBackedFile(this.file_name);
+    FileInfo file = FileHandler.getBackedFileByName(this.file_name);
 
     if (file == null) {
       return;

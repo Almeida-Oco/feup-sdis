@@ -121,7 +121,7 @@ public class FileHandler {
     Chunk    chunk;
     FileInfo info;
 
-    if ((info = getBackedUpFile(file_id)) != null) {
+    if ((info = getBackedFileByID(file_id)) != null) {
       return info.addPeer(chunk_n, peer_id);
     }
 
@@ -147,10 +147,11 @@ public class FileHandler {
     Chunk    chunk;
     FileInfo info;
 
-    if ((info = getBackedFile(file_id)) != null) {
+    if ((info = getBackedFileByID(file_id)) != null) {
+      System.out.println("info.removePeer");
       return info.removePeer(chunk_n, peer_id);
     }
-
+    System.out.println("Not backed!");
     synchronized (local_storer) {
       synchronized (network_storer) {
         chunk = local_storer.getChunk(file_id, chunk_n);
@@ -365,7 +366,7 @@ public class FileHandler {
    * First checks the {@link FileHandler#local_storer}, if not found then checks {@link FileHandler#network_storer}
    */
   public static Pair<Integer, Vector<Integer> > getChunkInfo(String file_id, int chunk_n) {
-    FileInfo info = getBackedUpFile(file_id);
+    FileInfo info = getBackedFileByID(file_id);
 
     if (info != null) {
       Chunk chunk = info.getChunk(chunk_n);
@@ -392,7 +393,7 @@ public class FileHandler {
    * @param  file_id File name
    * @return         Whether file was previously backed up or not
    */
-  public static FileInfo getBackedUpFile(String file_id) {
+  public static FileInfo getBackedFileByID(String file_id) {
     for (Map.Entry<String, FileInfo> entry : backed_files.entrySet()) {
       if (entry.getValue().getID().equals(file_id)) {
         return entry.getValue();
@@ -406,10 +407,11 @@ public class FileHandler {
    * @param  file_name Path to the file
    * @return           The information of the file, null if non-existing
    */
-  public static FileInfo getBackedFile(String file_name) {
+  public static FileInfo getBackedFileByName(String file_name) {
     if (file_name == null) {
       return null;
     }
+
     return backed_files.get(file_name);
   }
 

@@ -41,7 +41,7 @@ public abstract class Handler implements Runnable {
     else if (type.equals("REMOVED")) {
       return new RemovedHandler(packet, ApplicationInfo.getMDB());
     }
-    else if (type.equals("CHKCHUNK")) {
+    else if (type.equals("CHKCHUNK") && ApplicationInfo.getVersion() >= 20) {
       return new ChkchunkHandler(packet, ApplicationInfo.getMC());
     }
 
