@@ -227,6 +227,16 @@ public class FileHandler {
   }
 
   public static boolean remFilesystemChunk(String chunk_id) {
+    int    hashtag = chunk_id.lastIndexOf('#');
+    String file_id = chunk_id.substring(0, hashtag);
+    int    chunk_n = Integer.parseInt(chunk_id.substring(hashtag + 1));
+
+    int bytes = local_storer.removeChunk(file_id, chunk_n);
+
+    if (bytes > 0) {
+      used_space.addAndGet(-bytes);
+    }
+
     return File_IO.eraseFile(chunk_id);
   }
 
