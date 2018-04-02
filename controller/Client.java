@@ -21,6 +21,7 @@ class Client {
   private static final String RECLAIM = "RECLAIM";
   private static final String DELETE  = "DELETE";
   private static final String STATE   = "STATE";
+  private static final String CHECK   = "CHECK";
 
   /**
    * Main entry point for the initiator-peer protocl
@@ -52,6 +53,12 @@ class Client {
       }
       else if (protocol.equals(STATE)) {
         handler.state();
+      }
+      else if (protocol.equals(CHECK)) {
+        handler.check();
+      }
+      else {
+        System.out.println("Unknown protocol '" + protocol + "'");
       }
     }
     catch (RemoteException err) {
