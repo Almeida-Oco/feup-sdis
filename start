@@ -4,9 +4,9 @@ FILE='/home/jalmeida/Pictures/Example.png'
 FILE_BACKUP='/home/jalmeida/Pictures/Example2.png'
 VERSION='2.0'
 RMI='8000'
-MC='224.0.0.4:8001'
-MDR='224.0.0.2:8002'
-MDB='224.0.0.3:8003'
+MC='224.0.0.21:8001'
+MDR='224.0.0.22:8002'
+MDB='224.0.0.23:8003'
 
 BOLD=$(tput bold)
 UNDERLINE=$(tput smul)

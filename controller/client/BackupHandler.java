@@ -98,15 +98,16 @@ class BackupHandler extends Handler implements Remote {
    */
   private boolean checkConfirmations(Vector<PacketInfo> packets, FileInfo info) {
     ScheduledFuture<Boolean> major_future = this.services.schedule(()->{
-      for (int i = 2; i < MAX_TRIES; i++) {
+      for (int i = 1; i < MAX_TRIES; i++) {
         Vector<Chunk> chunks = info.underlyReplicated();
         for (Chunk chunk : chunks) {
+          System.out.println("  Sending #" + chunk.getChunkN());
           this.mdb.sendMsg(packets.get(chunk.getChunkN()));
         }
 
         ScheduledFuture<Boolean> minor_future = this.services.schedule(()->{
           return info.underlyReplicated().size() == 0;
-        }, WAIT_TIME * i, TimeUnit.SECONDS);
+        }, WAIT_TIME * (i + 1), TimeUnit.SECONDS);
 
         try {
           if (minor_future.get()) {
