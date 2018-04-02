@@ -57,7 +57,7 @@ class Client {
     catch (RemoteException err) {
       System.err.println("Failed to start protocol '" + protocol + "' due to RMI issues!\n - "
           + err.getMessage());
-      System.err.println(err.printStackTrace());
+      err.printStackTrace();
       return;
     }
   }
