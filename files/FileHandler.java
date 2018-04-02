@@ -237,13 +237,14 @@ public class FileHandler {
    */
   public static boolean eraseFileChunks(String file_id) {
     Vector<Chunk> chunks = local_storer.getFileChunks(file_id);
-
     if (chunks == null) {
       return false;
     }
 
     synchronized (local_storer) {
-      chunks.forEach((chunk)->remLocalChunk(file_id, chunk.getChunkN()));
+      while (chunks.size() > 0) {
+        remLocalChunk(file_id, chunks.firstElement().getChunkN());
+      }
       return local_storer.removeFile(file_id);
     }
   }
