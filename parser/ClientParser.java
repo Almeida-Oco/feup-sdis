@@ -14,6 +14,7 @@ public class ClientParser {
   private static final String RECLAIM = "RECLAIM";
   private static final String DELETE  = "DELETE";
   private static final String STATE   = "STATE";
+  private static final String CHECK   = "CHECK";
 
   private static final String ap_regex = "\\s*//(?<ip1>\\d{1,4})\\.(?<ip2>\\d{1,4})\\.(?<ip3>\\d{1,4})\\.(?<ip4>\\d{1,4})(:(?<port>\\d{1,7}))?/(?<name>\\w+)";
   private static final Pattern pattern = Pattern.compile(ap_regex);
@@ -37,15 +38,21 @@ public class ClientParser {
     String protocol = args[1];
     int    size     = args.length;
 
+
     if (!parseAP(args[0])) {
       return false;
     }
+    boolean is_backup = protocol.equals(BACKUP),
+        is_restore    = protocol.equals(RESTORE),
+        is_reclaim    = protocol.equals(RECLAIM),
+        is_delete     = protocol.equals(DELETE),
+        is_state      = protocol.equals(STATE),
+        is_check      = protocol.equals(CHECK);
 
-    return protocol.equals(BACKUP) && size == 4 ||
-           protocol.equals(RESTORE) && size == 3 ||
-           protocol.equals(RECLAIM) && size == 3 ||
-           protocol.equals(DELETE) && size == 3 ||
-           protocol.equals(STATE) && size == 2;
+
+    return (is_backup && size == 4) ||
+           ((is_restore || is_reclaim || is_delete) && size == 3) ||
+           ((is_state || is_check) && size == 2);
   }
 
   /**

@@ -48,7 +48,7 @@ public class User_IO {
         example = "  java controller.Server 1.0 1 8000 224.0.0.1:8001 224.0.0.2:8002 224.0.0.3:8003";
 
 
-    System.err.print("Usage:\n" + usage + "\n" + example + "\n\n");
+    System.err.print("Usage:\n" + usage + "\nExample:\n" + example + "\n\n");
 
     System.err.print("Arguments:\n" +
         BOLD + prot_name + PLAIN + prot_desc +
@@ -84,10 +84,12 @@ public class User_IO {
         reclaim_desc     = "Reclaims the memory space specified in " + UNDERLINE + "operand1" + PLAIN + " (memory in KB)\n",
         state_name       = "  STATE     ",
         state_desc       = "Retrives the current status of the peer (no operand needed)\n",
+        check_name       = "  CHECK     ",
+        check_desc       = "Rechecks if the chunks stored by the peer were not deleted by the network",
         usage            = "  java controller.Client <peer_ap> <sub protocol> <operand1> <operand2>",
         example          = "  java controller.Client 1 BACKUP example.txt 1";
 
-    System.out.print("Usage:\n" + usage + "\n" + example + "\n\n");
+    System.out.print("Usage:\n" + usage + "\nExample:\n" + example + "\n\n");
 
     System.err.print("Arguments:\n" +
         BOLD + ap_name + PLAIN + ap_desc +
@@ -99,7 +101,9 @@ public class User_IO {
         BOLD + restore_name + PLAIN + restore_desc +
         BOLD + delete_name + PLAIN + delete_desc +
         BOLD + reclaim_name + PLAIN + reclaim_desc +
-        BOLD + state_name + PLAIN + state_desc + "\n\n");
+        BOLD + state_name + PLAIN + state_desc +
+        BOLD + check_name + PLAIN + check_desc +
+        "\n\n");
   }
 
   /**
