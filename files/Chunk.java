@@ -127,6 +127,14 @@ public abstract class Chunk implements Comparable<Integer> {
   }
 
   /**
+   * Checks if chunk is underly replicated
+   * @return Whether the chunk is underly replicated or not
+   */
+  public boolean isUnderlyRep() {
+    return this.replicators.size() < this.desired_rep.get();
+  }
+
+  /**
    * Checks if the chunk is the last chunk of the file
    * @return Whether the chunk is the final chunk of the file or not
    */

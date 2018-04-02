@@ -10,11 +10,15 @@ import java.util.Set;
 import java.rmi.Remote;
 import java.util.Vector;
 import java.util.HashSet;
+import java.nio.ByteBuffer;
 import java.util.Collections;
+import java.util.concurrent.Future;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ExecutionException;
+import java.nio.channels.AsynchronousFileChannel;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 /**
@@ -23,8 +27,9 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
  * @author João Almeida
  */
 class RestoreHandler extends Handler implements Remote {
-  private static final int MAX_RESENDS = 5;
-  private static final int WAIT_TIME   = 2;
+  private static final int MAX_CHUNK_SIZE = 64000;
+  private static final int MAX_RESENDS    = 5;
+  private static final int WAIT_TIME      = 2;
 
   /** Path to file to be restored */
   String file_name;
@@ -32,14 +37,14 @@ class RestoreHandler extends Handler implements Remote {
   /** Instances of MC and MDR channels */
   Net_IO mc, mdr;
 
-  /** Number of expected chunks to receive */
-  int expected_chunks;
-
-  /** The chunks received from the network */
-  byte[][] got_chunks;
-
   /** The chunks that were not received by the network */
   Set<Integer> rem_chunks;
+
+  /** Futures returned by AsynchronousFileChannel write */
+  Vector<Future<Integer> > futures;
+
+  /** Channel to write data to */
+  AsynchronousFileChannel out;
 
   /**
    * Initializes the {@link RestoreHandler} with the given arguments and executes it
@@ -51,19 +56,22 @@ class RestoreHandler extends Handler implements Remote {
     this.file_name  = file_name;
     this.mc         = mc;
     this.mdr        = mdr;
-    this.got_chunks = null;
     this.rem_chunks = null;
+    this.out        = null;
+    this.futures    = null;
     this.run();
   }
 
   @Override
   public void signal(PacketInfo packet) {
-    int index = packet.getChunkN();
+    int chunk_n = packet.getChunkN();
 
-    if (this.got_chunks[index] == null) {
-      this.got_chunks[index] = packet.getData().getBytes(StandardCharsets.ISO_8859_1);
-      this.rem_chunks.remove(Integer.valueOf(index));
+    if (this.rem_chunks.contains(chunk_n)) {
+      byte[] data = packet.getData().getBytes(StandardCharsets.ISO_8859_1);
+      this.rem_chunks.remove(Integer.valueOf(chunk_n));
       SignalHandler.removeSignal("CHUNK", packet.getSenderID() + "#" + packet.getChunkN());
+
+      this.futures.add(this.out.write(ByteBuffer.wrap(data), MAX_CHUNK_SIZE * chunk_n));
     }
   }
 
@@ -75,10 +83,13 @@ class RestoreHandler extends Handler implements Remote {
       System.err.println("File '" + this.file_name + "' does not exist in table!");
       return;
     }
+    if ((this.out = FileHandler.openAsyncWriter(file_name)) == null) {
+      return;
+    }
 
     PacketInfo packet   = new PacketInfo("GETCHUNK", file.getID(), -1);
     int        expected = file.chunkNumber();
-    this.got_chunks = new byte[expected][];
+    this.futures = new Vector<Future<Integer> >(expected);
 
     this.rem_chunks = Collections.synchronizedSet(new HashSet<Integer>(expected, 1));
     for (Chunk chunk : file.getChunks()) {
@@ -91,7 +102,15 @@ class RestoreHandler extends Handler implements Remote {
     }
 
     if (this.waitForRemaining(expected, packet)) {
-      FileHandler.restoreFile(file.getName(), this.got_chunks);
+      this.futures.forEach((future)->{
+        try {
+          future.get();
+        }
+        catch (ExecutionException | InterruptedException err) {
+          System.err.println("Interruped restore future!");
+        }
+      });
+
       System.out.println("Restored file '" + this.file_name + "'!");
     }
     else {

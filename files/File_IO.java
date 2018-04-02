@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Vector;
 import java.nio.file.Paths;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.concurrent.Future;
@@ -204,47 +203,12 @@ class File_IO {
   }
 
   /**
-   * Restores a file using the given chunks
-   * @param  file_name Path to the file in the filesystem
-   * @param  chunks    The chunks of the file
-   * @return           Whether the file was successfully restored or not
-   */
-  static boolean restoreFile(String file_name, byte[][] chunks) {
-    AsynchronousFileChannel out;
-
-    if ((out = openFileWriter(file_name)) == null) {
-      return false;
-    }
-    Vector<Future<Integer> > futures = new Vector<Future<Integer> >(chunks.length);
-    for (int i = 0; i < chunks.length; i++) {
-      byte[] chunk = chunks[i];
-      futures.add(out.write(ByteBuffer.wrap(chunk), MAX_CHUNK_SIZE * i));
-    }
-
-    try {
-      for (Future<Integer> future : futures) {
-        future.get();
-      }
-      out.close();
-      return true;
-    }
-    catch (InterruptedException | ExecutionException err) {
-      System.err.println("Interrupted restore futures!\n - " + err.getMessage());
-      return false;
-    }
-    catch (IOException err) {
-      System.err.println("Failed to close FileChannel!\n - " + err.getMessage());
-      return false;
-    }
-  }
-
-  /**
    * Opens a stream to write to a file
    * @param  file_name Path to file to write to
    * @return           The newly created stream or null on error
    * It always creates a new file, if file already exists an exception is thrown
    */
-  private static AsynchronousFileChannel openFileWriter(String file_name) {
+  static AsynchronousFileChannel openFileWriter(String file_name) {
     try {
       return AsynchronousFileChannel.open(Paths.get(file_name), StandardOpenOption.WRITE, StandardOpenOption.CREATE_NEW);
     }

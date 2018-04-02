@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.io.FileNotFoundException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.nio.channels.AsynchronousFileChannel;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class FileHandler {
@@ -185,16 +186,6 @@ public class FileHandler {
 
     backed_files.put(file_name, info);
     return info;
-  }
-
-  /**
-   * Restores a file based on the given chunks
-   * @param  file_name Name of file to restore
-   * @param  chunks    Chunks to use to restore file
-   * @return           Whether the restore was successfull or not
-   */
-  public static boolean restoreFile(String file_name, byte[][] chunks) {
-    return File_IO.restoreFile(file_name, chunks);
   }
 
   // ----- REMOVE METHODS ------
@@ -442,6 +433,10 @@ public class FileHandler {
       return 0;
     }
     return rem;
+  }
+
+  public static AsynchronousFileChannel openAsyncWriter(String file_name) {
+    return File_IO.openFileWriter(file_name);
   }
 
   /**
