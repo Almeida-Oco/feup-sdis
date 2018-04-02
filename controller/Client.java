@@ -55,8 +55,9 @@ class Client {
       }
     }
     catch (RemoteException err) {
-      System.out.println("Failed to start protocol '" + protocol + "' due to RMI issues!\n - " + err.getMessage() +
-          "\n\n" + err.printStackTrace());
+      System.err.println("Failed to start protocol '" + protocol + "' due to RMI issues!\n - "
+          + err.getMessage());
+      System.err.println(err.getStackTrace());
       return;
     }
   }
