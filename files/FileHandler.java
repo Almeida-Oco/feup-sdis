@@ -82,7 +82,7 @@ public class FileHandler {
    */
   public static boolean storeLocalChunk(String file_id, int chunk_n, int desired_rep, byte[] data, int data_size) {
     Chunk chunk;
-    int   peer_id = ApplicationInfo.getServID();
+    int   peer_id = ApplicationInfo.getServID(), bytes;
 
     synchronized (network_storer) {
       if ((chunk = network_storer.getChunk(file_id, chunk_n)) == null) {
@@ -93,11 +93,12 @@ public class FileHandler {
         chunk.setRepDegree(desired_rep);
         network_storer.removeChunk(file_id, chunk_n);
       }
+      if (!File_IO.storeFile(file_id + "#" + chunk_n, data, data_size)) {
+        return false;
+      }
+      bytes = local_storer.addChunk(file_id, chunk);
     }
-    if (!File_IO.storeFile(file_id + "#" + chunk_n, data, data_size)) {
-      return false;
-    }
-    int bytes = local_storer.addChunk(file_id, chunk);
+
     if (bytes != -1) {
       used_space.addAndGet(bytes);
     }
