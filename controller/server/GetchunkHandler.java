@@ -50,6 +50,7 @@ public class GetchunkHandler extends Handler {
 
   @Override
   public void signal(PacketInfo packet) {
+    System.out.print("Got chunk #" + packet.getChunkN() + "!\n");
     this.got_chunk.set(true);
   }
 
