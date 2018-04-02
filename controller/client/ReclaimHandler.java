@@ -44,10 +44,11 @@ class ReclaimHandler extends Handler implements Remote {
       System.out.println("Space smaller than 0!");
       return;
     }
+    int diff = FileHandler.getMaxSpace() - this.space;
     FileHandler.setMaxSpace(this.space);
 
     if (used_space > this.space) {   //Using more space than it should
-      Vector<Pair<String, Chunk> > chunks = FileHandler.reclaimSpace(this.space);
+      Vector<Pair<String, Chunk> > chunks = FileHandler.reclaimSpace(diff);
       PacketInfo packet = new PacketInfo("REMOVED", null, 0);
 
       for (Pair<String, Chunk> pair : chunks) {
