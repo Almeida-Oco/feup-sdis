@@ -44,7 +44,7 @@ class ReclaimHandler extends Handler implements Remote {
       System.out.println("Space smaller than 0!");
       return;
     }
-    int diff = FileHandler.getMaxSpace() - this.space;
+    int diff = used_space - this.space;
     FileHandler.setMaxSpace(this.space);
 
     if (used_space > this.space) {   //Using more space than it should
