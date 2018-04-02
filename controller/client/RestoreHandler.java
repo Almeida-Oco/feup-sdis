@@ -62,7 +62,7 @@ class RestoreHandler extends Handler implements Remote {
 
     if (this.got_chunks[index] == null) {
       this.got_chunks[index] = packet.getData().getBytes(StandardCharsets.ISO_8859_1);
-      this.rem_chunks.remove(new Integer(index));
+      this.rem_chunks.remove(Integer.valueOf(index));
       SignalHandler.removeSignal("CHUNK", packet.getSenderID() + "#" + packet.getChunkN());
     }
   }
