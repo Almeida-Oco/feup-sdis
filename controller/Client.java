@@ -76,8 +76,7 @@ class Client {
         System.err.println("Failed to get registry from " + ip + ":" + port);
         return null;
       }
-      DispatcherInterface handler = (DispatcherInterface)registry.lookup(name);
-      return handler;
+      return (DispatcherInterface)registry.lookup(name);
     }
     catch (RemoteException err) {
       System.err.println("Could not get object '" + name + "' from RMI!\n - " + err.getMessage());

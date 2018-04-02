@@ -80,7 +80,7 @@ class Server {
     catch (InterruptedException err) {
       System.err.println("Failed to join thread!\n - " + err.getMessage());
     }
-
+    System.out.println("Main thread end!");
     return stub;
   }
 

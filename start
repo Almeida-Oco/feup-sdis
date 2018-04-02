@@ -3,7 +3,7 @@
 FILE='/home/jalmeida/Pictures/Example.png'
 FILE_BACKUP='/home/jalmeida/Pictures/Example2.png'
 VERSION='2.0'
-RMI='1099'
+RMI='8000'
 MC='224.0.0.4:8001'
 MDR='224.0.0.2:8002'
 MDB='224.0.0.3:8003'
