@@ -242,8 +242,10 @@ public class FileHandler {
       return false;
     }
 
-    chunks.forEach((chunk)->remLocalChunk(file_id, chunk.getChunkN()));
-    return local_storer.removeFile(file_id);
+    synchronized (local_storer) {
+      chunks.forEach((chunk)->remLocalChunk(file_id, chunk.getChunkN()));
+      return local_storer.removeFile(file_id);
+    }
   }
 
   // ------ RECLAIM --------------
