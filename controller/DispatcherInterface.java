@@ -51,5 +51,5 @@ public interface DispatcherInterface extends Remote {
    * @param chunks           Chunks to be checked
    * @throws RemoteException Exception thrown when something goes wrong with RMI
    */
-  public void check(Vector<Pair<String, Integer> > chunks) throws RemoteException;
+  public void check() throws RemoteException;
 }

@@ -44,13 +44,13 @@ public class CheckHandler extends Handler implements Remote {
    * @param chunks Chunks to check
    * @param mc     Channel to send messages
    */
-  public void start(Vector<Pair<String, Integer> > chunks, Net_IO mc) {
-    System.out.println("Checking " + chunks.size() + " chunks");
-    this.chunks         = chunks;
+  public void start(Net_IO mc) {
+    this.chunks         = FileHandler.getStoredChunksName();
     this.mc             = mc;
-    this.services       = new ScheduledThreadPoolExecutor(chunks.size() * 2);
-    this.checked_chunks = new ConcurrentHashMap<String, Pair<Integer, HashSet<Integer> > >(chunks.size(), 1);
-    for (Pair<String, Integer> pair : chunks) {
+    this.services       = new ScheduledThreadPoolExecutor(this.chunks.size() * 2);
+    this.checked_chunks = new ConcurrentHashMap<String, Pair<Integer, HashSet<Integer> > >(this.chunks.size(), 1);
+
+    for (Pair<String, Integer> pair : this.chunks) {
       String chunk_id = pair.first() + "#" + pair.second();
       this.checked_chunks.put(chunk_id, new Pair<Integer, HashSet<Integer> >(null, null));
       SignalHandler.addSignal("CHUNKCHKS", chunk_id, this);

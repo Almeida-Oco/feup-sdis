@@ -45,22 +45,8 @@ public class FileHandler {
    * @return Vector with previously stored chunks
    * Checks if there were any previously stored chunks by the peer and returns them
    */
-  public static Vector<Pair<String, Integer> > setup() {
+  public static void setup() {
     File_IO.setup(ApplicationInfo.getServID());
-    Vector<String> file_names            = File_IO.getPeerStoredChunks();
-    Vector<Pair<String, Integer> > names = new Vector<Pair<String, Integer> >(file_names.size());
-    for (String name : file_names) {
-      int hashtag = name.lastIndexOf('#');
-      if (hashtag == -1) {
-        System.err.println("File '" + name + "' has no '#'!!");
-        continue;
-      }
-      String file_id = name.substring(0, hashtag);
-      int    chunk_n = Integer.parseInt(name.substring(hashtag + 1));
-      names.add(new Pair<String, Integer>(file_id, chunk_n));
-    }
-
-    return names;
   }
 
   // ----- ADD METHODS ------
@@ -331,6 +317,21 @@ public class FileHandler {
 
   // ------ GETTERS SETTERS ---------
 
+  public static Vector<Pair<String, Integer> > getStoredChunksName() {
+    Vector<String> file_names            = File_IO.getPeerStoredChunks();
+    Vector<Pair<String, Integer> > names = new Vector<Pair<String, Integer> >(file_names.size());
+    for (String name : file_names) {
+      int hashtag = name.lastIndexOf('#');
+      if (hashtag == -1) {
+        System.err.println("File '" + name + "' has no '#'!!");
+        continue;
+      }
+      String file_id = name.substring(0, hashtag);
+      int    chunk_n = Integer.parseInt(name.substring(hashtag + 1));
+      names.add(new Pair<String, Integer>(file_id, chunk_n));
+    }
+    return names;
+  }
 
   /**
    * Checks if the given chunks is stored locally

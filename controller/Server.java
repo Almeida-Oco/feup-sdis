@@ -63,11 +63,11 @@ class Server {
     mdb.start();
     mdr.start();
     sig_handler.start();
+    FileHandler.setup();
 
-    Vector<Pair<String, Integer> > reused_chunks = FileHandler.setup();
     if (ApplicationInfo.getVersion() >= 20) {
       CheckHandler check = new CheckHandler();
-      check.start(reused_chunks, ApplicationInfo.getMC());
+      check.start(ApplicationInfo.getMC());
     }
 
     System.out.println("Ready!");

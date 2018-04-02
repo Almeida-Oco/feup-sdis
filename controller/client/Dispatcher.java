@@ -86,7 +86,10 @@ public class Dispatcher implements DispatcherInterface {
     this.state.run();
   }
 
-  public void check(Vector<Pair<String, Integer> > chunks) {
-    this.check.start(chunks, mc);
+  /**
+   * Initializes the Check protocol
+   */
+  public void check() {
+    this.check.start(mc);
   }
 }
