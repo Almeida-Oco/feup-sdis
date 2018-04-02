@@ -225,10 +225,15 @@ class File_IO {
       for (Future<Integer> future : futures) {
         future.get();
       }
+      out.close();
       return true;
     }
     catch (InterruptedException | ExecutionException err) {
       System.err.println("Interrupted restore futures!\n - " + err.getMessage());
+      return false;
+    }
+    catch (IOException err) {
+      System.err.println("Failed to close FileChannel!\n - " + err.getMessage());
       return false;
     }
   }
