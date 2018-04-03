@@ -133,7 +133,8 @@ public class PacketInfo {
     try {
       while (scan.hasNextInt()) {
         rep = scan.nextInt();
-        this.replicators[i++] = rep;
+        this.replicators[i] = rep;
+        i++;
       }
     }
     catch (InputMismatchException err) {

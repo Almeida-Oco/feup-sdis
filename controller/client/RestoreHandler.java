@@ -110,10 +110,11 @@ class RestoreHandler extends Handler implements Remote {
           System.err.println("Interruped restore future!");
         }
       });
-
+      FileHandler.closeAsyncWriter(this.out);
       System.out.println("Restored file '" + this.file_name + "'!");
     }
     else {
+      FileHandler.eraseBackedFile(this.file_name);
       System.err.println("Timed out!\nFailed to recover file " + this.file_name);
     }
   }
