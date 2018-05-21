@@ -1,3 +1,5 @@
+package network.chord;
+
 import java.util.Vector;
 
 class FingerTable {
@@ -6,16 +8,16 @@ class FingerTable {
   long base_id;
 
   String predecessor;
-  Vector<TableEntry> fingers;
+  Vector<TableEntry> fingers = new Vector<TableEntry>(BIT_NUMBER);
 
   FingerTable(long base_id, String predecessor) {
     this.base_id     = base_id;
     this.predecessor = predecessor;
-    this.fingers     = new Vector<TableEntry>(BIT_NUMBER);
+    this.fingers.ensureCapacity(BIT_NUMBER);
 
-    for (int i = 0, len = fingers.size(); i < len; i++) {
+    for (int i = 0; i < BIT_NUMBER; i++) {
       long entry_id = Math.abs((base_id + (long)Math.pow(2, i)) % MAX_ID);
-      this.fingers.set(i, new TableEntry(entry_id, null));
+      this.fingers.add(new TableEntry(entry_id, null));
     }
   }
 
@@ -26,10 +28,11 @@ class FingerTable {
   void addPeer(String peer_ip, long peer_id) {
     int entry = FingerTable.idToEntry(peer_id);
 
-    if (entry < this.base_id) {
+    if (Math.abs(entry - this.base_id) > Math.pow(2, BIT_NUMBER - 1)) {
       System.out.println("Send new to predecessor");
     }
     else {
+      System.out.println("Added ID " + peer_id + ", IP = '" + peer_ip + "'");
       String current = this.fingers.get(entry).getNodeIP();
       for (int i = entry; i < BIT_NUMBER && this.fingers.get(i).getNodeIP() == current; i++) {
         this.fingers.get(i).updateNodeIP(peer_ip);
@@ -38,6 +41,7 @@ class FingerTable {
   }
 
   TableEntry getEntry(int entry_n) {
+    System.out.println("Querying entry_n = " + entry_n);
     if (entry_n >= BIT_NUMBER) {
       System.out.println("Send query to latest entry");
       return null;
@@ -45,28 +49,5 @@ class FingerTable {
     else {
       return this.fingers.get(entry_n);
     }
-  }
-}
-
-class TableEntry {
-  long entry_id;
-  String node_ip;
-
-  TableEntry(long entry_id, String node_ip) {
-    this.entry_id = entry_id;
-
-    this.node_ip = node_ip;
-  }
-
-  long getNodeID() {
-    return this.entry_id;
-  }
-
-  String getNodeIP() {
-    return this.node_ip;
-  }
-
-  void updateNodeIP(String node_ip) {
-    this.node_ip = node_ip;
   }
 }
