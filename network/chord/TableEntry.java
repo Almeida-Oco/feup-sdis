@@ -21,4 +21,9 @@ class TableEntry {
   void updateNodeIP(String node_ip) {
     this.node_ip = node_ip;
   }
+
+  @Override
+  public String toString() {
+    return "(" + entry_id + ", " + node_ip + ")";
+  }
 }
