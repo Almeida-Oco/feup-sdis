@@ -59,7 +59,7 @@ class FingerTable {
       return null;
     }
     else {
-      return this.fingers.get(entry_n);
+      return this.fingers.get(entry_index);
     }
   }
 

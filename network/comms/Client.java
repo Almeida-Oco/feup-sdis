@@ -55,6 +55,7 @@ public class Client {
       err_msg = "Error while creating SSLServerSocket!\n - " + err.getMessage();
     }
 
+
     System.err.println(err_msg);
     return null;
   }
