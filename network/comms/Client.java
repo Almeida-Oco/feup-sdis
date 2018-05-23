@@ -64,7 +64,7 @@ public class Client {
     try {
       OutputStream out = this.ssl_socket.getOutputStream();
       System.out.println("IM HERE");
-      out.write("Hola como estas?".getBytes());
+      out.write("Hola como estas?\n".getBytes());
     }
     catch (IOException err) {
       System.err.println("Socket closed while getting output stream!\n - " + err.getMessage());
