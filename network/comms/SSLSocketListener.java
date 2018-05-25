@@ -13,6 +13,7 @@ import java.nio.channels.IllegalBlockingModeException;
 
 import handlers.Handler;
 import network.chord.Node;
+import network.comms.sockets.SSLChannel;
 import network.comms.sockets.SSLSocketChannel;
 
 class SSLSocketListener {
@@ -26,7 +27,7 @@ class SSLSocketListener {
    */
   SSLSocketListener(Node node) {
     this.myself   = node;
-    this.selector = new Selector();
+    this.selector = SSLChannel.newSelector();
   }
 
   /** Listens to the given connection */
@@ -42,7 +43,7 @@ class SSLSocketListener {
   }
 
   public boolean listenToSocket(SSLSocketChannel socket) {
-    socket.register(this.selector, SelectionKey.OP_READ);
+    return this.registerSocket(socket, SelectionKey.OP_READ);
   }
 
   private boolean registerSocket(SSLSocketChannel socket, int ops) {
@@ -66,6 +67,8 @@ class SSLSocketListener {
     catch (IllegalArgumentException err) {
       err_msg = "Bit in ops is not supported!\n - " + err.getMessage();
     }
+    System.err.println(err_msg);
+    return false;
   }
 
   private String msgType(String msg) {

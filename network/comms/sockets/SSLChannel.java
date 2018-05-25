@@ -1,37 +1,53 @@
 package network.comms.sockets;
 
-import java.nio.ByteBuffer;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLSession;
+import java.nio.channels.Selector;
 import javax.net.ssl.SSLException;
+import java.net.InetSocketAddress;
+import java.lang.SecurityException;
 import javax.net.ssl.SSLEngineResult;
+import java.nio.channels.SelectionKey;
 import java.util.concurrent.Executors;
 import java.nio.channels.SocketChannel;
 import javax.net.ssl.SSLEngineResult.Status;
-import java.util.concurrent.ExecutorService;
+import java.nio.channels.spi.SelectorProvider;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.NotYetConnectedException;
+import java.nio.channels.AlreadyConnectedException;
+import java.nio.channels.UnresolvedAddressException;
+import java.nio.channels.ConnectionPendingException;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
+import java.nio.channels.spi.AbstractSelectableChannel;
+import java.nio.channels.UnsupportedAddressTypeException;
 
-class SSLHandshakeHandler {
-  ExecutorService executor = Executors.newSingleThreadExecutor();
-  SSLEngine engine;
-  SocketChannel socket;
-  ByteBuffer my_app_data, my_net_data, peer_app_data, peer_net_data;
+public class SSLChannel extends AbstractSelectableChannel {
+  protected static SelectorProvider provider = SelectorProvider.provider();
+  protected SocketChannel socket;
+  protected SSLEngine engine;
+  protected ByteBuffer my_app_data, my_net_data, peer_app_data, peer_net_data;
 
-  SSLHandshakeHandler(SocketChannel socket, SSLEngine engine, ByteBuffer[] buffers) {
-    this.socket        = socket;
-    this.engine        = engine;
-    this.my_app_data   = buffers[0];
-    this.my_net_data   = buffers[1];
-    this.peer_app_data = buffers[2];
-    this.peer_net_data = buffers[3];
-    this.my_net_data.clear();
-    this.peer_net_data.clear();
+  protected SSLChannel(SocketChannel socket, SSLEngine engine, SelectorProvider provider) {
+    super(provider);
+    SSLSession s = engine.getSession();
+    this.socket = socket;
+    this.engine = engine;
+
+    int app_size = s.getApplicationBufferSize(),
+        net_size = s.getPacketBufferSize();
+    this.my_app_data   = ByteBuffer.allocate(app_size);
+    this.my_net_data   = ByteBuffer.allocate(net_size);
+    this.peer_app_data = ByteBuffer.allocate(app_size);
+    this.peer_net_data = ByteBuffer.allocate(net_size);
   }
 
-  boolean doHandshake() throws IOException {
+  protected boolean doHandshake() throws IOException {
     SSLEngineResult engine_res = null;
     HandshakeStatus shake_status;
 
+    this.engine.beginHandshake();
     while (!this.handshakeFinished((shake_status = this.engine.getHandshakeStatus()))) {
       System.out.println("STATUS = " + shake_status);
 
@@ -61,7 +77,6 @@ class SSLHandshakeHandler {
             this.peer_net_data.flip();
             engine_res = engine.unwrap(this.peer_net_data, this.peer_app_data);
             this.peer_net_data.compact();
-            // this.handleEngineStatus(engine_res.getStatus(), this.peer_app_data, this.peer_net_data, true);
           }
           catch (SSLException err) {
             System.err.println("Problem encountered while processing data!\n - " + err.getMessage());
@@ -112,7 +127,6 @@ class SSLHandshakeHandler {
             System.out.println("CLOSED!");
             System.exit(2);
           }
-          // this.handleEngineStatus(engine_res.getStatus(), this.my_net_data, this.my_app_data, false);
         }
         catch (SSLException err) {
           System.err.println("Problem encountered while processing data!\n - " + err.getMessage());
@@ -134,49 +148,42 @@ class SSLHandshakeHandler {
     return this.handshakeFinished(shake_status);
   }
 
-  private boolean handleEngineStatus(Status status, ByteBuffer app_data, ByteBuffer net_data, boolean needs_unwrap) {
-    System.out.println("  Engine status = " + status);
-    if (status == Status.OK) {
-      return true;
+  protected static SocketChannel openChannel(String addr, int port) {
+    String err_msg;
+
+    try {
+      SocketChannel channel = SSLChannel.provider.openSocketChannel();
+      channel.configureBlocking(false);
+      channel.connect(new InetSocketAddress(addr, port));
+      channel.finishConnect();
+
+      return channel;
     }
-    else if (status == Status.BUFFER_OVERFLOW) {
-      if (needs_unwrap) {
-        app_data = this.enlargeBuffer(app_data, this.engine.getSession().getApplicationBufferSize());
-      }
-      else {
-        net_data = this.enlargeBuffer(net_data, this.engine.getSession().getPacketBufferSize());
-      }
-      return true;
+    catch (AlreadyConnectedException err) {
+      err_msg = "Channel already connected!\n - " + err.getMessage();
     }
-    else if (status == Status.BUFFER_UNDERFLOW) {
-      if (needs_unwrap) {
-        // this.socket.read(net_data);
-        // net_data = this.shrinkBuffer(net_data);
-      }
-      else {
-        System.err.println("Should not happen!");
-        System.exit(1);
-      }
-      return true;
+    catch (ConnectionPendingException err) {
+      err_msg = "Non blocking already pending!\n - " + err.getMessage();
     }
-    else if (status == Status.CLOSED) {
-      try {
-        this.my_net_data.flip();
-        while (this.my_net_data.hasRemaining()) {
-          this.socket.write(this.my_net_data);
-        }
-        this.peer_net_data.clear();
-        return true;
-      }
-      catch (Exception err) {
-        System.err.println("Failed to send server close message!\n - " + err.getMessage());
-      }
-      return false;
+    catch (ClosedChannelException err) {
+      err_msg = "Channel is closed!\n - " + err.getMessage();
     }
-    else {
-      System.err.println("Wut is this? " + status);
-      return false;
+    catch (UnresolvedAddressException err) {
+      err_msg = "Given address not fully resolved!\n - " + err.getMessage();
     }
+    catch (UnsupportedAddressTypeException err) {
+      err_msg = "Type of given address is not supported!\n - " + err.getMessage();
+    }
+    catch (SecurityException err) {
+      err_msg = "Security manager does not allow operation!\n - " + err.getMessage();
+    }
+    catch (IOException err) {
+      err_msg = "Some I/O error occurred!\n - " + err.getMessage();
+      err.printStackTrace();
+    }
+
+    System.err.println(err_msg);
+    return null;
   }
 
   private ByteBuffer shrinkBuffer(ByteBuffer buffer) {
@@ -204,5 +211,28 @@ class SSLHandshakeHandler {
     }
 
     return buffer;
+  }
+
+  public static Selector newSelector() {
+    try {
+      return (Selector)SSLChannel.provider.openSelector();
+    }
+    catch (IOException err) {
+      System.err.println("Failed to open selector!\n - " + err.getMessage());
+      return null;
+    }
+  }
+
+  @Override
+  protected void implCloseSelectableChannel() {
+  }
+
+  @Override
+  protected void implConfigureBlocking(boolean block) {
+  }
+
+  @Override
+  public int validOps() {
+    return SelectionKey.OP_ACCEPT | SelectionKey.OP_CONNECT | SelectionKey.OP_READ | SelectionKey.OP_WRITE;
   }
 }

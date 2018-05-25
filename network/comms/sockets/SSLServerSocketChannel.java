@@ -43,7 +43,7 @@ public class SSLServerSocketChannel {
 
       channel.configureBlocking(false);
 
-      return SSLSocketChannel.newChannel(channel, this.ip, this.port);
+      return SSLSocketChannel.newChannel(channel, this.ip, this.port, true);
     }
     catch (Exception err) {
       err.printStackTrace();
