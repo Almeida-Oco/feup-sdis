@@ -1,10 +1,11 @@
-import network.comms.sockets.*;
 import java.lang.Thread;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.net.InetSocketAddress;
 
+import network.comms.sockets.SSLSocketChannel;
+import network.comms.sockets.SSLServerSocketChannel;
 
 class Service {
   public static void main(String[] args) {
@@ -24,6 +25,10 @@ class Service {
       boolean sent = socket.sendMsg("BEBI *******");
       if (sent) {
         System.out.println("Message sent!");
+        String msg;
+        while ((msg = socket.recvMsg()) == null) {
+        }
+        System.out.println("Response = '" + msg + "'");
       }
       else {
         System.out.println("Message not sent!");
@@ -42,6 +47,8 @@ class Service {
 
         while ((msg = socket.recvMsg()) == null) {
         }
+
+        socket.sendMsg("GOT IT");
       }
       System.out.println("GOT '" + msg + "'");
     }

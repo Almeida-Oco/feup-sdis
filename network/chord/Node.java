@@ -1,6 +1,6 @@
 package network.chord;
 
-import network.comms.Connection;
+import network.comms.sockets.SSLSocketChannel;
 
 import java.util.Random;
 import java.util.Vector;
@@ -8,17 +8,16 @@ import java.util.Scanner;
 import java.nio.ByteOrder;
 import java.nio.LongBuffer;
 import java.nio.ByteBuffer;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.util.LinkedHashMap;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-class Node {
+public class Node {
   private static final int BIT_NUMBER = 32;
 
   long finger_id;
-  Connection predecessor;
+  SSLSocketChannel base_node;
   FingerTable neighbors;
 
   // public static void main(String[] args) {
@@ -39,10 +38,10 @@ class Node {
   //   }
   // }
 
-  public Node(Connection conn) {
-    this.predecessor = conn;
+  public Node(SSLSocketChannel conn) {
+    this.base_node = conn;
 
-    this.neighbors = new FingerTable(Node.hash(conn.getIP().getBytes()), null);
+    this.neighbors = new FingerTable(Node.hash(conn.getID().getBytes()), null);
   }
 
   public void setPredecessor(String peer_ip) {

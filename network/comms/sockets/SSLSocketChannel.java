@@ -21,7 +21,7 @@ import java.nio.channels.UnresolvedAddressException;
 import java.nio.channels.ConnectionPendingException;
 import java.nio.channels.UnsupportedAddressTypeException;
 
-public class SSLSocketChannel {
+public class SSLSocketChannel extends SocketChannel {
   private static final int BUF_SIZE = 32768;
   SSLEngine engine;
   SocketChannel socket;
@@ -142,14 +142,16 @@ public class SSLSocketChannel {
     return buffers;
   }
 
-  public boolean finishConnect() {
+  public String getID() {
     try {
-      return this.socket.finishConnect();
+      InetSocketAddress addr = (InetSocketAddress)this.socket.getLocalAddress();
+
+      return addr.getHostName() + ":" + addr.getPort();
     }
     catch (IOException err) {
-      System.err.println("I/O error while finishing connection!\n - " + err.getMessage());
+      System.err.println("Failed to get SSLSocketChannel ID!\n - " + err.getMessage());
     }
-    return false;
+    return null;
   }
 
   public boolean sendMsg(String msg) {
