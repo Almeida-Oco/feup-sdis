@@ -50,12 +50,6 @@ private static ProgramRes runProcess(String command) throws Exception {
     Date now = new Date();
 
     Process pro = Runtime.getRuntime().exec(command);
-    
-    //printLines(command + " stdout:", pro.getInputStream());
-    //printLines(command + " stderr:", pro.getErrorStream());
-
-    //printLinestoFile(command + " stdout:", pro.getInputStream(), "stdout");
-    //printLinestoFile(command + " stderr:", pro.getErrorStream(), "stderr");
 
     System.out.println(command);
 
@@ -65,15 +59,13 @@ private static ProgramRes runProcess(String command) throws Exception {
     pro.waitFor();
 
     Date finished = new Date();
-    
-    //System.out.println(command + " exitValue() " + pro.exitValue());
-    
+
     ProgramRes results = new ProgramRes(pro.exitValue(), std_out, std_err, now);
     results.setDfinished(finished);
     return results;
 }
 
-private static void compileRunProgram(String name) throws Exception {
+private static ProgramRes compileRunProgram(String name, String[] args) throws Exception {
 
     String final_name;
     if (name.contains(".java")) {
@@ -84,12 +76,25 @@ private static void compileRunProgram(String name) throws Exception {
 
     String compile_str = "javac " + final_name + ".java";
     String run_str = "java " + final_name;
+
+    if(args.length != 0){
+        for (String arg: args) {
+            run_str += ' ' + arg;
+        }
+    }
+
+    System.out.println(run_str);
+
     if(runProcess(compile_str).getExitval() == 0){
         ProgramRes run_results = runProcess(run_str);
         run_results.storeToFiles(final_name);
+        runProcess("rm " + final_name +".class"); //delete the compiled program after run
+        return run_results;
     } else {
-        System.err.println("Error on calling compiler");
+        System.err.println("Error on calling compiler or deleting files");
     }
+
+    return null;
 
 }
 
@@ -103,7 +108,8 @@ public static void main(String args[])
     }
 
     try {
-        compileRunProgram(args[0]);
+        String[] helloargs = {"OK"};
+        compileRunProgram(args[0], helloargs);
     } catch (Exception e) {
       System.err.println("Error on calling sys calls for compiling. Unable to launch Compiling Process.");  
       e.printStackTrace();
