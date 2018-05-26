@@ -5,7 +5,7 @@ import java.util.LinkedHashMap;
 
 class FingerTable {
   private static final int BIT_NUMBER = Node.BIT_NUMBER;
-  private static final long MAX_ID    = (long)Math.pow(2, BIT_NUMBER);
+  public static final long MAX_ID     = (long)Math.pow(2, BIT_NUMBER);
   long base_id;
   long max_finger_id;
 

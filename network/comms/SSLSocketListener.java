@@ -7,6 +7,7 @@ import java.nio.channels.Selector;
 import java.util.concurrent.TimeUnit;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.BlockingQueue;
 import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -34,7 +35,10 @@ public class SSLSocketListener {
   private Selector selector;
 
   public SSLSocketListener(Node node) {
-    SSLSocketListener.tasks = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), POOL_SIZE, 0, TimeUnit.SECONDS, new ArrayBlockingQueue(POOL_SIZE, false));
+    ArrayBlockingQueue arr = new ArrayBlockingQueue(POOL_SIZE, false);
+    int cpu_number         = Runtime.getRuntime().availableProcessors();
+
+    SSLSocketListener.tasks = new ThreadPoolExecutor(cpu_number, POOL_SIZE, 0, TimeUnit.SECONDS, (BlockingQueue)arr);
     this.myself             = node;
     this.selector           = SSLChannel.newSelector();
     this.channel_handlers   = new ConcurrentHashMap<SocketChannel, PacketBuffer>(MAX_SOCKETS);
@@ -51,7 +55,9 @@ public class SSLSocketListener {
         Iterator<SelectionKey> keys_it = this.selector.selectedKeys().iterator();
         while (keys_it.hasNext()) {
           SelectionKey key = keys_it.next();
-          this.handleKey(key);
+          if (!this.handleKey(key)) {
+            return;
+          }
           keys_it.remove();
         }
       }
@@ -60,11 +66,7 @@ public class SSLSocketListener {
 
   public boolean waitForRead(PacketBuffer builder) {
     this.channel_handlers.put(builder.getChannel(), builder);
-
     SelectionKey key = this.registerSocket(builder.getChannel(), SelectionKey.OP_READ);
-    // if (key != null) {
-    //   key.attach(builder);
-    // }
     return key != null;
   }
 
@@ -79,7 +81,6 @@ public class SSLSocketListener {
       return this.acceptKey((ServerSocketChannel)key.channel());
     }
     else if (key.isReadable()) {
-      System.out.println("Reading from socket!");
       return this.readKey(this.channel_handlers.get(key.channel()));
     }
     else {

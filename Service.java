@@ -6,6 +6,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.net.InetSocketAddress;
 
 import network.chord.Node;
+import network.comms.PacketBuffer;
 import network.comms.SSLSocketListener;
 import network.comms.sockets.SSLSocketChannel;
 import network.comms.sockets.SSLServerSocketChannel;
@@ -28,14 +29,21 @@ class Service {
     SSLServerSocketChannel serv_channel   = SSLServerSocketChannel.newChannel(local_port);
 
     Node myself = new Node(remote_channel, new InetSocketAddress(local_port));
+
+    PacketBuffer.setMyself(myself);
     SSLSocketListener listener = new SSLSocketListener(myself);
 
     listener.waitForAccept(serv_channel.getSocket());
 
     try {
       if (remote_channel != null) {
-        System.out.println("Sending msg");
-        remote_channel.sendMsg("\\42/ NEW_PEER abcdefghijklmnopqrstuvwxyz\r\n");
+        if (!myself.startNodeDiscovery()) {
+          System.err.println("Failed to discover nodes in network!\n - Aborting");
+          return;
+        }
+      }
+      else {
+        System.out.println("Failed to discover nodes!\n - Starting a new network...");
       }
       listener.listen();
     }

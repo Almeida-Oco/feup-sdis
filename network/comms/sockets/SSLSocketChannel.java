@@ -111,7 +111,6 @@ public class SSLSocketChannel extends SSLChannel {
 
       if (res.getStatus() == Status.OK) {
         this.my_net_data.flip();
-
         while (this.my_net_data.hasRemaining()) {
           this.socket.write(this.my_net_data);
         }
@@ -127,24 +126,23 @@ public class SSLSocketChannel extends SSLChannel {
 
   public String recvMsg() {
     try {
+      int bytes_read;
       this.peer_net_data.clear();
-      if (this.socket.read(this.peer_net_data) == -1) {
+      if ((bytes_read = this.socket.read(this.peer_net_data)) > 0) {
+        return this.decodeData();
+      }
+      else if (bytes_read < 0) {
         System.err.println("Socket closed while receiving message!");
         return null;
-      }
-      else {
-        this.peer_net_data.flip();
-        return this.decodeData();
       }
     }
     catch (IOException err) {
       System.err.println("I/O error while receiving message!\n - " + err.getMessage());
-      return null;
     }
     catch (NotYetConnectedException err) {
       System.err.println("Not yet connected!\n - " + err.getMessage());
-      return null;
     }
+    return null;
   }
 
   private String decodeData() {
@@ -154,13 +152,16 @@ public class SSLSocketChannel extends SSLChannel {
     try {
       while (this.peer_net_data.hasRemaining()) {
         this.peer_app_data.clear();
+        this.peer_net_data.flip();
         res = this.engine.unwrap(this.peer_net_data, this.peer_app_data);
 
         if (res.getStatus() == Status.OK) {
           this.peer_app_data.flip();
-          result += new String(this.peer_app_data.array());
+          String got = new String(this.peer_app_data.array());
+          result += new String(got);
         }
         else {
+          System.out.println("Non ok");
           this.handleRecvNonOkStatus(res.getStatus());
         }
       }
@@ -182,13 +183,15 @@ public class SSLSocketChannel extends SSLChannel {
 
   private void handleRecvNonOkStatus(Status status) throws IOException {
     if (status == Status.BUFFER_OVERFLOW) {
+      System.out.println("Overflow");
       this.peer_app_data = ByteBuffer.allocate(this.engine.getSession().getApplicationBufferSize());
     }
     else if (status == Status.BUFFER_UNDERFLOW) {
-      this.peer_net_data.compact();
+      System.out.println("Underflow");
       this.socket.read(this.peer_net_data);
     }
     else {
+      System.err.println(status);
       System.err.println("SSLSocketChannel::recv Engine closed!?");
       System.exit(5);
     }
@@ -196,6 +199,7 @@ public class SSLSocketChannel extends SSLChannel {
 
   private void handleSendNonOkStatus(Status status) {
     if (status == Status.BUFFER_OVERFLOW) {
+      System.out.println("Send overflow");
       this.my_net_data = ByteBuffer.allocate(this.engine.getSession().getPacketBufferSize());
     }
     else if (status == Status.BUFFER_UNDERFLOW) {

@@ -1,7 +1,5 @@
 package network.chord;
 
-import network.comms.sockets.SSLSocketChannel;
-
 import java.util.Random;
 import java.util.Vector;
 import java.util.Scanner;
@@ -12,28 +10,52 @@ import java.net.InetAddress;
 import java.util.LinkedHashMap;
 import java.net.InetSocketAddress;
 import java.security.MessageDigest;
+import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
+
+import network.comms.Packet;
+import network.comms.PacketBuffer;
+import network.comms.SSLSocketListener;
+import network.comms.sockets.SSLSocketChannel;
 
 public class Node {
   public static final int BIT_NUMBER = 32;
 
-  long finger_id;
-  SSLSocketChannel base_node;
+  String finger_ip;
+  long finger_hash;
   FingerTable f_table;
+  PacketBuffer start_buffer;
+  SSLSocketListener listener;
 
   public Node(SSLSocketChannel channel, InetSocketAddress myself) {
-    this.base_node = channel;
-
-    if (channel != null) {
-      this.f_table = new FingerTable(Node.hash(channel.getID().getBytes()), null);
-    }
-    else {
-      this.f_table = new FingerTable(Node.hash(Node.getID(myself).getBytes()), null);
-    }
+    this.finger_ip    = Node.getID(myself.getPort());
+    this.start_buffer = new PacketBuffer(channel);
+    this.finger_hash  = Node.hash(this.finger_ip.getBytes());
+    this.f_table      = new FingerTable(this.finger_hash, null);
   }
 
-  private static String getID(InetSocketAddress myself) {
-    return myself.getHostString() + ":" + myself.getPort();
+  public boolean startNodeDiscovery() {
+    Vector<String> params = new Vector<String>(2);
+    params.add(Long.toString(this.finger_hash));
+    params.add(this.finger_ip);
+    String peers = "";
+
+    for (int i = 0; i < BIT_NUMBER; i++) {
+      String peer = Long.toString((long)(finger_hash + Math.pow(2, i)) % FingerTable.MAX_ID);
+      peers += peer + " ";
+    }
+    Packet packet = Packet.newPacket("NEW_PEER", params, peers.substring(0, peers.length() - 1));
+    return this.start_buffer.sendPacket(packet);
+  }
+
+  private static String getID(int port) {
+    try {
+      return InetAddress.getLocalHost().getHostAddress() + ":" + port;
+    }
+    catch (UnknownHostException err) {
+      System.err.println("Host not known");
+      return null;
+    }
   }
 
   public void setPredecessor(String peer_ip) {
@@ -66,5 +88,9 @@ public class Node {
     TableEntry entry       = this.f_table.getEntry(entry_index);
 
     System.out.println("IP = '" + entry.getNodeIP() + "'");
+  }
+
+  public void setListener(SSLSocketListener listener) {
+    this.listener = listener;
   }
 }

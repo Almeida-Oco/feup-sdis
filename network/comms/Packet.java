@@ -6,7 +6,7 @@ import java.io.EOFException;
 import java.io.DataInputStream;
 import java.io.ByteArrayInputStream;
 
-class Packet {
+public class Packet {
   String type;
   Vector<String> params;
   String code;
@@ -37,6 +37,16 @@ class Packet {
       System.err.println("Packet malformed!");
       return null;
     }
+  }
+
+  public static Packet newPacket(String msg_type, Vector<String> params, String code) {
+    Packet packet = new Packet();
+
+    packet.type   = msg_type;
+    packet.params = params;
+    packet.code   = code;
+
+    return packet;
   }
 
   void setType(String type) {
@@ -77,8 +87,9 @@ class Packet {
     str += "\r\n";
     str += this.code;
     int str_size = str.length();
+    str = str.trim();
 
-    return "\\" + (str_size + this.numberDigits(str_size) + 3) + "/ " + str;
+    return "\\" + (str_size + this.numberDigits(str_size) + 5) + "/ " + str;
   }
 
   private int numberDigits(int number) {

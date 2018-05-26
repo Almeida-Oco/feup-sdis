@@ -37,7 +37,6 @@ public class SSLChannel extends SocketChannel {
   protected SSLChannel(SocketChannel socket, SSLEngine engine) {
     super(socket.provider());
     SSLSession s = engine.getSession();
-    System.out.println("Created socket (NULL ? " + (socket == null) + ")");
     this.socket = socket;
     this.engine = engine;
 
@@ -186,7 +185,7 @@ public class SSLChannel extends SocketChannel {
       err_msg = "Security manager does not allow operation!\n - " + err.getMessage();
     }
     catch (IOException err) {
-      err_msg = "Remote peer not found!\n - Starting as sole peer of network...";
+      err_msg = "";
     }
 
     System.err.println(err_msg);
