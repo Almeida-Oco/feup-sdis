@@ -10,46 +10,38 @@ import java.nio.LongBuffer;
 import java.nio.ByteBuffer;
 import java.net.InetAddress;
 import java.util.LinkedHashMap;
+import java.net.InetSocketAddress;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class Node {
-  private static final int BIT_NUMBER = 32;
+  public static final int BIT_NUMBER = 32;
 
   long finger_id;
   SSLSocketChannel base_node;
-  FingerTable neighbors;
+  FingerTable f_table;
 
-  // public static void main(String[] args) {
-  //   Node   node = new Node("127.0.0.1", 8080);
-  //   Random rand = new Random();
-  //
-  //   LinkedHashMap<String, Node> nodes = new LinkedHashMap<String, Node>(20);
-  //   Vector<String> ips = new Vector<String>(20);
-  //
-  //   for (int i = 0; i < 20; i++) {
-  //     String ip = "" + rand.nextInt(256) + "." + rand.nextInt(256) + "." + rand.nextInt(256) + "." + rand.nextInt(256);
-  //     ips.add(ip);
-  //     nodes.putIfAbsent(ip, new Node(ip, 8080));
-  //   }
-  //
-  //   for (String ip : ips) {
-  //     node.neighbors.addPeer(ip, Node.hash(ip.getBytes()), nodes);
-  //   }
-  // }
+  public Node(SSLSocketChannel channel, InetSocketAddress myself) {
+    this.base_node = channel;
 
-  public Node(SSLSocketChannel conn) {
-    this.base_node = conn;
+    if (channel != null) {
+      this.f_table = new FingerTable(Node.hash(channel.getID().getBytes()), null);
+    }
+    else {
+      this.f_table = new FingerTable(Node.hash(Node.getID(myself).getBytes()), null);
+    }
+  }
 
-    this.neighbors = new FingerTable(Node.hash(conn.getID().getBytes()), null);
+  private static String getID(InetSocketAddress myself) {
+    return myself.getHostString() + ":" + myself.getPort();
   }
 
   public void setPredecessor(String peer_ip) {
-    this.neighbors.setPredecessor(peer_ip);
+    this.f_table.setPredecessor(peer_ip);
   }
 
   public void addSucessor(String peer_ip, long peer_id, LinkedHashMap<String, Node> nodes) {
-    this.neighbors.addPeer(peer_ip, peer_id, nodes);
+    this.f_table.addPeer(peer_ip, peer_id, nodes);
   }
 
   static long hash(byte[] content) {
@@ -71,7 +63,7 @@ public class Node {
 
   public void sendCode(String code) {
     int        entry_index = FingerTable.idToEntry(Node.hash(code.getBytes()));
-    TableEntry entry       = this.neighbors.getEntry(entry_index);
+    TableEntry entry       = this.f_table.getEntry(entry_index);
 
     System.out.println("IP = '" + entry.getNodeIP() + "'");
   }

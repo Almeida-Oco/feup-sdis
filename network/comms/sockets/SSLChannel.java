@@ -1,7 +1,11 @@
 package network.comms.sockets;
 
+import java.util.Set;
+import java.net.Socket;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.net.SocketOption;
+import java.net.SocketAddress;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSession;
 import java.nio.channels.Selector;
@@ -13,6 +17,7 @@ import java.nio.channels.SelectionKey;
 import java.util.concurrent.Executors;
 import java.nio.channels.SocketChannel;
 import javax.net.ssl.SSLEngineResult.Status;
+import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetConnectedException;
@@ -23,15 +28,16 @@ import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.UnsupportedAddressTypeException;
 
-public class SSLChannel extends AbstractSelectableChannel {
-  protected static SelectorProvider provider = SelectorProvider.provider();
+public class SSLChannel extends SocketChannel {
+  protected String channel_id;
   protected SocketChannel socket;
   protected SSLEngine engine;
   protected ByteBuffer my_app_data, my_net_data, peer_app_data, peer_net_data;
 
-  protected SSLChannel(SocketChannel socket, SSLEngine engine, SelectorProvider provider) {
-    super(provider);
+  protected SSLChannel(SocketChannel socket, SSLEngine engine) {
+    super(socket.provider());
     SSLSession s = engine.getSession();
+    System.out.println("Created socket (NULL ? " + (socket == null) + ")");
     this.socket = socket;
     this.engine = engine;
 
@@ -48,17 +54,11 @@ public class SSLChannel extends AbstractSelectableChannel {
     HandshakeStatus shake_status;
 
     this.engine.beginHandshake();
+    System.out.println("Starting handshake...");
     while (!this.handshakeFinished((shake_status = this.engine.getHandshakeStatus()))) {
-      System.out.println("STATUS = " + shake_status);
-
-      // try {
-      //   Thread.sleep(500, 0);
-      // }
-      // catch (InterruptedException err) {}
-
       if (shake_status == HandshakeStatus.NEED_UNWRAP) {
-        int bytes_read;
-        if ((bytes_read = this.socket.read(this.peer_net_data)) < 0) {
+        int bytes;
+        if ((bytes = this.socket.read(this.peer_net_data)) < 0) {
           if (this.engine.isInboundDone() && this.engine.isOutboundDone()) {
             System.err.println("Read < 0 data");
             return false;
@@ -86,37 +86,38 @@ public class SSLChannel extends AbstractSelectableChannel {
 
           Status status = engine_res.getStatus();
           if (status == Status.OK) {
-            System.out.println("OK");
+            continue;
           }
           else if (status == Status.BUFFER_OVERFLOW) {
-            System.out.println("  OVERFLOW");
             this.enlargeBuffer(this.peer_app_data, this.engine.getSession().getApplicationBufferSize());
           }
           else if (status == Status.BUFFER_UNDERFLOW) {
-            System.out.println("  UNDERFLOW");
             this.peer_net_data.flip();
             this.socket.read(this.peer_net_data);
             engine_res = engine.unwrap(this.peer_net_data, this.peer_app_data);
             this.peer_net_data.compact();
           }
           else if (status == Status.CLOSED) {
-            System.out.println("CLOSED!");
-            System.exit(2);
+            if (this.engine.isOutboundDone()) {
+              System.err.println("Got closed but output is done!");
+              return false;
+            }
+            this.engine.closeOutbound();
           }
         }
       }
       else if (shake_status == HandshakeStatus.NEED_WRAP) {
-        this.my_net_data.clear();
-
         try {
+          this.my_net_data.clear();
           engine_res = this.engine.wrap(this.my_app_data, this.my_net_data);
-          this.my_net_data.flip();
 
-          while (this.socket.write(this.my_net_data) > 0) {
-          }
+
+
           Status status = engine_res.getStatus();
           if (status == Status.OK) {
-            System.out.println("  OK");
+            this.my_net_data.flip();
+            while (this.socket.write(this.my_net_data) > 0) {
+            }
           }
           else if (status == Status.BUFFER_OVERFLOW) {
             System.out.println("  OBVERFLOW");
@@ -125,7 +126,10 @@ public class SSLChannel extends AbstractSelectableChannel {
           }
           else if (status == Status.CLOSED) {
             System.out.println("CLOSED!");
-            System.exit(2);
+            this.my_net_data.flip();
+            while (this.socket.write(this.my_net_data) > 0) {
+            }
+            this.peer_net_data.clear();
           }
         }
         catch (SSLException err) {
@@ -144,15 +148,19 @@ public class SSLChannel extends AbstractSelectableChannel {
       }
     }
 
-    System.err.println("End of while");
+    System.err.println("Handshake done!");;
     return this.handshakeFinished(shake_status);
   }
 
-  protected static SocketChannel openChannel(String addr, int port) {
+  public String getID() {
+    return this.channel_id;
+  }
+
+  public static SocketChannel openChannel(String addr, int port) {
     String err_msg;
 
     try {
-      SocketChannel channel = SSLChannel.provider.openSocketChannel();
+      SocketChannel channel = SelectorProvider.provider().openSocketChannel();
       channel.configureBlocking(false);
       channel.connect(new InetSocketAddress(addr, port));
       channel.finishConnect();
@@ -178,8 +186,7 @@ public class SSLChannel extends AbstractSelectableChannel {
       err_msg = "Security manager does not allow operation!\n - " + err.getMessage();
     }
     catch (IOException err) {
-      err_msg = "Some I/O error occurred!\n - " + err.getMessage();
-      err.printStackTrace();
+      err_msg = "Remote peer not found!\n - Starting as sole peer of network...";
     }
 
     System.err.println(err_msg);
@@ -215,7 +222,7 @@ public class SSLChannel extends AbstractSelectableChannel {
 
   public static Selector newSelector() {
     try {
-      return (Selector)SSLChannel.provider.openSelector();
+      return SelectorProvider.provider().openSelector();
     }
     catch (IOException err) {
       System.err.println("Failed to open selector!\n - " + err.getMessage());
@@ -223,16 +230,109 @@ public class SSLChannel extends AbstractSelectableChannel {
     }
   }
 
-  @Override
-  protected void implCloseSelectableChannel() {
+  public static ServerSocketChannel newServerChannel() {
+    try {
+      return SelectorProvider.provider().openServerSocketChannel();
+    }
+    catch (IOException err) {
+      System.err.println("Failed to open server socket channel!\n - " + err.getMessage());
+      return null;
+    }
   }
 
   @Override
-  protected void implConfigureBlocking(boolean block) {
+  public SocketChannel bind(SocketAddress local) throws IOException {
+    return this.socket.bind(local);
   }
 
   @Override
-  public int validOps() {
-    return SelectionKey.OP_ACCEPT | SelectionKey.OP_CONNECT | SelectionKey.OP_READ | SelectionKey.OP_WRITE;
+  public boolean connect(SocketAddress remote) throws IOException {
+    return this.socket.connect(remote);
+  }
+
+  @Override
+  public boolean finishConnect() throws IOException {
+    return this.socket.finishConnect();
+  }
+
+  @Override
+  public SocketAddress getLocalAddress() throws IOException {
+    return this.socket.getLocalAddress();
+  }
+
+  @Override
+  public SocketAddress getRemoteAddress() throws IOException {
+    return this.socket.getRemoteAddress();
+  }
+
+  @Override
+  public boolean isConnected() {
+    return this.socket.isConnected();
+  }
+
+  @Override
+  public boolean isConnectionPending() {
+    return this.socket.isConnectionPending();
+  }
+
+  @Override
+  public int read(ByteBuffer dst) throws IOException {
+    return this.socket.read(dst);
+  }
+
+  @Override
+  public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
+    return this.socket.read(dsts, offset, length);
+  }
+
+  @Override
+  public < T > SocketChannel setOption(SocketOption<T> name, T value) throws IOException {
+    return this.socket.setOption(name, value);
+  }
+
+  @Override
+  public SocketChannel shutdownInput() throws IOException {
+    return this.socket.shutdownInput();
+  }
+
+  @Override
+  public SocketChannel shutdownOutput() throws IOException {
+    return this.socket.shutdownOutput();
+  }
+
+  @Override
+  public Socket socket() {
+    return this.socket.socket();
+  }
+
+  @Override
+  public int write(ByteBuffer src) throws IOException {
+    return this.socket.write(src);
+  }
+
+  @Override
+  public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
+    return this.socket.write(srcs, offset, length);
+  }
+
+  @Override
+  public void implCloseSelectableChannel() {
+    System.out.println("Called implCloseSelectableChannel()");
+  }
+
+  @Override
+  public void implConfigureBlocking(boolean block) throws IOException {
+    System.out.println("Called implConfigureBlocking()");
+    this.socket.configureBlocking(block);
+  }
+
+  @Override
+  public Set<SocketOption<?> > supportedOptions() {
+    return this.socket.supportedOptions();
+  }
+
+  @Override
+  public < T > T getOption(SocketOption<T> name) throws IOException {
+    return this.socket.getOption(name);
   }
 }

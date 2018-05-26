@@ -21,11 +21,9 @@ import java.nio.channels.UnsupportedAddressTypeException;
 
 public class SSLSocketChannel extends SSLChannel {
   private static final int BUF_SIZE = 32768;
-  SSLEngine engine;
-  SocketChannel socket;
 
   private SSLSocketChannel(SocketChannel socket, SSLEngine engine) {
-    super(socket, engine, null);
+    super(socket, engine);
   }
 
   public static SSLSocketChannel newChannel(String addr, int port, boolean client_mode) {
@@ -35,44 +33,52 @@ public class SSLSocketChannel extends SSLChannel {
       return null;
     }
 
-    return SSLSocketChannel.newChannel(socket, addr, port, client_mode);
+    return SSLSocketChannel.newChannel(socket, client_mode);
   }
 
-  public static SSLSocketChannel newChannel(SocketChannel socket, String addr, int port, boolean client_mode) {
-    SSLEngine engine;
+  public static SSLSocketChannel newChannel(SocketChannel socket, boolean client_mode) {
+    SSLEngine         engine;
+    InetSocketAddress addr;
 
-    if ((engine = SSLEngineFactory.newEngine(addr, port)) == null) {
+    try {
+      socket.configureBlocking(false);
+      addr = (InetSocketAddress)socket.getLocalAddress();
+    }
+    catch (IOException err) {
+      System.err.println("Error getting local address!\n - " + err.getMessage());
+      return null;
+    }
+
+    if ((engine = SSLEngineFactory.newEngine(addr.getHostString(), addr.getPort())) == null) {
       return null;
     }
 
     engine.setUseClientMode(client_mode);
     SSLSocketChannel socket_channel = new SSLSocketChannel(socket, engine);
+
     try {
-      if (!socket_channel.doHandshake()) {
-        System.out.println("Failed to handshake!");
-        return null;
-      }
-      else {
-        System.out.println("Handshake is done boie!");
+      if (socket_channel.doHandshake() && socket_channel.setupID()) {
         return socket_channel;
       }
+      System.err.println("Failed to handshake!");
     }
     catch (IOException err) {
       System.err.println("IO Error while handshaking!\n - " + err.getMessage());
-      return null;
     }
+    return null;
   }
 
-  public String getID() {
+  private boolean setupID() {
     try {
       InetSocketAddress addr = (InetSocketAddress)this.socket.getLocalAddress();
 
-      return addr.getHostName() + ":" + addr.getPort();
+      this.channel_id = addr.getHostName() + ":" + addr.getPort();
+      return true;
     }
     catch (IOException err) {
       System.err.println("Failed to get SSLSocketChannel ID!\n - " + err.getMessage());
     }
-    return null;
+    return false;
   }
 
   public boolean sendMsg(String msg) {
@@ -102,20 +108,17 @@ public class SSLSocketChannel extends SSLChannel {
     while (this.my_app_data.hasRemaining()) {
       this.my_net_data.clear();
       SSLEngineResult res = this.engine.wrap(this.my_app_data, this.my_net_data);
-      System.out.println(res);
 
       if (res.getStatus() == Status.OK) {
         this.my_net_data.flip();
 
-        System.out.println("Sending my_net_data");
         while (this.my_net_data.hasRemaining()) {
           this.socket.write(this.my_net_data);
         }
-        System.out.println("Sent my_net_data");
         return true;
       }
       else {
-        System.out.println("While sending got '" + res.getStatus() + "'");
+        this.handleSendNonOkStatus(res.getStatus());
       }
     }
 
@@ -123,56 +126,42 @@ public class SSLSocketChannel extends SSLChannel {
   }
 
   public String recvMsg() {
-    int num;
-
-    this.my_net_data.clear();
-    this.my_app_data.clear();
     try {
-      num = this.socket.read(this.my_net_data);
+      this.peer_net_data.clear();
+      if (this.socket.read(this.peer_net_data) == -1) {
+        System.err.println("Socket closed while receiving message!");
+        return null;
+      }
+      else {
+        this.peer_net_data.flip();
+        return this.decodeData();
+      }
     }
     catch (IOException err) {
       System.err.println("I/O error while receiving message!\n - " + err.getMessage());
       return null;
     }
     catch (NotYetConnectedException err) {
-      // System.err.println("Not yet connected!\n - " + err.getMessage());
+      System.err.println("Not yet connected!\n - " + err.getMessage());
       return null;
-    }
-
-    if (num == -1) {
-      System.err.println("Socket closed while receiving message!");
-      return null;
-    }
-    else if (num == 0) {
-      System.err.println("Nothing to read");
-      return null;
-    }
-    else {
-      return this.decodeData();
     }
   }
 
   private String decodeData() {
-    String result = null;
-
-    this.my_net_data.flip();
+    String          result = "";
     SSLEngineResult res;
-    try {
-      while (this.my_net_data.hasRemaining()) {
-        this.my_app_data.clear();
-        res = this.engine.unwrap(this.my_net_data, this.my_app_data);
 
-        if (res.getStatus() == SSLEngineResult.Status.OK) {
-          this.my_app_data.flip();
-          if (result == null) {
-            result = new String(this.my_app_data.array());
-          }
-          else {
-            result += new String(this.my_app_data.array());
-          }
+    try {
+      while (this.peer_net_data.hasRemaining()) {
+        this.peer_app_data.clear();
+        res = this.engine.unwrap(this.peer_net_data, this.peer_app_data);
+
+        if (res.getStatus() == Status.OK) {
+          this.peer_app_data.flip();
+          result += new String(this.peer_app_data.array());
         }
         else {
-          System.out.println("Read status = " + res.getStatus());
+          this.handleRecvNonOkStatus(res.getStatus());
         }
       }
       return result;
@@ -180,7 +169,41 @@ public class SSLSocketChannel extends SSLChannel {
     catch (SSLException err) {
       System.err.println("SSL error while unwrapping!\n - " + err.getMessage());
     }
+    catch (IOException err) {
+      System.err.println("I/O error while handling recv status!\n - " + err.getMessage());
+    }
 
     return null;
+  }
+
+  public SocketChannel getChannel() {
+    return this.socket;
+  }
+
+  private void handleRecvNonOkStatus(Status status) throws IOException {
+    if (status == Status.BUFFER_OVERFLOW) {
+      this.peer_app_data = ByteBuffer.allocate(this.engine.getSession().getApplicationBufferSize());
+    }
+    else if (status == Status.BUFFER_UNDERFLOW) {
+      this.peer_net_data.compact();
+      this.socket.read(this.peer_net_data);
+    }
+    else {
+      System.err.println("SSLSocketChannel::recv Engine closed!?");
+      System.exit(5);
+    }
+  }
+
+  private void handleSendNonOkStatus(Status status) {
+    if (status == Status.BUFFER_OVERFLOW) {
+      this.my_net_data = ByteBuffer.allocate(this.engine.getSession().getPacketBufferSize());
+    }
+    else if (status == Status.BUFFER_UNDERFLOW) {
+      System.out.println("Send underflow");
+    }
+    else {
+      System.err.println("SSLSocketChannel::send Engine closed!?");
+      System.exit(5);
+    }
   }
 }

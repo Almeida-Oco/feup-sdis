@@ -19,14 +19,14 @@ public class SSLServerSocketChannel {
     this.port   = port;
   }
 
-  public static SSLServerSocketChannel newChannel(String addr, int port) {
+  public static SSLServerSocketChannel newChannel(int port) {
     try {
-      ServerSocketChannel socket = ServerSocketChannel.open();
-
+      ServerSocketChannel socket     = SSLChannel.newServerChannel();
+      InetSocketAddress   local_addr = new InetSocketAddress(port);
       socket.configureBlocking(false);
-      socket.socket().bind(new InetSocketAddress(addr, port));
+      socket.bind(local_addr);
 
-      return new SSLServerSocketChannel(socket, addr, port);
+      return new SSLServerSocketChannel(socket, local_addr.getHostString(), port);
     }
     catch (Exception err) {
       err.printStackTrace();
@@ -35,20 +35,7 @@ public class SSLServerSocketChannel {
     return null;
   }
 
-  public SSLSocketChannel accept() {
-    try {
-      SocketChannel channel;
-      while ((channel = this.socket.accept()) == null) {
-      }
-
-      channel.configureBlocking(false);
-
-      return SSLSocketChannel.newChannel(channel, this.ip, this.port, true);
-    }
-    catch (Exception err) {
-      err.printStackTrace();
-    }
-
-    return null;
+  public ServerSocketChannel getSocket() {
+    return this.socket;
   }
 }
