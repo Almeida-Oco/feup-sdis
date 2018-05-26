@@ -3,6 +3,9 @@ package network.chord;
 import java.util.Vector;
 import java.util.LinkedHashMap;
 
+import network.comms.Packet;
+import network.comms.PacketBuffer;
+
 class FingerTable {
   private static final int BIT_NUMBER = Node.BIT_NUMBER;
   public static final long MAX_ID     = (long)Math.pow(2, BIT_NUMBER);
@@ -51,11 +54,15 @@ class FingerTable {
     this.predecessor = peer_ip;
   }
 
-  TableEntry getEntry(long peer_id) {
-    int entry_index = FingerTable.idToEntry(peer_id);
+  TableEntry getEntry(long peer_hash) {
+    int entry_index = FingerTable.idToEntry(peer_hash);
 
     if (entry_index >= BIT_NUMBER) {
-      System.out.println("Send to latest sucessor");
+      PacketBuffer   buffer = this.fingers.lastElement().getChannel();
+      Vector<String> params = new Vector<String>(1);
+      params.add(Long.toString(peer_hash));
+
+      buffer.sendPacket(Packet.newPacket("GET_PEER", params, ""));
       return null;
     }
     else {

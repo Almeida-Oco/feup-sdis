@@ -24,11 +24,19 @@ public class PacketBuffer implements Runnable {
     return this.channel.getChannel();
   }
 
+  /**
+   * Sends a packet to the channel
+   * @param  packet Packet to be sent
+   * @return        Whether it was succesfully sent or not
+   */
   public boolean sendPacket(Packet packet) {
     System.out.println("Sending '" + packet.toString() + "'");
     return this.channel.sendMsg(packet.toString());
   }
 
+  /**
+   * Reads a packet from the channel
+   */
   @Override
   public void run() {
     String msg = this.channel.recvMsg();
@@ -71,7 +79,7 @@ public class PacketBuffer implements Runnable {
 
   private void sendMsgUpstream(Packet packet) {
     if (packet != null) {
-      System.out.println("Sending '" + packet.toString() + "' upstream!");
+      System.out.println("Sending packet upstream!");
     }
     else {
       System.out.println("Packet is null!");

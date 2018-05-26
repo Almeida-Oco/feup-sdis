@@ -1,13 +1,15 @@
 package network.chord;
 
+import network.comms.PacketBuffer;
+
 class TableEntry {
   long entry_id;
-  String node_ip;
+  String node_id;
+  PacketBuffer node_channel;
 
-  TableEntry(long entry_id, String node_ip) {
+  TableEntry(long entry_id, String node_id) {
     this.entry_id = entry_id;
-
-    this.node_ip = node_ip;
+    this.node_id  = node_id;
   }
 
   long getNodeID() {
@@ -15,15 +17,19 @@ class TableEntry {
   }
 
   String getNodeIP() {
-    return this.node_ip;
+    return this.node_id;
   }
 
-  void updateNodeIP(String node_ip) {
-    this.node_ip = node_ip;
+  PacketBuffer getChannel() {
+    return this.node_channel;
+  }
+
+  void updateNodeIP(String node_id) {
+    this.node_id = node_id;
   }
 
   @Override
   public String toString() {
-    return "(" + entry_id + ", " + node_ip + ")";
+    return "(" + entry_id + ", " + node_id + ")";
   }
 }

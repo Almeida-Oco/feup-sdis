@@ -1,5 +1,6 @@
 package network.comms;
 
+import java.util.Arrays;
 import java.util.Vector;
 import java.io.IOException;
 import java.io.EOFException;
@@ -45,6 +46,16 @@ public class Packet {
     packet.type   = msg_type;
     packet.params = params;
     packet.code   = code;
+
+    return packet;
+  }
+
+  public static Packet netPeersPacket(String[] peers) {
+    Packet packet = new Packet();
+
+    packet.type   = "PEERS";
+    packet.params = new Vector<String>(Arrays.asList(peers));
+    packet.code   = "";
 
     return packet;
   }
