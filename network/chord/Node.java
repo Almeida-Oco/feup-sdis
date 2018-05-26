@@ -1,56 +1,69 @@
 package network.chord;
 
-import network.comms.Connection;
-
 import java.util.Random;
 import java.util.Vector;
 import java.util.Scanner;
 import java.nio.ByteOrder;
 import java.nio.LongBuffer;
 import java.nio.ByteBuffer;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.util.LinkedHashMap;
+import java.net.InetSocketAddress;
 import java.security.MessageDigest;
+import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 
-class Node {
-  private static final int BIT_NUMBER = 32;
+import network.comms.Packet;
+import network.comms.PacketBuffer;
+import network.comms.SSLSocketListener;
+import network.comms.sockets.SSLSocketChannel;
 
-  long finger_id;
-  Connection predecessor;
-  FingerTable neighbors;
+public class Node {
+  public static final int BIT_NUMBER = 32;
 
-  // public static void main(String[] args) {
-  //   Node   node = new Node("127.0.0.1", 8080);
-  //   Random rand = new Random();
-  //
-  //   LinkedHashMap<String, Node> nodes = new LinkedHashMap<String, Node>(20);
-  //   Vector<String> ips = new Vector<String>(20);
-  //
-  //   for (int i = 0; i < 20; i++) {
-  //     String ip = "" + rand.nextInt(256) + "." + rand.nextInt(256) + "." + rand.nextInt(256) + "." + rand.nextInt(256);
-  //     ips.add(ip);
-  //     nodes.putIfAbsent(ip, new Node(ip, 8080));
-  //   }
-  //
-  //   for (String ip : ips) {
-  //     node.neighbors.addPeer(ip, Node.hash(ip.getBytes()), nodes);
-  //   }
-  // }
+  String finger_ip;
+  long finger_hash;
+  FingerTable f_table;
+  PacketBuffer start_buffer;
+  SSLSocketListener listener;
 
-  public Node(Connection conn) {
-    this.predecessor = conn;
+  public Node(SSLSocketChannel channel, InetSocketAddress myself) {
+    this.finger_ip    = Node.getID(myself.getPort());
+    this.start_buffer = new PacketBuffer(channel);
+    this.finger_hash  = Node.hash(this.finger_ip.getBytes());
+    this.f_table      = new FingerTable(this.finger_hash, null);
+  }
 
-    this.neighbors = new FingerTable(Node.hash(conn.getIP().getBytes()), null);
+  public boolean startNodeDiscovery() {
+    Vector<String> params = new Vector<String>(2);
+    params.add(Long.toString(this.finger_hash));
+    params.add(this.finger_ip);
+    String peers = "";
+
+    for (int i = 0; i < BIT_NUMBER; i++) {
+      String peer = Long.toString((long)(finger_hash + Math.pow(2, i)) % FingerTable.MAX_ID);
+      peers += peer + " ";
+    }
+    Packet packet = Packet.newPacket("NEW_PEER", params, peers.substring(0, peers.length() - 1));
+    return this.start_buffer.sendPacket(packet);
+  }
+
+  private static String getID(int port) {
+    try {
+      return InetAddress.getLocalHost().getHostAddress() + ":" + port;
+    }
+    catch (UnknownHostException err) {
+      System.err.println("Host not known");
+      return null;
+    }
   }
 
   public void setPredecessor(String peer_ip) {
-    this.neighbors.setPredecessor(peer_ip);
+    this.f_table.setPredecessor(peer_ip);
   }
 
   public void addSucessor(String peer_ip, long peer_id, LinkedHashMap<String, Node> nodes) {
-    this.neighbors.addPeer(peer_ip, peer_id, nodes);
+    this.f_table.addPeer(peer_ip, peer_id, nodes);
   }
 
   static long hash(byte[] content) {
@@ -72,8 +85,12 @@ class Node {
 
   public void sendCode(String code) {
     int        entry_index = FingerTable.idToEntry(Node.hash(code.getBytes()));
-    TableEntry entry       = this.neighbors.getEntry(entry_index);
+    TableEntry entry       = this.f_table.getEntry(entry_index);
 
     System.out.println("IP = '" + entry.getNodeIP() + "'");
+  }
+
+  public void setListener(SSLSocketListener listener) {
+    this.listener = listener;
   }
 }
