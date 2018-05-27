@@ -70,7 +70,13 @@ public class ProgramRes {
 
    public static void storeAFile(String folder, String write, String filename){
 
-    File fout = new File(System.getProperty("user.dir")+ "/" + folder + "/" + filename);
+    File fout;
+
+    if(folder == "NONE"){
+      fout = new File(System.getProperty("user.dir") + "/" + filename);
+    } else {
+      fout = new File(System.getProperty("user.dir")+ "/" + folder + "/" + filename);
+    }
 
     if(!fout.getParentFile().exists()){
         fout.getParentFile().mkdirs();
