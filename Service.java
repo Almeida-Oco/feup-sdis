@@ -70,7 +70,7 @@ class Service {
     handler = new SynchronizeHandler(myself);
 
     try {
-      executor.scheduleAtFixedRate(handler, delay, delay, TimeUnit.SECONDS);
+      executor.scheduleAtFixedRate(handler, 3, 3, TimeUnit.SECONDS);
     }
     catch (Exception err) {
       System.err.println("Synchronized thread interrupted! Aborting...");

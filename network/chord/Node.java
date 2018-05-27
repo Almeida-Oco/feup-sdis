@@ -69,7 +69,7 @@ public class Node {
       }
     }
 
-    PacketDispatcher.registerHandler(Packet.PEER, this.predecessor.getHash(), new PeerHandler(this, null, this.predecessor.getHash()));
+    PacketDispatcher.registerHandler(Packet.PEER, this.predecessor.getHash(), new PeerHandler(this, null, this.my_hash));
     Packet packet = Packet.newNewPeerPacket(Long.toString(this.my_hash), this.my_id, peers);
     return this.predecessor.getChannel().sendPacket(packet);
   }
@@ -127,6 +127,10 @@ public class Node {
     return this.my_hash;
   }
 
+  public void setPredecessor(String peer_id, long peer_hash, PacketChannel channel) {
+    this.predecessor = new TableEntry(peer_id, peer_hash, channel);
+  }
+
   public void setAlive(long entry_hash) {
     TableEntry entry = this.f_table.getEntry(entry_hash);
 
@@ -178,6 +182,8 @@ public class Node {
 
   @Override
   public String toString() {
-    return this.f_table.toString();
+    String ret = "FATHER = " + this.predecessor.getID() + "\n";
+
+    return ret + this.f_table.toString();
   }
 }

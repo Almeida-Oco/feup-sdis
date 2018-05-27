@@ -22,8 +22,9 @@ public class PeerHandler extends Handler {
       this.redirect_buffer.sendPacket(packet);
     }
     else {
-      if (packet.getIP_Port().equals(this.node.getID())) {
-        this.node.setPredecessor(packet.getIP_Port(), buffer);
+      long hash = packet.getHash();
+      if (hash != this.peer_hash) { //My predecessor
+        this.node.setPredecessor(packet.getIP_Port(), hash, buffer);
       }
       else {
         this.node.addPeer(packet.getIP_Port(), packet.getHash(), buffer);
