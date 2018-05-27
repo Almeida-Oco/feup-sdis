@@ -39,7 +39,7 @@ public class Packet {
       header = msg.substring(0, header_end);
     }
 
-    packet.code = msg.substring(header_end + 2, msg.length());
+    packet.code = msg.substring(header_end + 1, msg.length());
 
     String[] fields = header.split(" ");
     if (fields.length >= 2) {

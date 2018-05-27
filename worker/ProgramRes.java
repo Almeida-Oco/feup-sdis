@@ -9,6 +9,7 @@ public class ProgramRes {
    int exitval;
    Date dstarted;
    Date dfinished;
+   static String special_token = " XJAVWKSERVICE ";
  
    public ProgramRes(int exitval, String stdout, String stderr, Date start) {
 
@@ -16,6 +17,17 @@ public class ProgramRes {
         this.stdout = stdout;
         this.stderr = stderr;
         this.dstarted = start;
+
+   }
+
+    public ProgramRes(String packet) {
+        String processed = packet;
+
+        this.exitval = Integer.parseInt(packet.split(this.special_token)[0]);
+        this.stdout = packet.split(this.special_token)[1];
+        this.stderr = packet.split(this.special_token)[2];
+
+        //this.dstarted = start;
 
    }
  
@@ -102,4 +114,23 @@ public class ProgramRes {
   public void setDfinished(Date value) {
     this.dfinished = value;
   }
+
+   @Override
+   public String toString() {
+
+    String final_stderr = "empty";
+    String final_stdout = "empty";
+
+    if( this.stdout.trim().length() > 0){
+      final_stdout = this.stdout;
+    }
+
+    if( this.stderr.trim().length() > 0){
+      final_stderr = this.stderr;
+    }
+
+      return Integer.toString(this.exitval) + this.special_token + final_stdout + this.special_token +
+            final_stderr;
+
+   }
 }
