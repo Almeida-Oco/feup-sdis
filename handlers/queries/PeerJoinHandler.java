@@ -20,12 +20,12 @@ public class PeerJoinHandler extends Handler {
       long       hash = Long.parseLong(hash_str);
       TableEntry peer = this.node.getResponsiblePeer(hash);
 
-      if (peer != null) { // Im responsible for packet
+      if (peer != null) {
         PacketChannel peer_buffer = peer.getChannel();
-        if (peer_buffer == null) {
+        if (peer_buffer == null) { // Im responsible for packet
           buffer.sendPacket(Packet.newPeerPacket(hash_str, peer.getID()));
         }
-        else {
+        else { //Someone else is responsible, resend the query and wait for response to redirect
           Handler handler = new PeerHandler(this.node, buffer, hash);
           PacketDispatcher.registerHandler(Packet.GET_PEER, hash, handler);
           peer_buffer.sendPacket(Packet.newGetPeerPacket(hash_str));

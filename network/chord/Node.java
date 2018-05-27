@@ -74,20 +74,6 @@ public class Node {
     return this.predecessor.getChannel().sendPacket(packet);
   }
 
-  public void findRequestedNodes(Packet packet, PacketChannel buffer) {
-    String[] nodes_hash = packet.getCode().split(" ");
-    for (String hash : nodes_hash) {
-      TableEntry entry = this.f_table.getEntry(Long.parseLong(hash));
-      if (entry != null) {
-        buffer.sendPacket(Packet.newPeerPacket(hash, entry.getID()));
-      }
-      else { //Request closes node to find it (register somewhere that I am looking for peer with this hash)
-        TableEntry    last_entry  = this.f_table.getLastEntry();
-        PacketChannel peer_buffer = last_entry.getChannel();
-      }
-    }
-  }
-
   public TableEntry getResponsiblePeer(long hash) {
     TableEntry entry = this.f_table.getEntry(hash);
 
