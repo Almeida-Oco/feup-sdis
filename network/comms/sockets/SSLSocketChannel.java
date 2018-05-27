@@ -88,7 +88,10 @@ public class SSLSocketChannel extends SSLChannel {
       this.my_app_data.clear();
       this.my_app_data.put(msg.getBytes());
       this.my_app_data.flip();
-      return this.sendData();
+      boolean ret = this.sendData();
+      this.my_net_data.clear();
+      this.my_app_data.clear();
+      return ret;
     }
     catch (SSLException err) {
       err_msg = "Problem occurred while beginning handshake!\n  - " + err.getMessage();
@@ -129,7 +132,10 @@ public class SSLSocketChannel extends SSLChannel {
       int bytes_read;
       this.peer_net_data.clear();
       if ((bytes_read = this.socket.read(this.peer_net_data)) > 0) {
-        return this.decodeData();
+        String ret = this.decodeData();
+        this.peer_net_data.clear();
+        this.peer_app_data.clear();
+        return ret;
       }
       else if (bytes_read < 0) {
         System.err.println("Socket closed while receiving message!");
@@ -150,21 +156,19 @@ public class SSLSocketChannel extends SSLChannel {
     SSLEngineResult res;
 
     try {
+      this.peer_net_data.flip();
       do {
         this.peer_app_data.clear();
-        this.peer_net_data.flip();
         res = this.engine.unwrap(this.peer_net_data, this.peer_app_data);
 
-        if (res.getStatus() == Status.OK) {
-          this.peer_app_data.flip();
-          String got = new String(this.peer_app_data.array());
-          result += new String(got);
-        }
-        else {
+        if (res.getStatus() != Status.OK) {
           this.handleRecvNonOkStatus(res.getStatus());
         }
       } while (this.peer_net_data.hasRemaining());
-      return result;
+      String ret = new String(this.peer_app_data.array(), 0, this.peer_app_data.position());
+      this.peer_app_data.clear();
+      this.peer_net_data.clear();
+      return ret;
     }
     catch (SSLException err) {
       System.err.println("SSL error while unwrapping!\n - " + err.getMessage());
@@ -178,6 +182,18 @@ public class SSLSocketChannel extends SSLChannel {
 
   public SocketChannel getChannel() {
     return this.socket;
+  }
+
+  public String getID() {
+    try {
+      InetSocketAddress addr = (InetSocketAddress)this.socket.getRemoteAddress();
+      return addr.toString().substring(1);
+    }
+    catch (Exception err) {
+      System.err.println("Failed to get channel ID!\n - " + err.getMessage());
+      System.exit(3);
+    }
+    return null;
   }
 
   private void handleRecvNonOkStatus(Status status) throws IOException {

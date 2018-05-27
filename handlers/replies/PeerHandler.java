@@ -22,7 +22,12 @@ public class PeerHandler extends Handler {
       this.redirect_buffer.sendPacket(packet);
     }
     else {
-      this.node.addPeer(packet.getIP_Port(), packet.getHash(), buffer);
+      if (packet.getIP_Port().equals(this.node.getID())) {
+        this.node.setPredecessor(packet.getIP_Port(), buffer);
+      }
+      else {
+        this.node.addPeer(packet.getIP_Port(), packet.getHash(), buffer);
+      }
     }
   }
 

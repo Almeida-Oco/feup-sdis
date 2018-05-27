@@ -31,7 +31,11 @@ public class SSLSocketListener {
 
   private static ThreadPoolExecutor tasks;
   private Node myself;
-  private Selector selector;
+  private static Selector selector;
+
+  static {
+    selector = SSLChannel.newSelector();
+  }
 
   public SSLSocketListener(Node node) {
     ArrayBlockingQueue<Runnable> arr = new ArrayBlockingQueue<Runnable>(POOL_SIZE, false);
@@ -39,7 +43,6 @@ public class SSLSocketListener {
 
     SSLSocketListener.tasks = new ThreadPoolExecutor(cpu_number, POOL_SIZE, (long)0, TimeUnit.SECONDS, arr);
     this.myself             = node;
-    this.selector           = SSLChannel.newSelector();
   }
 
   /**
@@ -49,8 +52,8 @@ public class SSLSocketListener {
     String line;
 
     while (true) {
-      if (this.selector.select() > 0) {
-        Iterator<SelectionKey> keys_it = this.selector.selectedKeys().iterator();
+      if (selector.select(100) > 0) {
+        Iterator<SelectionKey> keys_it = selector.selectedKeys().iterator();
         while (keys_it.hasNext()) {
           SelectionKey key = keys_it.next();
           if (!key.isValid() || !this.handleKey(key)) {
@@ -59,19 +62,25 @@ public class SSLSocketListener {
           keys_it.remove();
         }
       }
+      try { //Someone called selector.wakeup(), give him some time to use the selector
+        Thread.sleep(100, 0);
+      }
+      catch (Exception e) {}
     }
   }
 
-  public boolean waitForRead(PacketChannel builder) {
-    SelectionKey key = this.registerSocket(builder.getChannel(), SelectionKey.OP_READ);
+  public static boolean waitForRead(PacketChannel builder) {
+    SelectionKey key = registerSocket(builder.getChannel(), SelectionKey.OP_READ);
 
-    System.out.println("Registering for read!");
-    key.attach(builder);
-    return key != null;
+    if (key != null) {
+      key.attach(builder);
+      return true;
+    }
+    return false;
   }
 
-  public boolean waitForAccept(AbstractSelectableChannel socket) {
-    return this.registerSocket(socket, SelectionKey.OP_ACCEPT) != null;
+  public static boolean waitForAccept(AbstractSelectableChannel socket) {
+    return registerSocket(socket, SelectionKey.OP_ACCEPT) != null;
   }
 
   private boolean handleKey(SelectionKey key) {
@@ -96,7 +105,7 @@ public class SSLSocketListener {
         SSLSocketChannel socket = SSLSocketChannel.newChannel(s_channel, false);
         PacketChannel    buffer = new PacketChannel(socket);
 
-        this.waitForRead(buffer);
+        waitForRead(buffer);
         return true;
       }
       return false;
@@ -109,6 +118,7 @@ public class SSLSocketListener {
   }
 
   private boolean readKey(PacketChannel builder) {
+    System.out.println("Reading");
     if (builder.isConnected()) {
       SSLSocketListener.tasks.execute((Runnable)builder);
       return true;
@@ -116,12 +126,16 @@ public class SSLSocketListener {
     return false;
   }
 
-  private SelectionKey registerSocket(AbstractSelectableChannel socket, int ops) {
+  private static SelectionKey registerSocket(AbstractSelectableChannel socket, int ops) {
     String err_msg;
 
     try {
       socket.configureBlocking(false);
-      return socket.register(this.selector, ops);
+      selector.wakeup();
+      System.out.println("Waiting to register?");
+      SelectionKey key = socket.register(selector, ops);
+      System.out.println("Registered");
+      return key;
     }
     catch (ClosedChannelException err) {
       err_msg = "The channel is closed!\n - " + err.getMessage();
@@ -133,9 +147,7 @@ public class SSLSocketListener {
       err_msg = "The socket trying to register is in blocking-mode!\n - " + err.getMessage();
     }
     catch (IllegalSelectorException err) {
-      err.printStackTrace();
-      err_msg  = "Channel not created with same provider!\n - " + err.getMessage();
-      err_msg += "\n" + err.getCause() + err.toString();
+      err_msg = "Channel not created with same provider!\n - " + err.getMessage();
     }
     catch (IllegalArgumentException err) {
       err_msg = "Bit in ops is not supported!\n - " + err.getMessage();
@@ -146,6 +158,12 @@ public class SSLSocketListener {
 
     System.err.println(err_msg);
     return null;
+  }
+
+  public static void unregisterChannel(PacketChannel channel) {
+    SelectionKey key = channel.getChannel().keyFor(selector);
+
+    key.cancel();
   }
 
   private String msgType(String msg) {

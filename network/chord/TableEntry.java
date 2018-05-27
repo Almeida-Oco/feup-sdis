@@ -6,11 +6,13 @@ public class TableEntry {
   long entry_hash;
   String entry_id;
   PacketChannel node_channel;
+  boolean alive;
 
   TableEntry(String entry_id, long entry_hash, PacketChannel connection) {
     this.entry_hash   = entry_hash;
     this.entry_id     = entry_id;
     this.node_channel = connection;
+    this.alive        = true;
   }
 
   public long getHash() {
@@ -25,8 +27,20 @@ public class TableEntry {
     return this.node_channel;
   }
 
+  boolean isAlive() {
+    return this.alive;
+  }
+
   void updateNodeIP(String entry_id) {
     this.entry_id = entry_id;
+  }
+
+  void revive() {
+    this.alive = true;
+  }
+
+  void kill() {
+    this.alive = false;
   }
 
   @Override

@@ -63,6 +63,10 @@ class FingerTable {
     return this.fingers.lastElement();
   }
 
+  Vector<TableEntry> getEntries() {
+    return this.fingers;
+  }
+
   @Override
   public String toString() {
     String final_str = "[";

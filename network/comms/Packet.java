@@ -26,14 +26,18 @@ public class Packet {
   private Packet() {
     this.type   = null;
     this.params = new Vector<String>();
-    this.code   = "";
+    this.code   = null;
   }
 
   //TODO handle wrong cases
   static Packet fromString(String msg) {
     Packet packet     = new Packet();
-    int    header_end = msg.indexOf("\r\n");
-    String header     = msg.substring(0, header_end);
+    int    header_end = msg.indexOf("\n");
+    String header     = msg;
+
+    if (header_end != -1) {
+      header = msg.substring(0, header_end);
+    }
 
     packet.code = msg.substring(header_end + 2, msg.length());
 
@@ -100,11 +104,11 @@ public class Packet {
     return packet;
   }
 
-  public static Packet newHeartbeatPacket() {
+  public static Packet newHeartbeatPacket(String hash) {
     Packet packet = new Packet();
 
     packet.type = HEARTBEAT;
-
+    packet.params.add(hash);
     return packet;
   }
 
@@ -181,24 +185,32 @@ public class Packet {
 
   @Override
   public String toString() {
-    String str = "" + this.type + " ";
+    String str = this.type + " ";
 
     for (String param : this.params) {
       str += param + " ";
     }
-    str += "\r\n";
-    str += this.code;
-    int str_size = str.length();
+    str += "\n";
+    if (this.code != null) {
+      str += this.code;
+    }
     str = str.trim();
+    int str_size = str.length();
 
-    return "\\" + (str_size + this.numberDigits(str_size) + 5) + "/ " + str;
+    int inc = 3;
+    if (this.code != null) {
+      inc++;
+    }
+
+    return "\\" + (str_size + this.numberDigits(str_size) + inc) + "/ " + str;
   }
 
   private int numberDigits(int number) {
-    int cont = 0;
+    int cont = 1;
 
     while ((number = number % 10) > 10) {
       cont++;
+      number = number % 10;
     }
 
     return cont + 1;

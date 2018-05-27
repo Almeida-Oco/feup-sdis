@@ -15,7 +15,6 @@ public class PeerJoinHandler extends Handler {
 
   @Override
   public void run(Packet packet, PacketChannel buffer) {
-    System.out.println("New peer joined!\n - Hash = " + packet.getHash());
     String[] nodes_hash = packet.getCode().split(" ");
     for (String hash_str : nodes_hash) {
       long       hash = Long.parseLong(hash_str);
@@ -37,6 +36,7 @@ public class PeerJoinHandler extends Handler {
         System.exit(2);
       }
     }
+    buffer.sendPacket(Packet.newPeerPacket(Long.toString(packet.getHash()), this.node.getID()));
     System.out.println("Sent requested nodes");
   }
 

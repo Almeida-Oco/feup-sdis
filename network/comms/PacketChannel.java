@@ -6,6 +6,7 @@ import network.comms.sockets.SSLSocketChannel;
 import network.chord.Node;
 import handlers.PacketDispatcher;
 
+// TODO handle case when multiple packets are being sent
 public class PacketChannel implements Runnable {
   private SSLSocketChannel channel;
 
@@ -33,6 +34,10 @@ public class PacketChannel implements Runnable {
     return this.channel.sendMsg(packet.toString());
   }
 
+  public String getID() {
+    return this.channel.getID();
+  }
+
   /**
    * Reads a packet from the channel
    */
@@ -40,16 +45,15 @@ public class PacketChannel implements Runnable {
   public void run() {
     String msg = this.channel.recvMsg();
 
-    if (msg != null || this.built_msg.length() > 0) {
+    if (msg != null || !this.built_msg.isEmpty()) {
       if (msg != null) {
         this.built_msg += msg.trim();
       }
       int expected_size = this.readMsgSize(this.built_msg);
-      if (expected_size != -1 && this.built_msg.length() >= expected_size) { // A message is ready
+      if (expected_size != -1 && this.built_msg.length() >= expected_size) {   // A message is ready
         String packet_str = this.built_msg.substring(0, expected_size);
-        this.built_msg = this.built_msg.substring(expected_size, this.built_msg.length());
+        this.built_msg = this.built_msg.substring(expected_size);
         Packet packet = Packet.fromString(packet_str);
-
         if (packet != null) {
           PacketDispatcher.handlePacket(packet, this);
         }
@@ -64,7 +68,7 @@ public class PacketChannel implements Runnable {
       return false;
     }
     else {
-      this.built_msg += msg;
+      this.built_msg += msg.trim();
       return true;
     }
   }

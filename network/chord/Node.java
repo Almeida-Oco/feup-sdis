@@ -27,7 +27,7 @@ public class Node {
   String my_id;
   long my_hash;
   FingerTable f_table;
-  PacketChannel start_buffer;
+  TableEntry predecessor;
 
   public Node(SSLSocketChannel channel, int my_port) {
     try {
@@ -37,9 +37,15 @@ public class Node {
       System.err.println("Host not known!\n - " + err.getMessage());
       System.exit(1);
     }
-    this.start_buffer = new PacketChannel(channel);
-    this.my_hash      = Node.hash(this.my_id.getBytes());
-    this.f_table      = new FingerTable(this.my_id, this.my_hash);
+
+    this.my_hash = Node.hash(this.my_id.getBytes());
+    if (channel != null) {
+      this.predecessor = new TableEntry(channel.getID(), Node.hash(channel.getID().getBytes()), new PacketChannel(channel));
+    }
+    else {
+      this.predecessor = null;
+    }
+    this.f_table = new FingerTable(this.my_id, this.my_hash);
   }
 
   /**
@@ -62,9 +68,10 @@ public class Node {
         return false;
       }
     }
+
+    PacketDispatcher.registerHandler(Packet.PEER, this.predecessor.getHash(), new PeerHandler(this, null, this.predecessor.getHash()));
     Packet packet = Packet.newNewPeerPacket(Long.toString(this.my_hash), this.my_id, peers);
-    System.out.println("Sending NEW_PEER");
-    return this.start_buffer.sendPacket(packet);
+    return this.predecessor.getChannel().sendPacket(packet);
   }
 
   public void findRequestedNodes(Packet packet, PacketChannel buffer) {
@@ -90,17 +97,19 @@ public class Node {
     return this.f_table.getLastEntry();
   }
 
-  public void setPredecessor(String peer_ip, long peer_hash, PacketChannel connection) {
-    this.f_table.setPredecessor(peer_ip, peer_hash, connection);
-  }
-
   public void addPeer(String peer_id, long peer_hash, PacketChannel connection) {
-    this.f_table.addPeer(peer_id, peer_hash, connection);
+    if (peer_hash == this.my_hash) {
+      this.predecessor = null;
+    }
+    else {
+      this.f_table.addPeer(peer_id, peer_hash, connection);
+    }
   }
 
   static long hash(byte[] content) {
     MessageDigest intestine;
 
+    System.out.print("Hashing '" + new String(content) + "' --> ");
     try {
       intestine = MessageDigest.getInstance("SHA-1");
     }
@@ -112,7 +121,9 @@ public class Node {
     byte[]     cont = intestine.digest(content);
     LongBuffer lb   = ByteBuffer.wrap(cont).order(ByteOrder.BIG_ENDIAN).asLongBuffer();
 
-    return Math.abs(lb.get(1)) % (long)Math.pow(2, BIT_NUMBER);
+    long hash = Math.abs(lb.get(1)) % (long)Math.pow(2, BIT_NUMBER);
+    System.out.println(hash);
+    return hash;
   }
 
   public void sendCode(String code) {
@@ -128,5 +139,59 @@ public class Node {
 
   public long getHash() {
     return this.my_hash;
+  }
+
+  public void setAlive(long entry_hash) {
+    TableEntry entry = this.f_table.getEntry(entry_hash);
+
+    if (entry == null) {
+      if (entry_hash == this.predecessor.getHash()) {
+        this.predecessor.revive();
+      }
+      else {
+        System.err.println("Hash '" + entry_hash + "' NULL?");
+      }
+    }
+    else {
+      entry.revive();
+    }
+  }
+
+  public void killAllEntries() {
+    this.predecessor.kill();
+    for (TableEntry entry : this.f_table.getEntries()) {
+      entry.kill();
+    }
+  }
+
+  public Vector<TableEntry> getAllEntries() {
+    Vector<TableEntry> entry_channels = new Vector<TableEntry>(BIT_NUMBER + 1);
+    entry_channels.add(this.predecessor);
+    for (TableEntry entry : this.f_table.getEntries()) {
+      entry_channels.add(entry);
+    }
+
+    return entry_channels;
+  }
+
+  public Vector<TableEntry> getDeadEntries() {
+    Vector<TableEntry> entry_channels = new Vector<TableEntry>(BIT_NUMBER + 1);
+
+    if (!this.predecessor.isAlive()) {
+      entry_channels.add(this.predecessor);
+    }
+
+    for (TableEntry entry : this.f_table.getEntries()) {
+      if (!entry.isAlive()) {
+        entry_channels.add(entry);
+      }
+    }
+
+    return entry_channels;
+  }
+
+  @Override
+  public String toString() {
+    return this.f_table.toString();
   }
 }

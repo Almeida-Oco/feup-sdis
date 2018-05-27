@@ -1,19 +1,26 @@
+import java.util.Random;
 import java.util.Vector;
 import java.lang.Thread;
 import java.nio.ByteBuffer;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.concurrent.TimeUnit;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.ServerSocketChannel;
-import java.net.InetSocketAddress;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 import network.chord.Node;
 import handlers.PacketDispatcher;
 import network.comms.PacketChannel;
+import handlers.SynchronizeHandler;
 import network.comms.SSLSocketListener;
 import network.comms.sockets.SSLSocketChannel;
 import network.comms.sockets.SSLServerSocketChannel;
 
 class Service {
+  private static ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(2);
+  private static SynchronizeHandler handler;
+
   public static void main(String[] args) {
     if (!Service.validArgs(args)) {
       return;
@@ -33,8 +40,10 @@ class Service {
     SSLSocketListener listener = new SSLSocketListener(myself);
 
     PacketDispatcher.initQueryHandlers(myself);
-    listener.waitForAccept(serv_channel.getSocket());
+    SSLSocketListener.waitForAccept(serv_channel.getSocket());
 
+    startSynchronizeThread(myself);
+    System.out.println("My Hash = " + myself.getHash());
     if (remote_channel != null) {
       System.out.println("Discovered a network!\n - Starting node discovery...");
       if (!myself.startNodeDiscovery()) {
@@ -51,6 +60,21 @@ class Service {
     }
     catch (IOException err) {
       System.err.println("Error while listening sockets!\n - " + err.getMessage());
+    }
+  }
+
+  private static void startSynchronizeThread(Node myself) {
+    Random rand  = new Random();
+    int    delay = 40 + rand.nextInt(20);
+
+    handler = new SynchronizeHandler(myself);
+
+    try {
+      executor.scheduleAtFixedRate(handler, delay, delay, TimeUnit.SECONDS);
+    }
+    catch (Exception err) {
+      System.err.println("Synchronized thread interrupted! Aborting...");
+      System.exit(1);
     }
   }
 
