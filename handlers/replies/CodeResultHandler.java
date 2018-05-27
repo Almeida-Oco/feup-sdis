@@ -12,6 +12,8 @@ public class CodeResultHandler extends Handler {
 
   @Override
   public void run(Packet packet, PacketChannel buffer) {
+    System.out.println(" --- Computation '" + packet.getHash() + "' result --- ");
+    System.out.println(packet.getCode());
   }
 
   @Override

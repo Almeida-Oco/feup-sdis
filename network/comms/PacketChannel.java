@@ -17,6 +17,17 @@ public class PacketChannel implements Runnable {
     this.built_msg = "";
   }
 
+  public static PacketChannel newChannel(String addr, int port) {
+    SSLSocketChannel channel = SSLSocketChannel.newChannel(addr, port, true);
+
+    if (channel != null) {
+      return new PacketChannel(channel);
+    }
+    else {
+      return null;
+    }
+  }
+
   public SSLSocketChannel getSocket() {
     return this.channel;
   }

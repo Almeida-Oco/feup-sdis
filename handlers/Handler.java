@@ -16,4 +16,8 @@ public abstract class Handler implements Runnable {
   }
 
   public abstract void run(Packet packet, PacketChannel buffer);
+
+  @Override
+  public void run() {
+  }
 }

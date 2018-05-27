@@ -19,7 +19,6 @@ import network.comms.Packet;
 import handlers.PacketDispatcher;
 import network.comms.PacketChannel;
 import network.comms.SSLSocketListener;
-import network.comms.sockets.SSLSocketChannel;
 
 public class Node {
   public static final int BIT_NUMBER = 32;
@@ -29,7 +28,7 @@ public class Node {
   FingerTable f_table;
   TableEntry predecessor;
 
-  public Node(SSLSocketChannel channel, int my_port) {
+  public Node(PacketChannel channel, int my_port) {
     try {
       this.my_id = InetAddress.getLocalHost().getHostAddress() + ":" + my_port;
     }
@@ -39,13 +38,12 @@ public class Node {
     }
 
     this.my_hash = Node.hash(this.my_id.getBytes());
-    if (channel != null) {
-      this.predecessor = new TableEntry(channel.getID(), Node.hash(channel.getID().getBytes()), new PacketChannel(channel));
-    }
-    else {
-      this.predecessor = null;
-    }
     this.f_table = new FingerTable(this.my_id, this.my_hash);
+
+    this.predecessor = null;
+    if (channel != null) {
+      this.predecessor = new TableEntry(channel.getID(), Node.hash(channel.getID().getBytes()), channel);
+    }
   }
 
   /**
@@ -58,7 +56,7 @@ public class Node {
     params.add(this.my_id);
     Vector<String> peers = new Vector<String>(32);
 
-    for (int i = 0; i <= BIT_NUMBER; i++) { //Need to discover who 'owns' my hash
+    for (int i = 0; i < BIT_NUMBER; i++) { //Need to discover who 'owns' my hash
       long peer_hash = (long)((my_hash + Math.pow(2, i)) % FingerTable.MAX_ID);
       peers.add(Long.toString(peer_hash));
 
@@ -69,27 +67,24 @@ public class Node {
       }
     }
 
-    PacketDispatcher.registerHandler(Packet.PEER, this.predecessor.getHash(), new PeerHandler(this, null, this.my_hash));
     Packet packet = Packet.newNewPeerPacket(Long.toString(this.my_hash), this.my_id, peers);
     return this.predecessor.getChannel().sendPacket(packet);
   }
 
   public TableEntry getResponsiblePeer(long hash) {
-    TableEntry entry = this.f_table.getEntry(hash);
+    return this.f_table.getEntry(hash);
+  }
 
-    if (entry != null) {
-      return entry;
-    }
-    return this.f_table.getLastEntry();
+  public void takeOverResponsibility(String new_id, long new_hash, PacketChannel conn) {
+    TableEntry entry = new TableEntry(new_id, new_hash, conn);
+
+    this.f_table.takeOverResponsibility(new_hash, entry);
   }
 
   public void addPeer(String peer_id, long peer_hash, PacketChannel connection) {
-    if (peer_hash == this.my_hash) {
-      this.predecessor = null;
-    }
-    else {
-      this.f_table.addPeer(peer_id, peer_hash, connection);
-    }
+    TableEntry entry = new TableEntry(peer_id, peer_hash, connection);
+
+    this.f_table.takeOverResponsibility(peer_hash, entry);
   }
 
   static long hash(byte[] content) {
@@ -127,6 +122,10 @@ public class Node {
     return this.my_hash;
   }
 
+  public TableEntry getPredecessor() {
+    return this.predecessor;
+  }
+
   public void setPredecessor(String peer_id, long peer_hash, PacketChannel channel) {
     this.predecessor = new TableEntry(peer_id, peer_hash, channel);
   }
@@ -152,6 +151,10 @@ public class Node {
     for (TableEntry entry : this.f_table.getEntries()) {
       entry.kill();
     }
+  }
+
+  public long maxHash() {
+    return this.f_table.maxHash();
   }
 
   public Vector<TableEntry> getAllEntries() {

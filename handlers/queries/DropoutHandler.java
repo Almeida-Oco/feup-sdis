@@ -12,9 +12,6 @@ public class DropoutHandler extends Handler {
 
   @Override
   public void run(Packet packet, PacketChannel buffer) {
-  }
-
-  @Override
-  public void run() {
+    System.out.println("Peer '" + packet.getHash() + "' is leaving!");
   }
 }

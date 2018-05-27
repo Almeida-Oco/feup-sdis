@@ -14,8 +14,4 @@ public class KeepAliveHandler extends Handler {
   public void run(Packet packet, PacketChannel buffer) {
     buffer.sendPacket(Packet.newHeartbeatPacket(Long.toString(this.node.getHash())));
   }
-
-  @Override
-  public void run() {
-  }
 }

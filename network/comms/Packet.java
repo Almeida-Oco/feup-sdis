@@ -72,10 +72,12 @@ public class Packet {
     String[] parameters = { hash, ip_port };
     packet.params.addAll(Arrays.asList(parameters));
     packet.code = "";
-    for (String peer : peers) {
-      packet.code += peer + " ";
+    if (peers != null) {
+      for (String peer : peers) {
+        packet.code += peer + " ";
+      }
+      packet.code = packet.code.substring(0, packet.code.length() - 1);
     }
-    packet.code = packet.code.substring(0, packet.code.length() - 1);
 
     return packet;
   }
@@ -112,10 +114,11 @@ public class Packet {
     return packet;
   }
 
-  public static Packet newPredecessorPacket() {
+  public static Packet newPredecessorPacket(String hash) {
     Packet packet = new Packet();
 
     packet.type = PREDECESSOR;
+    packet.params.add(hash);
 
     return packet;
   }

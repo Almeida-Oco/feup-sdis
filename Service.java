@@ -30,22 +30,33 @@ class Service {
     String   ip         = ip_port[0];
     int      port       = Integer.parseInt(ip_port[1]);
 
-    Service.start(local_port, ip, port);
+    Service.setupNetwork(local_port, ip, port);
   }
 
-  private static void start(int local_port, String remote_ip, int remote_port) {
-    SSLSocketChannel       remote_channel = SSLSocketChannel.newChannel(remote_ip, remote_port, true);
+  private static void setupNetwork(int local_port, String remote_ip, int remote_port) {
+    PacketChannel          remote_channel = PacketChannel.newChannel(remote_ip, remote_port);
     SSLServerSocketChannel serv_channel   = SSLServerSocketChannel.newChannel(local_port);
     Node myself = new Node(remote_channel, local_port);
     SSLSocketListener listener = new SSLSocketListener(myself);
 
     PacketDispatcher.initQueryHandlers(myself);
-    SSLSocketListener.waitForAccept(serv_channel.getSocket());
+    if (serv_channel != null) {
+      SSLSocketListener.waitForAccept(serv_channel.getSocket());
 
+      startProgram(myself, listener, remote_channel);
+    }
+    else {
+      System.err.println("Failed to create server socket!");
+    }
+  }
+
+  private static void startProgram(Node myself, SSLSocketListener listener, PacketChannel channel) {
     startSynchronizeThread(myself);
-    System.out.println("My Hash = " + myself.getHash());
-    if (remote_channel != null) {
+
+    System.out.println("My hash = " + myself.getHash());
+    if (channel != null) {
       System.out.println("Discovered a network!\n - Starting node discovery...");
+
       if (!myself.startNodeDiscovery()) {
         System.out.println("Failed to start node discovery!\n - Aborting...");
         return;
