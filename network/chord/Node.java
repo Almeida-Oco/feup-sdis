@@ -48,6 +48,15 @@ public class Node {
     return this.start_buffer.sendPacket(packet);
   }
 
+  public void findRequestedNodes(Packet packet, PacketBuffer buffer) {
+    String[] nodes_hash = packet.getCode().split(" ");
+    for (String hash : nodes_hash) {
+      TableEntry entry = this.f_table.getEntry(Long.parseLong(hash));
+      if (entry != null) {
+      }
+    }
+  }
+
   private static String getID(int port) {
     try {
       return InetAddress.getLocalHost().getHostAddress() + ":" + port;

@@ -4,7 +4,6 @@ import java.util.*;
 import java.io.*;
 
 public class ProgramRes {
- 
    String stdout;
    String stderr; 
    int exitval;
@@ -82,27 +81,25 @@ public class ProgramRes {
         fout.getParentFile().mkdirs();
     }
     //Remove if clause if you want to overwrite file
-    if(!fout.exists()){
-        try {
-            fout.createNewFile();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    if (!fout.exists()) {
+      try {
+        fout.createNewFile();
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
     }
     try {
-        //dir will change directory and specifies file name for writer
-        File dir = new File(fout.getParentFile(), fout.getName());
-        PrintWriter writer = new PrintWriter(dir);
-        writer.println(write);
-        writer.close();
+      //dir will change directory and specifies file name for writer
+      File        dir    = new File(fout.getParentFile(), fout.getName());
+      PrintWriter writer = new PrintWriter(dir);
+      writer.println(write);
+      writer.close();
     } catch (FileNotFoundException e) {
-        e.printStackTrace();
+      e.printStackTrace();
     }
+  }
 
-   }
-
-
-   public void setDfinished(Date value) {
-      this.dfinished = value;
-   }
+  public void setDfinished(Date value) {
+    this.dfinished = value;
+  }
 }

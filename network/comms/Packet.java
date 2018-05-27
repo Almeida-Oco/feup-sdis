@@ -1,5 +1,6 @@
 package network.comms;
 
+import java.util.Arrays;
 import java.util.Vector;
 import java.io.IOException;
 import java.io.EOFException;
@@ -14,7 +15,7 @@ public class Packet {
   private Packet() {
     this.type   = null;
     this.params = new Vector<String>();
-    this.code   = null;
+    this.code   = "";
   }
 
   //TODO handle wrong cases
@@ -45,6 +46,108 @@ public class Packet {
     packet.type   = msg_type;
     packet.params = params;
     packet.code   = code;
+
+    return packet;
+  }
+
+  public static Packet newPeersPacket(String[] peers) {
+    Packet packet = new Packet();
+
+    packet.type = "PEERS";
+    packet.params.addAll(Arrays.asList(peers));
+    packet.code = "";
+
+    return packet;
+  }
+
+  public static Packet newResultPacket(String hash, String result) {
+    Packet packet = new Packet();
+
+    packet.type = "RESULT";
+    packet.params.add(hash);
+    packet.code = result;
+
+    return packet;
+  }
+
+  public static Packet newNewPeerPacket(String hash, String ip_port, Vector<String> peers) {
+    Packet packet = new Packet();
+
+    packet.type = "NEW_PEER";
+    String[] parameters = { hash, ip_port };
+    packet.params.addAll(Arrays.asList(parameters));
+    packet.code = "";
+    for (String peer : peers) {
+      packet.code += peer + " ";
+    }
+    packet.code = packet.code.substring(0, packet.code.length() - 1);
+
+    return packet;
+  }
+
+  public static Packet newCodePacket(String hash, String code) {
+    Packet packet = new Packet();
+
+    packet.type = "CODE";
+    packet.params.add(hash);
+    packet.code = code;
+
+    return packet;
+  }
+
+  public static Packet newLeavePacket() {
+    Packet packet = new Packet();
+
+    packet.type = "LEAVE";
+    return packet;
+  }
+
+  public static Packet newAlivePacket() {
+    Packet packet = new Packet();
+
+    packet.type = "ALIVE?";
+    return packet;
+  }
+
+  public static Packet newHeartbeatPacket() {
+    Packet packet = new Packet();
+
+    packet.type = "HEARTBEAT";
+
+    return packet;
+  }
+
+  public static Packet newPredecessorPacket() {
+    Packet packet = new Packet();
+
+    packet.type = "PREDECESSOR";
+
+    return packet;
+  }
+
+  public static Packet newFatherPacket(String hash, String ip_port) {
+    Packet packet = new Packet();
+
+    packet.type = "FATHER";
+    packet.params.add(hash);
+    packet.params.add(ip_port);
+
+    return packet;
+  }
+
+  public static Packet newGetPeerPacket(String hash) {
+    Packet packet = new Packet();
+
+    packet.type = "GET_PEER";
+    return packet;
+  }
+
+  public static Packet newPeerPacket(String hash, String ip_port) {
+    Packet packet = new Packet();
+
+    packet.type = "PEER";
+    packet.params.add(hash);
+    packet.params.add(ip_port);
 
     return packet;
   }
