@@ -68,7 +68,7 @@ private static ProgramRes runProcess(String command) throws Exception {
     return results;
 }
 
-private static String hash(String content){
+public static String hash(String content){
 
     MessageDigest m;
 
@@ -112,9 +112,7 @@ private static ProgramRes compileRunProgram(String name, String[] args, Boolean 
     }
 
     System.out.println(run_str);
-
     ProgramRes compileRes = runProcess(compile_str);
-    System.out.println(compileRes.stderr);
 
     if( compileRes.getExitval() == 0){
         ProgramRes run_results = runProcess(run_str);
@@ -178,7 +176,14 @@ public static void main(String args[])
     try {
         String[] helloargs = {"OK"};
 
-        Worker.ProgramResfromString(hellocode, helloargs);
+        ProgramRes res = Worker.ProgramResfromString(hellocode, helloargs);
+
+        System.out.println(res.toString());
+
+        ProgramRes test = new ProgramRes(res.toString());
+
+        //System.out.println(test.toString());
+
         //System.out.println("Name of class: " + Worker.getClassName(hellocode));
     } catch (Exception e) {
       System.err.println("Error on calling sys calls for compiling. Unable to launch Compiling Process.");  
