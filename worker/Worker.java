@@ -4,7 +4,10 @@ import java.util.*;
 import java.io.*;
 import java.security.*;
 import java.math.*;
+import java.nio.*;
 import java.util.regex.*;
+import java.util.Collections;
+
 
 public class Worker
 {
@@ -116,7 +119,7 @@ private static ProgramRes compileRunProgram(String name, String[] args, Boolean 
 
     if( compileRes.getExitval() == 0){
         ProgramRes run_results = runProcess(run_str);
-        run_results.storeToFiles(final_name);
+        run_results.storeToFiles("genCode/" + final_name);
         runProcess("rm " + final_name +".class"); //delete the compiled program after run
 
         if(deletejava){
@@ -134,7 +137,6 @@ private static ProgramRes compileRunProgram(String name, String[] args, Boolean 
 
 public static ProgramRes ProgramResfromString(String code, String[] args) throws Exception{
 
-    //String codename = Worker.hash(code);
     String codename = Worker.getClassName(code);
     ProgramRes.storeAFile("NONE", code, codename+".java");
     ProgramRes results = compileRunProgram(codename, args, new Boolean(true));
@@ -143,6 +145,7 @@ public static ProgramRes ProgramResfromString(String code, String[] args) throws
 
 public static String getClassName(String code){
 
+    System.out.println("CODE IS " + code);
     String classname = code.split("public\\s+class\\s+")[1];
 
     String pattern = "\\s*\\w+\\s+";
@@ -162,6 +165,38 @@ public static String getClassName(String code){
 
 }
 
+public static String[] programsToStrings(String[] program_names){
+    List<String> all_programs = new ArrayList<String>();
+
+    for (String p_name : program_names) {
+        try{
+            all_programs.add(Worker.readFile( p_name));
+            System.out.println("Opened and read: " + p_name);
+        } catch (IOException io){
+            System.err.println("Cant open a file, maybe name is Wrong.");
+        }
+    }
+
+    return all_programs.toArray(new String[0]);
+}
+
+
+public static String readFile(String pathname) throws IOException {
+
+    File file = new File(pathname);
+    StringBuilder fileContents = new StringBuilder((int)file.length());
+    Scanner scanner = new Scanner(file);
+    String lineSeparator = System.getProperty("line.separator");
+
+    try {
+        while(scanner.hasNextLine()) {
+            fileContents.append(scanner.nextLine() + lineSeparator);
+        }
+        return fileContents.toString();
+    } finally {
+        scanner.close();
+    }
+}
 
 public static void main(String args[])
 {
@@ -174,13 +209,22 @@ public static void main(String args[])
     String hellocode = "public class HelloWorld { public static void main(String[] args) { System.out.println(\"Hello world from example program, arg 0: \" + args[0]); } }";
 
     try {
-        String[] helloargs = {"OK"};
 
-        ProgramRes res = Worker.ProgramResfromString(hellocode, helloargs);
+        String[] program_names = {"example/Fibonacci.java", "example/TowersOfHanoi.java"};
+        String[] program_codes = Worker.programsToStrings(program_names);
+     
+        for (String code : program_codes) {
+            ProgramRes results = Worker.ProgramResfromString(code, new String[0]);
+            System.out.println(results.getStdout());
+        }
 
-        System.out.println(res.toString());
+        //String[] helloargs = {"OK"};
 
-        ProgramRes test = new ProgramRes(res.toString());
+        //ProgramRes res = Worker.ProgramResfromString(hellocode, helloargs);
+
+        //System.out.println(res.toString());
+
+        //ProgramRes test = new ProgramRes(res.toString());
 
         //System.out.println(test.toString());
 
