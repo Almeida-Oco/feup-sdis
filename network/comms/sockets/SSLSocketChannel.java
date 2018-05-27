@@ -150,7 +150,7 @@ public class SSLSocketChannel extends SSLChannel {
     SSLEngineResult res;
 
     try {
-      while (this.peer_net_data.hasRemaining()) {
+      do {
         this.peer_app_data.clear();
         this.peer_net_data.flip();
         res = this.engine.unwrap(this.peer_net_data, this.peer_app_data);
@@ -161,10 +161,9 @@ public class SSLSocketChannel extends SSLChannel {
           result += new String(got);
         }
         else {
-          System.out.println("Non ok");
           this.handleRecvNonOkStatus(res.getStatus());
         }
-      }
+      } while (this.peer_net_data.hasRemaining());
       return result;
     }
     catch (SSLException err) {
@@ -183,11 +182,9 @@ public class SSLSocketChannel extends SSLChannel {
 
   private void handleRecvNonOkStatus(Status status) throws IOException {
     if (status == Status.BUFFER_OVERFLOW) {
-      System.out.println("Overflow");
       this.peer_app_data = ByteBuffer.allocate(this.engine.getSession().getApplicationBufferSize());
     }
     else if (status == Status.BUFFER_UNDERFLOW) {
-      System.out.println("Underflow");
       this.socket.read(this.peer_net_data);
     }
     else {

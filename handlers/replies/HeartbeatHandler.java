@@ -3,7 +3,7 @@ package handlers.replies;
 import handlers.Handler;
 import network.chord.Node;
 import network.comms.Packet;
-import network.comms.PacketBuffer;
+import network.comms.PacketChannel;
 
 public class HeartbeatHandler extends Handler {
   public HeartbeatHandler(Node node) {
@@ -11,7 +11,7 @@ public class HeartbeatHandler extends Handler {
   }
 
   @Override
-  public void run(Packet packet, PacketBuffer buffer) {
+  public void run(Packet packet, PacketChannel buffer) {
   }
 
   @Override

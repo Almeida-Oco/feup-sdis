@@ -30,7 +30,6 @@ public class SSLSocketListener {
   private static final int POOL_SIZE   = MAX_SOCKETS * 3;
 
   private static ThreadPoolExecutor tasks;
-  private ConcurrentHashMap<SocketChannel, PacketBuffer> channel_handlers;
   private Node myself;
   private Selector selector;
 
@@ -41,7 +40,6 @@ public class SSLSocketListener {
     SSLSocketListener.tasks = new ThreadPoolExecutor(cpu_number, POOL_SIZE, (long)0, TimeUnit.SECONDS, arr);
     this.myself             = node;
     this.selector           = SSLChannel.newSelector();
-    this.channel_handlers   = new ConcurrentHashMap<SocketChannel, PacketBuffer>(MAX_SOCKETS);
   }
 
   /**
@@ -55,8 +53,8 @@ public class SSLSocketListener {
         Iterator<SelectionKey> keys_it = this.selector.selectedKeys().iterator();
         while (keys_it.hasNext()) {
           SelectionKey key = keys_it.next();
-          if (!this.handleKey(key)) {
-            return;
+          if (!key.isValid() || !this.handleKey(key)) {
+            key.cancel();
           }
           keys_it.remove();
         }
@@ -64,9 +62,11 @@ public class SSLSocketListener {
     }
   }
 
-  public boolean waitForRead(PacketBuffer builder) {
-    this.channel_handlers.put(builder.getChannel(), builder);
+  public boolean waitForRead(PacketChannel builder) {
     SelectionKey key = this.registerSocket(builder.getChannel(), SelectionKey.OP_READ);
+
+    System.out.println("Registering for read!");
+    key.attach(builder);
     return key != null;
   }
 
@@ -76,12 +76,12 @@ public class SSLSocketListener {
 
   private boolean handleKey(SelectionKey key) {
     if (key.isAcceptable() && key.isValid()) {
-      System.out.println("Accepting!");
       ServerSocketChannel server_socket = (ServerSocketChannel)key.channel();
       return this.acceptKey((ServerSocketChannel)key.channel());
     }
     else if (key.isReadable()) {
-      return this.readKey(this.channel_handlers.get(key.channel()));
+      boolean ret = this.readKey((PacketChannel)key.attachment());
+      return ret;
     }
     else {
       System.out.println("Some other state");
@@ -94,7 +94,7 @@ public class SSLSocketListener {
       SocketChannel s_channel = server_channel.accept();
       if (s_channel != null) {
         SSLSocketChannel socket = SSLSocketChannel.newChannel(s_channel, false);
-        PacketBuffer     buffer = new PacketBuffer(socket);
+        PacketChannel    buffer = new PacketChannel(socket);
 
         this.waitForRead(buffer);
         return true;
@@ -108,9 +108,12 @@ public class SSLSocketListener {
     return false;
   }
 
-  private boolean readKey(PacketBuffer builder) {
-    SSLSocketListener.tasks.execute((Runnable)builder);
-    return true;
+  private boolean readKey(PacketChannel builder) {
+    if (builder.isConnected()) {
+      SSLSocketListener.tasks.execute((Runnable)builder);
+      return true;
+    }
+    return false;
   }
 
   private SelectionKey registerSocket(AbstractSelectableChannel socket, int ops) {

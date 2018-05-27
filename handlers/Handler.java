@@ -6,14 +6,14 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 import network.chord.Node;
 import network.comms.Packet;
-import network.comms.PacketBuffer;
+import network.comms.PacketChannel;
 
 public abstract class Handler implements Runnable {
-  Node myself;
+  protected Node node;
 
   public Handler(Node node) {
-    this.myself = node;
+    this.node = node;
   }
 
-  public abstract void run(Packet packet, PacketBuffer buffer);
+  public abstract void run(Packet packet, PacketChannel buffer);
 }

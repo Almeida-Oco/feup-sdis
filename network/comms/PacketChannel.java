@@ -6,12 +6,12 @@ import network.comms.sockets.SSLSocketChannel;
 import network.chord.Node;
 import handlers.PacketDispatcher;
 
-public class PacketBuffer implements Runnable {
+public class PacketChannel implements Runnable {
   private SSLSocketChannel channel;
 
   private String built_msg;
 
-  public PacketBuffer(SSLSocketChannel channel) {
+  public PacketChannel(SSLSocketChannel channel) {
     this.channel   = channel;
     this.built_msg = "";
   }
@@ -30,7 +30,6 @@ public class PacketBuffer implements Runnable {
    * @return        Whether it was succesfully sent or not
    */
   public boolean sendPacket(Packet packet) {
-    System.out.println("Sending '" + packet.toString() + "'");
     return this.channel.sendMsg(packet.toString());
   }
 
@@ -41,10 +40,11 @@ public class PacketBuffer implements Runnable {
   public void run() {
     String msg = this.channel.recvMsg();
 
-    if (msg != null) {
-      this.built_msg += msg.trim();
+    if (msg != null || this.built_msg.length() > 0) {
+      if (msg != null) {
+        this.built_msg += msg.trim();
+      }
       int expected_size = this.readMsgSize(this.built_msg);
-      System.out.println("Expected = " + expected_size + ", got = " + this.built_msg.length());
       if (expected_size != -1 && this.built_msg.length() >= expected_size) { // A message is ready
         String packet_str = this.built_msg.substring(0, expected_size);
         this.built_msg = this.built_msg.substring(expected_size, this.built_msg.length());
@@ -54,6 +54,18 @@ public class PacketBuffer implements Runnable {
           PacketDispatcher.handlePacket(packet, this);
         }
       }
+    }
+  }
+
+  public boolean isConnected() {
+    String msg = this.channel.recvMsg();
+
+    if (msg == null) {
+      return false;
+    }
+    else {
+      this.built_msg += msg;
+      return true;
     }
   }
 

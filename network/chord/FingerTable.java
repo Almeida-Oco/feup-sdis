@@ -4,7 +4,8 @@ import java.util.Vector;
 import java.util.LinkedHashMap;
 
 import network.comms.Packet;
-import network.comms.PacketBuffer;
+import network.chord.TableEntry;
+import network.comms.PacketChannel;
 
 class FingerTable {
   private static final int BIT_NUMBER = Node.BIT_NUMBER;
@@ -31,21 +32,21 @@ class FingerTable {
     }
   }
 
-  void addPeer(String peer_id, long peer_hash, PacketBuffer connection) {
+  void addPeer(String peer_id, long peer_hash, PacketChannel connection) {
     int        index = FingerTable.hashToEntry(peer_hash);
     TableEntry entry = new TableEntry(peer_id, peer_hash, connection);
 
-    long current = this.fingers.get(index).getEntryID();
+    long current = this.fingers.get(index).getHash();
 
     for (int i = index; i < BIT_NUMBER; i++) {
-      if (this.fingers.get(i).getEntryID() != current) {
+      if (this.fingers.get(i).getHash() != current) {
         break;
       }
       this.fingers.set(i, entry);
     }
   }
 
-  void setPredecessor(String peer_id, long peer_hash, PacketBuffer connection) {
+  void setPredecessor(String peer_id, long peer_hash, PacketChannel connection) {
     this.predecessor = new TableEntry(peer_id, peer_hash, connection);
   }
 
@@ -53,13 +54,13 @@ class FingerTable {
     int entry_index = FingerTable.hashToEntry(peer_hash);
 
     if (entry_index >= BIT_NUMBER) {
-      PacketBuffer buffer = this.fingers.lastElement().getChannel();
-      buffer.sendPacket(Packet.newGetPeerPacket(Long.toString(peer_hash)));
       return null;
     }
-    else {
-      return this.fingers.get(entry_index);
-    }
+    return this.fingers.get(entry_index);
+  }
+
+  TableEntry getLastEntry() {
+    return this.fingers.lastElement();
   }
 
   @Override

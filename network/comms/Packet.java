@@ -171,6 +171,10 @@ public class Packet {
     return Long.parseLong(this.params.get(0));
   }
 
+  public String getIP_Port() {
+    return this.params.get(1);
+  }
+
   public String getCode() {
     return this.code;
   }

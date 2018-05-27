@@ -7,7 +7,7 @@ import handlers.queries.*;
 import handlers.replies.*;
 import network.chord.Node;
 import network.comms.Packet;
-import network.comms.PacketBuffer;
+import network.comms.PacketChannel;
 
 public class PacketDispatcher {
   /** Maps message type and hash to a Handler */
@@ -18,10 +18,10 @@ public class PacketDispatcher {
   static {
     type_hash_handler = new ConcurrentHashMap<String, ConcurrentHashMap<Long, Handler> >(4, 1);
     query_types       = new ConcurrentHashMap<String, Handler>(6, 1);
-    type_hash_handler.put(Packet.RESULT, new ConcurrentHashMap<Long, Handler>(32));
-    type_hash_handler.put(Packet.PEER, new ConcurrentHashMap<Long, Handler>(32));
-    type_hash_handler.put(Packet.HEARTBEAT, new ConcurrentHashMap<Long, Handler>(32));
-    type_hash_handler.put(Packet.FATHER, new ConcurrentHashMap<Long, Handler>(32));
+    type_hash_handler.put(Packet.RESULT, new ConcurrentHashMap<Long, Handler>(Node.BIT_NUMBER * 2));
+    type_hash_handler.put(Packet.PEER, new ConcurrentHashMap<Long, Handler>(Node.BIT_NUMBER * 2));
+    type_hash_handler.put(Packet.HEARTBEAT, new ConcurrentHashMap<Long, Handler>(Node.BIT_NUMBER * 2));
+    type_hash_handler.put(Packet.FATHER, new ConcurrentHashMap<Long, Handler>(Node.BIT_NUMBER * 2));
   }
 
   public static void initQueryHandlers(Node myself) {
@@ -33,10 +33,11 @@ public class PacketDispatcher {
     query_types.put(Packet.LEAVE, (Handler)(new DropoutHandler(myself)));
   }
 
-  public static void handlePacket(Packet packet, PacketBuffer buffer) {
+  public static void handlePacket(Packet packet, PacketChannel buffer) {
     String type = packet.getType();
 
-    if (query_types.contains(type)) {
+    System.out.println("Got packet type '" + type + "'");
+    if (query_types.containsKey(type)) {
       handleQuery(buffer, packet, type);
     }
     else {
@@ -44,13 +45,13 @@ public class PacketDispatcher {
     }
   }
 
-  private static void handleQuery(PacketBuffer buffer, Packet packet, String type) {
+  private static void handleQuery(PacketChannel buffer, Packet packet, String type) {
     Handler handler = query_types.get(type);
 
     handler.run(packet, buffer);
   }
 
-  private static void handleReply(PacketBuffer buffer, Packet packet, String type) {
+  private static void handleReply(PacketChannel buffer, Packet packet, String type) {
     ConcurrentHashMap<Long, Handler> hash_handler = type_hash_handler.get(type);
     if (hash_handler != null) {
       Handler handler = hash_handler.get(packet.getHash());

@@ -13,8 +13,11 @@ import java.security.MessageDigest;
 import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 
+import handlers.Handler;
+import handlers.replies.*;
 import network.comms.Packet;
-import network.comms.PacketBuffer;
+import handlers.PacketDispatcher;
+import network.comms.PacketChannel;
 import network.comms.SSLSocketListener;
 import network.comms.sockets.SSLSocketChannel;
 
@@ -24,11 +27,17 @@ public class Node {
   String my_id;
   long my_hash;
   FingerTable f_table;
-  PacketBuffer start_buffer;
+  PacketChannel start_buffer;
 
-  public Node(SSLSocketChannel channel, InetSocketAddress myself) {
-    this.my_id        = Node.getID(myself.getPort());
-    this.start_buffer = new PacketBuffer(channel);
+  public Node(SSLSocketChannel channel, int my_port) {
+    try {
+      this.my_id = InetAddress.getLocalHost().getHostAddress() + ":" + my_port;
+    }
+    catch (UnknownHostException err) {
+      System.err.println("Host not known!\n - " + err.getMessage());
+      System.exit(1);
+    }
+    this.start_buffer = new PacketChannel(channel);
     this.my_hash      = Node.hash(this.my_id.getBytes());
     this.f_table      = new FingerTable(this.my_id, this.my_hash);
   }
@@ -37,38 +46,55 @@ public class Node {
    * Initializes the peer discovery mechanism
    * @return The hash of the peers to be discovered
    */
-  public Vector<String> startNodeDiscovery() {
+  public boolean startNodeDiscovery() {
     Vector<String> params = new Vector<String>(2);
     params.add(Long.toString(this.my_hash));
     params.add(this.my_id);
     Vector<String> peers = new Vector<String>(32);
 
     for (int i = 0; i <= BIT_NUMBER; i++) { //Need to discover who 'owns' my hash
-      peers.add(Long.toString((long)(my_hash + Math.pow(2, i)) % FingerTable.MAX_ID));
-    }
+      long peer_hash = (long)((my_hash + Math.pow(2, i)) % FingerTable.MAX_ID);
+      peers.add(Long.toString(peer_hash));
 
+      Handler handler = new PeerHandler(this, null, peer_hash);
+      if (!PacketDispatcher.registerHandler(Packet.PEER, peer_hash, handler)) {
+        System.err.println("Hash '" + peer_hash + "' already present?!");
+        return false;
+      }
+    }
     Packet packet = Packet.newNewPeerPacket(Long.toString(this.my_hash), this.my_id, peers);
-    this.start_buffer.sendPacket(packet);
-    return peers;
+    System.out.println("Sending NEW_PEER");
+    return this.start_buffer.sendPacket(packet);
   }
 
-  public void findRequestedNodes(Packet packet, PacketBuffer buffer) {
+  public void findRequestedNodes(Packet packet, PacketChannel buffer) {
     String[] nodes_hash = packet.getCode().split(" ");
     for (String hash : nodes_hash) {
       TableEntry entry = this.f_table.getEntry(Long.parseLong(hash));
       if (entry != null) {
-        buffer.sendPacket(Packet.newPeerPacket(hash, entry.getNodeID()));
+        buffer.sendPacket(Packet.newPeerPacket(hash, entry.getID()));
       }
       else { //Request closes node to find it (register somewhere that I am looking for peer with this hash)
+        TableEntry    last_entry  = this.f_table.getLastEntry();
+        PacketChannel peer_buffer = last_entry.getChannel();
       }
     }
   }
 
-  public void setPredecessor(String peer_ip, long peer_hash, PacketBuffer connection) {
+  public TableEntry getResponsiblePeer(long hash) {
+    TableEntry entry = this.f_table.getEntry(hash);
+
+    if (entry != null) {
+      return entry;
+    }
+    return this.f_table.getLastEntry();
+  }
+
+  public void setPredecessor(String peer_ip, long peer_hash, PacketChannel connection) {
     this.f_table.setPredecessor(peer_ip, peer_hash, connection);
   }
 
-  public void addSucessor(String peer_id, long peer_hash, PacketBuffer connection) {
+  public void addPeer(String peer_id, long peer_hash, PacketChannel connection) {
     this.f_table.addPeer(peer_id, peer_hash, connection);
   }
 
@@ -93,16 +119,14 @@ public class Node {
     int        entry_index = FingerTable.hashToEntry(Node.hash(code.getBytes()));
     TableEntry entry       = this.f_table.getEntry(entry_index);
 
-    System.out.println("IP = '" + entry.getNodeID() + "'");
+    System.out.println("IP = '" + entry.getID() + "'");
   }
 
-  private static String getID(int port) {
-    try {
-      return InetAddress.getLocalHost().getHostAddress() + ":" + port;
-    }
-    catch (UnknownHostException err) {
-      System.err.println("Host not known");
-      return null;
-    }
+  public String getID() {
+    return this.my_id;
+  }
+
+  public long getHash() {
+    return this.my_hash;
   }
 }

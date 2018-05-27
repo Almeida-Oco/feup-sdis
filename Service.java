@@ -8,7 +8,7 @@ import java.net.InetSocketAddress;
 
 import network.chord.Node;
 import handlers.PacketDispatcher;
-import network.comms.PacketBuffer;
+import network.comms.PacketChannel;
 import network.comms.SSLSocketListener;
 import network.comms.sockets.SSLSocketChannel;
 import network.comms.sockets.SSLServerSocketChannel;
@@ -29,23 +29,24 @@ class Service {
   private static void start(int local_port, String remote_ip, int remote_port) {
     SSLSocketChannel       remote_channel = SSLSocketChannel.newChannel(remote_ip, remote_port, true);
     SSLServerSocketChannel serv_channel   = SSLServerSocketChannel.newChannel(local_port);
-    Node myself = new Node(remote_channel, new InetSocketAddress(local_port));
+    Node myself = new Node(remote_channel, local_port);
     SSLSocketListener listener = new SSLSocketListener(myself);
 
     PacketDispatcher.initQueryHandlers(myself);
     listener.waitForAccept(serv_channel.getSocket());
 
+    if (remote_channel != null) {
+      System.out.println("Discovered a network!\n - Starting node discovery...");
+      if (!myself.startNodeDiscovery()) {
+        System.out.println("Failed to start node discovery!\n - Aborting...");
+        return;
+      }
+    }
+    else {
+      System.out.println("Failed to discover nodes!\n - Starting a new network...");
+    }
+
     try {
-      if (remote_channel != null) {
-        Vector<String> nodes_to_find;
-        if ((nodes_to_find = myself.startNodeDiscovery()) == null) {
-          System.err.println("Failed to discover nodes in network!\n - Aborting");
-          return;
-        }
-      }
-      else {
-        System.out.println("Failed to discover nodes!\n - Starting a new network...");
-      }
       listener.listen();
     }
     catch (IOException err) {

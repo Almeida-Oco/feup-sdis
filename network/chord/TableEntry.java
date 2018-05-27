@@ -1,27 +1,27 @@
 package network.chord;
 
-import network.comms.PacketBuffer;
+import network.comms.PacketChannel;
 
-class TableEntry {
+public class TableEntry {
   long entry_hash;
   String entry_id;
-  PacketBuffer node_channel;
+  PacketChannel node_channel;
 
-  TableEntry(String entry_id, long entry_hash, PacketBuffer connection) {
+  TableEntry(String entry_id, long entry_hash, PacketChannel connection) {
     this.entry_hash   = entry_hash;
     this.entry_id     = entry_id;
     this.node_channel = connection;
   }
 
-  long getEntryID() {
+  public long getHash() {
     return this.entry_hash;
   }
 
-  String getNodeID() {
+  public String getID() {
     return this.entry_id;
   }
 
-  PacketBuffer getChannel() {
+  public PacketChannel getChannel() {
     return this.node_channel;
   }
 

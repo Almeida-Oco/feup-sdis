@@ -3,7 +3,7 @@ package handlers.queries;
 import handlers.Handler;
 import network.chord.Node;
 import network.comms.Packet;
-import network.comms.PacketBuffer;
+import network.comms.PacketChannel;
 
 public class GetPeerHandler extends Handler {
   public GetPeerHandler(Node node) {
@@ -11,7 +11,7 @@ public class GetPeerHandler extends Handler {
   }
 
   @Override
-  public void run(Packet packet, PacketBuffer buffer) {
+  public void run(Packet packet, PacketChannel buffer) {
   }
 
   @Override
