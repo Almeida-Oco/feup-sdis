@@ -8,6 +8,17 @@ import java.io.DataInputStream;
 import java.io.ByteArrayInputStream;
 
 public class Packet {
+  public static final String RESULT      = "RESULT";
+  public static final String NEW_PEER    = "NEW_PEER";
+  public static final String CODE        = "CODE";
+  public static final String LEAVE       = "LEAVE";
+  public static final String ALIVE       = "ALIVE?";
+  public static final String HEARTBEAT   = "HEARTBEAT";
+  public static final String PREDECESSOR = "PREDECESSOR";
+  public static final String FATHER      = "FATHER";
+  public static final String GET_PEER    = "GET_PEER";
+  public static final String PEER        = "PEER";
+
   String type;
   Vector<String> params;
   String code;
@@ -40,30 +51,10 @@ public class Packet {
     }
   }
 
-  public static Packet newPacket(String msg_type, Vector<String> params, String code) {
-    Packet packet = new Packet();
-
-    packet.type   = msg_type;
-    packet.params = params;
-    packet.code   = code;
-
-    return packet;
-  }
-
-  public static Packet newPeersPacket(String[] peers) {
-    Packet packet = new Packet();
-
-    packet.type = "PEERS";
-    packet.params.addAll(Arrays.asList(peers));
-    packet.code = "";
-
-    return packet;
-  }
-
   public static Packet newResultPacket(String hash, String result) {
     Packet packet = new Packet();
 
-    packet.type = "RESULT";
+    packet.type = RESULT;
     packet.params.add(hash);
     packet.code = result;
 
@@ -73,7 +64,7 @@ public class Packet {
   public static Packet newNewPeerPacket(String hash, String ip_port, Vector<String> peers) {
     Packet packet = new Packet();
 
-    packet.type = "NEW_PEER";
+    packet.type = NEW_PEER;
     String[] parameters = { hash, ip_port };
     packet.params.addAll(Arrays.asList(parameters));
     packet.code = "";
@@ -88,7 +79,7 @@ public class Packet {
   public static Packet newCodePacket(String hash, String code) {
     Packet packet = new Packet();
 
-    packet.type = "CODE";
+    packet.type = CODE;
     packet.params.add(hash);
     packet.code = code;
 
@@ -98,21 +89,21 @@ public class Packet {
   public static Packet newLeavePacket() {
     Packet packet = new Packet();
 
-    packet.type = "LEAVE";
+    packet.type = LEAVE;
     return packet;
   }
 
   public static Packet newAlivePacket() {
     Packet packet = new Packet();
 
-    packet.type = "ALIVE?";
+    packet.type = ALIVE;
     return packet;
   }
 
   public static Packet newHeartbeatPacket() {
     Packet packet = new Packet();
 
-    packet.type = "HEARTBEAT";
+    packet.type = HEARTBEAT;
 
     return packet;
   }
@@ -120,7 +111,7 @@ public class Packet {
   public static Packet newPredecessorPacket() {
     Packet packet = new Packet();
 
-    packet.type = "PREDECESSOR";
+    packet.type = PREDECESSOR;
 
     return packet;
   }
@@ -128,7 +119,7 @@ public class Packet {
   public static Packet newFatherPacket(String hash, String ip_port) {
     Packet packet = new Packet();
 
-    packet.type = "FATHER";
+    packet.type = FATHER;
     packet.params.add(hash);
     packet.params.add(ip_port);
 
@@ -138,14 +129,14 @@ public class Packet {
   public static Packet newGetPeerPacket(String hash) {
     Packet packet = new Packet();
 
-    packet.type = "GET_PEER";
+    packet.type = GET_PEER;
     return packet;
   }
 
   public static Packet newPeerPacket(String hash, String ip_port) {
     Packet packet = new Packet();
 
-    packet.type = "PEER";
+    packet.type = PEER;
     packet.params.add(hash);
     packet.params.add(ip_port);
 
@@ -174,6 +165,10 @@ public class Packet {
 
   public Vector<String> getParams() {
     return this.params;
+  }
+
+  public long getHash() {
+    return Long.parseLong(this.params.get(0));
   }
 
   public String getCode() {

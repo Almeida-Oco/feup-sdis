@@ -35,10 +35,10 @@ public class SSLSocketListener {
   private Selector selector;
 
   public SSLSocketListener(Node node) {
-    ArrayBlockingQueue arr = new ArrayBlockingQueue(POOL_SIZE, false);
-    int cpu_number         = Runtime.getRuntime().availableProcessors();
+    ArrayBlockingQueue<Runnable> arr = new ArrayBlockingQueue<Runnable>(POOL_SIZE, false);
+    int cpu_number = Runtime.getRuntime().availableProcessors();
 
-    SSLSocketListener.tasks = new ThreadPoolExecutor(cpu_number, POOL_SIZE, 0, TimeUnit.SECONDS, (BlockingQueue)arr);
+    SSLSocketListener.tasks = new ThreadPoolExecutor(cpu_number, POOL_SIZE, (long)0, TimeUnit.SECONDS, arr);
     this.myself             = node;
     this.selector           = SSLChannel.newSelector();
     this.channel_handlers   = new ConcurrentHashMap<SocketChannel, PacketBuffer>(MAX_SOCKETS);

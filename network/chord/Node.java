@@ -21,31 +21,35 @@ import network.comms.sockets.SSLSocketChannel;
 public class Node {
   public static final int BIT_NUMBER = 32;
 
-  String finger_ip;
-  long finger_hash;
+  String my_id;
+  long my_hash;
   FingerTable f_table;
   PacketBuffer start_buffer;
-  SSLSocketListener listener;
 
   public Node(SSLSocketChannel channel, InetSocketAddress myself) {
-    this.finger_ip    = Node.getID(myself.getPort());
+    this.my_id        = Node.getID(myself.getPort());
     this.start_buffer = new PacketBuffer(channel);
-    this.finger_hash  = Node.hash(this.finger_ip.getBytes());
-    this.f_table      = new FingerTable(this.finger_hash, null);
+    this.my_hash      = Node.hash(this.my_id.getBytes());
+    this.f_table      = new FingerTable(this.my_id, this.my_hash);
   }
 
-  public boolean startNodeDiscovery() {
+  /**
+   * Initializes the peer discovery mechanism
+   * @return The hash of the peers to be discovered
+   */
+  public Vector<String> startNodeDiscovery() {
     Vector<String> params = new Vector<String>(2);
-    params.add(Long.toString(this.finger_hash));
-    params.add(this.finger_ip);
-    String peers = "";
+    params.add(Long.toString(this.my_hash));
+    params.add(this.my_id);
+    Vector<String> peers = new Vector<String>(32);
 
-    for (int i = 0; i < BIT_NUMBER; i++) {
-      String peer = Long.toString((long)(finger_hash + Math.pow(2, i)) % FingerTable.MAX_ID);
-      peers += peer + " ";
+    for (int i = 0; i <= BIT_NUMBER; i++) { //Need to discover who 'owns' my hash
+      peers.add(Long.toString((long)(my_hash + Math.pow(2, i)) % FingerTable.MAX_ID));
     }
-    Packet packet = Packet.newPacket("NEW_PEER", params, peers.substring(0, peers.length() - 1));
-    return this.start_buffer.sendPacket(packet);
+
+    Packet packet = Packet.newNewPeerPacket(Long.toString(this.my_hash), this.my_id, peers);
+    this.start_buffer.sendPacket(packet);
+    return peers;
   }
 
   public void findRequestedNodes(Packet packet, PacketBuffer buffer) {
@@ -53,26 +57,19 @@ public class Node {
     for (String hash : nodes_hash) {
       TableEntry entry = this.f_table.getEntry(Long.parseLong(hash));
       if (entry != null) {
+        buffer.sendPacket(Packet.newPeerPacket(hash, entry.getNodeID()));
+      }
+      else { //Request closes node to find it (register somewhere that I am looking for peer with this hash)
       }
     }
   }
 
-  private static String getID(int port) {
-    try {
-      return InetAddress.getLocalHost().getHostAddress() + ":" + port;
-    }
-    catch (UnknownHostException err) {
-      System.err.println("Host not known");
-      return null;
-    }
+  public void setPredecessor(String peer_ip, long peer_hash, PacketBuffer connection) {
+    this.f_table.setPredecessor(peer_ip, peer_hash, connection);
   }
 
-  public void setPredecessor(String peer_ip) {
-    this.f_table.setPredecessor(peer_ip);
-  }
-
-  public void addSucessor(String peer_ip, long peer_id, LinkedHashMap<String, Node> nodes) {
-    this.f_table.addPeer(peer_ip, peer_id, nodes);
+  public void addSucessor(String peer_id, long peer_hash, PacketBuffer connection) {
+    this.f_table.addPeer(peer_id, peer_hash, connection);
   }
 
   static long hash(byte[] content) {
@@ -93,13 +90,19 @@ public class Node {
   }
 
   public void sendCode(String code) {
-    int        entry_index = FingerTable.idToEntry(Node.hash(code.getBytes()));
+    int        entry_index = FingerTable.hashToEntry(Node.hash(code.getBytes()));
     TableEntry entry       = this.f_table.getEntry(entry_index);
 
-    System.out.println("IP = '" + entry.getNodeIP() + "'");
+    System.out.println("IP = '" + entry.getNodeID() + "'");
   }
 
-  public void setListener(SSLSocketListener listener) {
-    this.listener = listener;
+  private static String getID(int port) {
+    try {
+      return InetAddress.getLocalHost().getHostAddress() + ":" + port;
+    }
+    catch (UnknownHostException err) {
+      System.err.println("Host not known");
+      return null;
+    }
   }
 }

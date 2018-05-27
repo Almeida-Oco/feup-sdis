@@ -4,9 +4,9 @@ import java.nio.channels.SocketChannel;
 import network.comms.sockets.SSLSocketChannel;
 
 import network.chord.Node;
+import handlers.PacketDispatcher;
 
 public class PacketBuffer implements Runnable {
-  private static Node myself;
   private SSLSocketChannel channel;
 
   private String built_msg;
@@ -50,13 +50,11 @@ public class PacketBuffer implements Runnable {
         this.built_msg = this.built_msg.substring(expected_size, this.built_msg.length());
         Packet packet = Packet.fromString(packet_str);
 
-        this.sendMsgUpstream(packet);
+        if (packet != null) {
+          PacketDispatcher.handlePacket(packet, this);
+        }
       }
     }
-  }
-
-  public static void setMyself(Node node) {
-    PacketBuffer.myself = node;
   }
 
   private int readMsgSize(String msg) {
@@ -75,14 +73,5 @@ public class PacketBuffer implements Runnable {
       }
     }
     return -1;
-  }
-
-  private void sendMsgUpstream(Packet packet) {
-    if (packet != null) {
-      System.out.println("Sending packet upstream!");
-    }
-    else {
-      System.out.println("Packet is null!");
-    }
   }
 }

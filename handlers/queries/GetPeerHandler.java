@@ -1,13 +1,12 @@
 package handlers.queries;
 
-
 import handlers.Handler;
 import network.chord.Node;
 import network.comms.Packet;
 import network.comms.PacketBuffer;
 
-public class CodeExecutorHandler extends Handler {
-  public CodeExecutorHandler(Node node) {
+public class GetPeerHandler extends Handler {
+  public GetPeerHandler(Node node) {
     super(node);
   }
 

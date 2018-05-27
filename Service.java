@@ -1,3 +1,4 @@
+import java.util.Vector;
 import java.lang.Thread;
 import java.nio.ByteBuffer;
 import java.io.IOException;
@@ -6,6 +7,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.net.InetSocketAddress;
 
 import network.chord.Node;
+import handlers.PacketDispatcher;
 import network.comms.PacketBuffer;
 import network.comms.SSLSocketListener;
 import network.comms.sockets.SSLSocketChannel;
@@ -27,17 +29,16 @@ class Service {
   private static void start(int local_port, String remote_ip, int remote_port) {
     SSLSocketChannel       remote_channel = SSLSocketChannel.newChannel(remote_ip, remote_port, true);
     SSLServerSocketChannel serv_channel   = SSLServerSocketChannel.newChannel(local_port);
-
     Node myself = new Node(remote_channel, new InetSocketAddress(local_port));
-
-    PacketBuffer.setMyself(myself);
     SSLSocketListener listener = new SSLSocketListener(myself);
 
+    PacketDispatcher.initQueryHandlers(myself);
     listener.waitForAccept(serv_channel.getSocket());
 
     try {
       if (remote_channel != null) {
-        if (!myself.startNodeDiscovery()) {
+        Vector<String> nodes_to_find;
+        if ((nodes_to_find = myself.startNodeDiscovery()) == null) {
           System.err.println("Failed to discover nodes in network!\n - Aborting");
           return;
         }

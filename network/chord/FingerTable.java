@@ -9,60 +9,52 @@ import network.comms.PacketBuffer;
 class FingerTable {
   private static final int BIT_NUMBER = Node.BIT_NUMBER;
   public static final long MAX_ID     = (long)Math.pow(2, BIT_NUMBER);
-  long base_id;
-  long max_finger_id;
+  long my_hash;
+  long max_finger_hash;
 
-  String predecessor;
+  TableEntry predecessor;
   Vector<TableEntry> fingers = new Vector<TableEntry>(BIT_NUMBER);
 
-  FingerTable(long base_id, String predecessor) {
-    this.base_id       = base_id;
-    this.max_finger_id = Math.abs((base_id + (long)Math.pow(2, BIT_NUMBER - 1)) % MAX_ID);
-    this.predecessor   = predecessor;
-    this.fingers.ensureCapacity(BIT_NUMBER);
-
-    for (int i = 0; i < BIT_NUMBER; i++) {
-      long entry_id = Math.abs((base_id + (long)Math.pow(2, i)) % MAX_ID);
-      this.fingers.add(new TableEntry(entry_id, null));
-    }
-  }
-
-  public static int idToEntry(long id) {
+  public static int hashToEntry(long id) {
     return (int)Math.ceil(Math.log(id) / Math.log(2)) % BIT_NUMBER;
   }
 
-  void addPeer(String peer_ip, long peer_id, LinkedHashMap<String, Node> nodes) {
-    int entry = FingerTable.idToEntry(peer_id);
+  FingerTable(String my_id, long my_hash) {
+    this.my_hash         = my_hash;
+    this.max_finger_hash = Math.abs((my_hash + (long)Math.pow(2, BIT_NUMBER - 1)) % MAX_ID);
+    this.predecessor     = null;
+    this.fingers.ensureCapacity(BIT_NUMBER);
 
-    if (peer_id > (long)(this.base_id + Math.pow(2, BIT_NUMBER - 1))) {
-      System.out.println(" ---- Send new to predecessor ----- ");
-    }
-    else {
-      String current = this.fingers.get(entry).getNodeIP();
-      if (current != null) {
-        nodes.get(current).addSucessor(peer_ip, peer_id, nodes);
-      }
-      else {
-        for (int i = entry; i < BIT_NUMBER && this.fingers.get(i).getNodeIP() == current; i++) {
-          this.fingers.get(i).updateNodeIP(peer_ip);
-        }
-      }
+    for (int i = 0; i < BIT_NUMBER; i++) {
+      long entry_hash = Math.abs((my_hash + (long)Math.pow(2, i)) % MAX_ID);
+      this.fingers.add(new TableEntry(my_id, entry_hash, null));
     }
   }
 
-  void setPredecessor(String peer_ip) {
-    this.predecessor = peer_ip;
+  void addPeer(String peer_id, long peer_hash, PacketBuffer connection) {
+    int        index = FingerTable.hashToEntry(peer_hash);
+    TableEntry entry = new TableEntry(peer_id, peer_hash, connection);
+
+    long current = this.fingers.get(index).getEntryID();
+
+    for (int i = index; i < BIT_NUMBER; i++) {
+      if (this.fingers.get(i).getEntryID() != current) {
+        break;
+      }
+      this.fingers.set(i, entry);
+    }
+  }
+
+  void setPredecessor(String peer_id, long peer_hash, PacketBuffer connection) {
+    this.predecessor = new TableEntry(peer_id, peer_hash, connection);
   }
 
   TableEntry getEntry(long peer_hash) {
-    int entry_index = FingerTable.idToEntry(peer_hash);
+    int entry_index = FingerTable.hashToEntry(peer_hash);
 
     if (entry_index >= BIT_NUMBER) {
-      PacketBuffer   buffer = this.fingers.lastElement().getChannel();
-      Vector<String> params = new Vector<String>(1);
-      params.add(Long.toString(peer_hash));
-
-      buffer.sendPacket(Packet.newPacket("GET_PEER", params, ""));
+      PacketBuffer buffer = this.fingers.lastElement().getChannel();
+      buffer.sendPacket(Packet.newGetPeerPacket(Long.toString(peer_hash)));
       return null;
     }
     else {
