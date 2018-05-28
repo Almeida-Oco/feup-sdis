@@ -70,13 +70,41 @@ public class SSLSocketListener {
   }
 
   public static boolean waitForRead(PacketChannel builder) {
-    SelectionKey key = registerSocket(builder.getChannel(), SelectionKey.OP_READ);
+    SocketChannel channel = builder.getChannel();
 
-    if (key != null) {
-      key.attach(builder);
+    if (!channel.isRegistered()) {
+      SelectionKey key = registerSocket(builder.getChannel(), SelectionKey.OP_READ);
+
+      if (key != null) {
+        key.attach(builder);
+        return true;
+      }
+      return false;
+    }
+    else {
+      SelectionKey key = channel.keyFor(selector);
+      key.interestOps(key.interestOps() | SelectionKey.OP_READ);
       return true;
     }
-    return false;
+  }
+
+  public static boolean waitForWrite(PacketChannel builder) {
+    SocketChannel channel = builder.getChannel();
+
+    if (!channel.isRegistered()) {
+      SelectionKey key = registerSocket(builder.getChannel(), SelectionKey.OP_WRITE);
+
+      if (key != null) {
+        key.attach(builder);
+        return true;
+      }
+      return false;
+    }
+    else {
+      SelectionKey key = channel.keyFor(selector);
+      key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+      return true;
+    }
   }
 
   public static boolean waitForAccept(AbstractSelectableChannel socket) {
@@ -91,6 +119,10 @@ public class SSLSocketListener {
     else if (key.isReadable()) {
       boolean ret = this.readKey((PacketChannel)key.attachment());
       return ret;
+    }
+    else if (key.isWritable()) {
+      this.writeKey((PacketChannel)key.attachment());
+      return true;
     }
     else {
       System.out.println("Some other state");
@@ -123,6 +155,11 @@ public class SSLSocketListener {
       return true;
     }
     return false;
+  }
+
+  private boolean writeKey(PacketChannel builder) {
+    SSLSocketListener.tasks.execute(()->builder.send());
+    return true;
   }
 
   private static SelectionKey registerSocket(AbstractSelectableChannel socket, int ops) {

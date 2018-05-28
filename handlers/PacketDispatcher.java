@@ -36,7 +36,7 @@ public class PacketDispatcher {
   public static void handlePacket(Packet packet, PacketChannel buffer) {
     String type = packet.getType();
 
-    System.out.println("Got packet type '" + type + "'");
+    System.out.println("Got packet type '" + packet.getType() + "'");
     if (query_types.containsKey(type)) {
       handleQuery(buffer, packet, type);
     }
@@ -66,7 +66,6 @@ public class PacketDispatcher {
   public static boolean registerHandler(String type, long hash, Handler handler) {
     ConcurrentHashMap<Long, Handler> hash_handler = type_hash_handler.get(type);
     if (!hash_handler.containsKey(hash)) {
-      System.out.println("(" + type + " , " + hash + ") -> registered!");
       hash_handler.put(hash, handler);
       return true;
     }

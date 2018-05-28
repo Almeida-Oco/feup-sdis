@@ -1,6 +1,7 @@
 package network.comms;
 
-import java.util.Vector;
+import java.nio.ByteBuffer;
+import java.util.LinkedList;
 import java.nio.channels.SocketChannel;
 import network.comms.sockets.SSLSocketChannel;
 
@@ -10,12 +11,12 @@ import handlers.PacketDispatcher;
 // TODO handle case when multiple packets are being sent
 public class PacketChannel implements Runnable {
   private SSLSocketChannel channel;
-  private Vector<Packet> built_packets;
+  private LinkedList<Packet> packet_buffer;
   private String built_msg;
 
   public PacketChannel(SSLSocketChannel channel) {
     this.channel       = channel;
-    this.built_packets = new Vector<Packet>(10);
+    this.packet_buffer = new LinkedList<Packet>();
     this.built_msg     = "";
   }
 
@@ -44,7 +45,16 @@ public class PacketChannel implements Runnable {
    * @return        Whether it was succesfully sent or not
    */
   public boolean sendPacket(Packet packet) {
-    return this.channel.sendMsg(packet.toString());
+    this.packet_buffer.add(packet);
+    SSLSocketListener.waitForWrite(this);
+    return true;
+  }
+
+  void send() {
+    if (this.packet_buffer.peek() != null) {
+      String packet = this.packet_buffer.remove().toString();
+      this.channel.sendMsg(packet);
+    }
   }
 
   public String getID() {
@@ -58,29 +68,18 @@ public class PacketChannel implements Runnable {
   public void run() {
     String msg = this.channel.recvMsg();
 
-    System.out.println("GOT '" + msg + "'");
     if (msg != null || !this.built_msg.isEmpty()) {
       if (msg != null) {
         this.built_msg += msg.trim();
       }
-      do {
-        int expected_size = this.readMsgSize(this.built_msg);
-        if (expected_size != -1 && this.built_msg.length() >= expected_size) {   // A message is ready
-          String packet_str = this.built_msg.substring(0, expected_size);
-          this.built_msg = this.built_msg.substring(expected_size);
-
-          Packet packet = Packet.fromString(packet_str);
-          if (packet != null) {
-            System.out.println("Got packet TYPEEEE " + packet.getType());
-            this.built_packets.add(packet);
-          }
+      int expected_size = this.readMsgSize(this.built_msg);
+      if (expected_size != -1 && this.built_msg.length() >= expected_size) {   // A message is ready
+        String packet_str = this.built_msg.substring(0, expected_size);
+        this.built_msg = this.built_msg.substring(expected_size);
+        Packet packet = Packet.fromString(packet_str);
+        if (packet != null) {
+          PacketDispatcher.handlePacket(packet, this);
         }
-        else {
-          break;
-        }
-      } while (true);
-      for (Packet packet : this.built_packets) {
-        PacketDispatcher.handlePacket(packet, this);
       }
     }
   }
@@ -88,7 +87,6 @@ public class PacketChannel implements Runnable {
   public boolean isConnected() {
     String msg = this.channel.recvMsg();
 
-    System.out.println("GOT '" + msg + "'");
     if (msg == null) {
       return false;
     }

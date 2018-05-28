@@ -7,6 +7,7 @@ import network.chord.TableEntry;
 import handlers.PacketDispatcher;
 import network.comms.PacketChannel;
 import handlers.replies.PeerHandler;
+import network.comms.SSLSocketListener;
 
 public class PeerJoinHandler extends Handler {
   long max_hash;
@@ -36,7 +37,6 @@ public class PeerJoinHandler extends Handler {
   private void handleSenderPeer(String sender_id, long sender_hash, PacketChannel reply_channel) {
     TableEntry curr;
 
-    System.out.println("Handling received peer '" + sender_id + "'");
     if ((curr = this.node.getResponsiblePeer(sender_hash)) != null) { // Peer in my range
       long          curr_hash     = curr.getResponsibleHash();
       PacketChannel curr_channel  = curr.getChannel();
@@ -90,6 +90,7 @@ public class PeerJoinHandler extends Handler {
         }
         else {
           System.out.println("My sucessor '" + hash_str + "'");
+          SSLSocketListener.waitForWrite(reply_channel);
           if (!reply_channel.sendPacket(Packet.newPeerPacket(hash_str, this.node.getID()))) {
             System.err.println("  Failed to send '" + hash_str + "' to peer!");
           }
@@ -101,9 +102,6 @@ public class PeerJoinHandler extends Handler {
           Handler handler = new PeerHandler(this.node, reply_channel, peer_hash);
           PacketDispatcher.registerHandler(Packet.PEER, peer_hash, handler);
           last_entry.getChannel().sendPacket(Packet.newGetPeerPacket(hash_str));
-        }
-        else {
-          System.out.println("peer '" + hash_str + "' out of my range");
         }
       }
     }

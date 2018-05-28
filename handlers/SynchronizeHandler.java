@@ -20,7 +20,6 @@ public class SynchronizeHandler extends Handler {
 
   @Override
   public void run() {
-    System.out.println(this.node.toString());
     Vector<TableEntry> dead_entries = this.node.getDeadEntries();
 
     if (dead_entries.size() > 0) {
