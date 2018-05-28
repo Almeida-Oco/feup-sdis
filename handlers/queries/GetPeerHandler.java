@@ -39,9 +39,6 @@ public class GetPeerHandler extends Handler {
         PacketDispatcher.registerHandler(Packet.PEER, peer_hash, handler);
         last_entry.getChannel().sendPacket(Packet.newGetPeerPacket(hash_str));
       }
-      else {
-        System.out.println("peer '" + hash_str + "' out of my range");
-      }
     }
   }
 }

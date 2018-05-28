@@ -38,7 +38,6 @@ public class PeerHandler extends Handler {
     PacketDispatcher.unregisterHandler(Packet.PEER, sender_hash);
     if (this.peer_hash == sender_hash && this.code_executor) {
       String[] ip_port = packet.getIP_Port().split(":");
-      //System.out.println("SDCHERNVUEV" + ip_port[0] + ip_port[1]);
       this.handleCodeExecutor(ip_port[0], Integer.parseInt(ip_port[1]));
     }
     else {

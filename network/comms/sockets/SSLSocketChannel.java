@@ -88,10 +88,9 @@ public class SSLSocketChannel extends SSLChannel {
       this.my_app_data.clear();
       this.my_app_data.put(msg.getBytes());
       this.my_app_data.flip();
-      boolean ret = this.sendData();
-      System.out.println("Sent '" + msg + "' ? " + ret);
+      int bytes = this.sendData();
       this.my_net_data.clear();
-      return ret;
+      return bytes > 0;
     }
     catch (SSLException err) {
       err_msg = "Problem occurred while beginning handshake!\n  - " + err.getMessage();
@@ -107,28 +106,25 @@ public class SSLSocketChannel extends SSLChannel {
     return false;
   }
 
-  private synchronized boolean sendData() throws IOException, SSLException {
+  private synchronized int sendData() throws IOException, SSLException {
     while (this.my_app_data.hasRemaining()) {
+      int bytes_sent = 0;
       this.my_net_data.clear();
       SSLEngineResult res = this.engine.wrap(this.my_app_data, this.my_net_data);
 
       if (res.getStatus() == Status.OK) {
-        this.my_net_data.flip();
         while (this.my_net_data.hasRemaining()) {
-          System.out.println("  Sending...");
-          if (this.socket.write(this.my_net_data) == -1) {
-            System.err.println("Socket closed!");
-            return false;
-          }
+          this.my_net_data.flip();
+          bytes_sent += this.socket.write(this.my_net_data);
         }
-        return true;
+        return bytes_sent;
       }
       else {
         this.handleSendNonOkStatus(res.getStatus());
       }
     }
 
-    return false;
+    return -1;
   }
 
   public String recvMsg() {
@@ -172,7 +168,6 @@ public class SSLSocketChannel extends SSLChannel {
       String ret = new String(this.peer_app_data.array(), 0, this.peer_app_data.position());
       this.peer_app_data.clear();
       this.peer_net_data.clear();
-      System.out.println("Received '" + ret + "'");
       return ret;
     }
     catch (SSLException err) {
