@@ -13,8 +13,4 @@ public class PeerPredecessorHandler extends Handler {
   @Override
   public void run(Packet packet, PacketChannel buffer) {
   }
-
-  @Override
-  public void run() {
-  }
 }

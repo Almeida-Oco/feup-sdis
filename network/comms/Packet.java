@@ -36,15 +36,16 @@ public class Packet {
     String header     = msg;
 
     if (header_end != -1) {
-      header = msg.substring(0, header_end);
+      header      = msg.substring(0, header_end);
+      packet.code = msg.substring(header_end + 1, msg.length());
     }
 
-    packet.code = msg.substring(header_end + 1, msg.length());
 
     String[] fields = header.split(" ");
-    if (fields.length >= 2) {
+    int      size   = fields.length;
+    if (size >= 2) {
       packet.type = fields[1];
-      for (int i = 2; i < fields.length; i++) {
+      for (int i = 2; i < size; i++) {
         packet.params.add(fields[i]);
       }
       return packet;
@@ -71,14 +72,14 @@ public class Packet {
     packet.type = NEW_PEER;
     String[] parameters = { hash, ip_port };
     packet.params.addAll(Arrays.asList(parameters));
-    packet.code = "";
+
     if (peers != null) {
+      packet.code = "";
       for (String peer : peers) {
         packet.code += peer + " ";
       }
       packet.code = packet.code.substring(0, packet.code.length() - 1);
     }
-
     return packet;
   }
 
@@ -137,6 +138,7 @@ public class Packet {
     Packet packet = new Packet();
 
     packet.type = GET_PEER;
+    packet.params.add(hash);
     return packet;
   }
 
@@ -189,21 +191,18 @@ public class Packet {
   @Override
   public String toString() {
     String str = this.type + " ";
+    int    inc = 3;
 
     for (String param : this.params) {
       str += param + " ";
     }
-    str += "\n";
     if (this.code != null) {
+      str += "\n";
       str += this.code;
+      inc++;
     }
     str = str.trim();
     int str_size = str.length();
-
-    int inc = 3;
-    if (this.code != null) {
-      inc++;
-    }
 
     return "\\" + (str_size + this.numberDigits(str_size) + inc) + "/ " + str;
   }

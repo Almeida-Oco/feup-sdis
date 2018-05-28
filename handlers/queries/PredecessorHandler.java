@@ -21,7 +21,7 @@ public class PredecessorHandler extends Handler {
     }
     else {
       if (predecessor != null) {
-        String pred_hash = Long.toString(predecessor.getHash());
+        String pred_hash = Long.toString(predecessor.getResponsibleHash());
         String pred_id   = predecessor.getID();
 
         reply_channel.sendPacket(Packet.newFatherPacket(pred_hash, pred_id));

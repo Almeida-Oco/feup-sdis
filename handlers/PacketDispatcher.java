@@ -41,7 +41,6 @@ public class PacketDispatcher {
       handleQuery(buffer, packet, type);
     }
     else {
-      System.out.println("  Handling reply hash = '" + packet.getHash() + "'");
       handleReply(buffer, packet, type);
     }
   }
@@ -50,7 +49,6 @@ public class PacketDispatcher {
     Handler handler = query_types.get(type);
 
     if (handler != null) {
-      System.out.println("  Running query handler!");
       handler.run(packet, buffer);
     }
   }
@@ -60,7 +58,6 @@ public class PacketDispatcher {
     if (hash_handler != null) {
       Handler handler = hash_handler.get(packet.getHash());
       if (handler != null) {
-        System.out.println("Handler running");
         handler.run(packet, buffer);
       }
     }
@@ -69,7 +66,7 @@ public class PacketDispatcher {
   public static boolean registerHandler(String type, long hash, Handler handler) {
     ConcurrentHashMap<Long, Handler> hash_handler = type_hash_handler.get(type);
     if (!hash_handler.containsKey(hash)) {
-      System.out.println("Registering ---> (" + type + ", " + hash + ")");
+      System.out.println("(" + type + " , " + hash + ") -> registered!");
       hash_handler.put(hash, handler);
       return true;
     }

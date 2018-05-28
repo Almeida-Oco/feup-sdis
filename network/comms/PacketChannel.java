@@ -1,5 +1,6 @@
 package network.comms;
 
+import java.util.Vector;
 import java.nio.channels.SocketChannel;
 import network.comms.sockets.SSLSocketChannel;
 
@@ -9,12 +10,13 @@ import handlers.PacketDispatcher;
 // TODO handle case when multiple packets are being sent
 public class PacketChannel implements Runnable {
   private SSLSocketChannel channel;
-
+  private Vector<Packet> built_packets;
   private String built_msg;
 
   public PacketChannel(SSLSocketChannel channel) {
-    this.channel   = channel;
-    this.built_msg = "";
+    this.channel       = channel;
+    this.built_packets = new Vector<Packet>(10);
+    this.built_msg     = "";
   }
 
   public static PacketChannel newChannel(String addr, int port) {
@@ -56,18 +58,29 @@ public class PacketChannel implements Runnable {
   public void run() {
     String msg = this.channel.recvMsg();
 
+    System.out.println("GOT '" + msg + "'");
     if (msg != null || !this.built_msg.isEmpty()) {
       if (msg != null) {
         this.built_msg += msg.trim();
       }
-      int expected_size = this.readMsgSize(this.built_msg);
-      if (expected_size != -1 && this.built_msg.length() >= expected_size) {   // A message is ready
-        String packet_str = this.built_msg.substring(0, expected_size);
-        this.built_msg = this.built_msg.substring(expected_size);
-        Packet packet = Packet.fromString(packet_str);
-        if (packet != null) {
-          PacketDispatcher.handlePacket(packet, this);
+      do {
+        int expected_size = this.readMsgSize(this.built_msg);
+        if (expected_size != -1 && this.built_msg.length() >= expected_size) {   // A message is ready
+          String packet_str = this.built_msg.substring(0, expected_size);
+          this.built_msg = this.built_msg.substring(expected_size);
+
+          Packet packet = Packet.fromString(packet_str);
+          if (packet != null) {
+            System.out.println("Got packet TYPEEEE " + packet.getType());
+            this.built_packets.add(packet);
+          }
         }
+        else {
+          break;
+        }
+      } while (true);
+      for (Packet packet : this.built_packets) {
+        PacketDispatcher.handlePacket(packet, this);
       }
     }
   }
@@ -75,6 +88,7 @@ public class PacketChannel implements Runnable {
   public boolean isConnected() {
     String msg = this.channel.recvMsg();
 
+    System.out.println("GOT '" + msg + "'");
     if (msg == null) {
       return false;
     }

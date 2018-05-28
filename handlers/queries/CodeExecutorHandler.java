@@ -21,29 +21,48 @@ public class CodeExecutorHandler extends Handler {
 
   @Override
   public void run(Packet packet, PacketChannel reply_channel) {
-    long          file_hash           = packet.getHash();
-    String        file_content        = packet.getCode();
-    TableEntry    responsible         = this.node.getResponsiblePeer(file_hash);
-    PacketChannel responsible_channel = responsible.getChannel();
+    long       file_hash    = packet.getHash();
+    String     file_content = packet.getCode();
+    TableEntry responsible  = this.node.getResponsiblePeer(file_hash);
 
-    if (file_hash >= this.max_hash || responsible_channel != null) {
-      Handler handler = new PeerHandler(this.node, file_hash, file_content);
-      PacketDispatcher.registerHandler(Packet.PEER, file_hash, handler);
-      responsible_channel.sendPacket(Packet.newGetPeerPacket(Long.toString(file_hash)));
-    }
-    else { // I shall be executing the code
-      System.out.println("Running code executer handler");
-
-      System.out.println("Got code : " + file_content);
-
-      try{
-        ProgramRes code_results = Worker.ProgramResfromString(file_content, new String[0]);
-        System.out.println("Results from code: " + code_results.toString());
-      } catch (Exception e) {
-        System.err.println("Unable to execute code");
+    if (responsible != null) {
+      PacketChannel responsible_channel = responsible.getChannel();
+      if (responsible_channel != null) {
+        Handler handler = new PeerHandler(this.node, file_hash, file_content);
+        PacketDispatcher.registerHandler(Packet.PEER, file_hash, handler);
+        responsible_channel.sendPacket(Packet.newGetPeerPacket(Long.toString(file_hash)));
       }
+      else {
+        this.executeCode(file_content, file_hash, reply_channel);
+      }
+    }
+    else {
+      TableEntry last_entry = this.node.lastEntry();
+      if (last_entry.getResponsibleHash() != this.node.getHash()) { //Last entry might know
+        Handler handler = new PeerHandler(this.node, file_hash, file_content);
+        PacketDispatcher.registerHandler(Packet.PEER, file_hash, handler);
+        last_entry.getChannel().sendPacket(Packet.newGetPeerPacket(Long.toString(file_hash)));
+      }
+      else {
+        this.executeCode(file_content, file_hash, reply_channel);
+      }
+    }
+  }
 
-      //TODO send reply to reply_channel with RESULT packet (Packet.newResultPacket())
+  private void executeCode(String code, long file_hash, PacketChannel reply_channel) {
+    System.out.println("Running code executer handler");
+
+    System.out.println("Got code : " + code);
+
+    try{
+      ProgramRes code_results = Worker.ProgramResfromString(code, new String[0]);
+
+      String results = "\nProcess returned code: " + code_results.getExitval() + "\n";
+      results += "Results:\n" + code_results.getStdout() + "\n\n";
+
+      reply_channel.sendPacket(Packet.newResultPacket(Long.toString(file_hash), results));
+    } catch (Exception e) {
+      System.err.println("Unable to execute code\n - " + e.getMessage());
     }
   }
 }

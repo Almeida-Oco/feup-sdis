@@ -42,7 +42,7 @@ public class Node {
 
     this.predecessor = null;
     if (channel != null) {
-      this.predecessor = new TableEntry(channel.getID(), Node.hash(channel.getID().getBytes()), channel);
+      this.predecessor = new TableEntry(channel.getID(), 0, Node.hash(channel.getID().getBytes()), channel);
     }
   }
 
@@ -62,7 +62,6 @@ public class Node {
 
       Handler handler = new PeerHandler(this, null, peer_hash);
       if (!PacketDispatcher.registerHandler(Packet.PEER, peer_hash, handler)) {
-        System.err.println("Hash '" + peer_hash + "' already present?!");
         return false;
       }
     }
@@ -72,22 +71,42 @@ public class Node {
   }
 
   public TableEntry getResponsiblePeer(long hash) {
-    return this.f_table.getEntry(hash);
+    if (this.inMyRange(hash)) {
+      return this.f_table.getEntry(hash);
+    }
+    else {
+      return null;
+    }
   }
 
-  public void takeOverResponsibility(String new_id, long new_hash, PacketChannel conn) {
-    TableEntry entry = new TableEntry(new_id, new_hash, conn);
+  /**
+   * Checks if the peer is in range
+   * @param  peer_hash Peer to check
+   * @return           Whether it is in range or not
+   */
+  public boolean inMyRange(long peer_hash) {
+    long half = (long)Math.pow(2, BIT_NUMBER - 1);
+    long last = (this.my_hash + half) % (long)Math.pow(2, BIT_NUMBER);
 
-    this.f_table.takeOverResponsibility(new_hash, entry);
+    if (peer_hash >= this.my_hash && peer_hash <= last) {
+      return true;
+    }
+    else if (this.my_hash > half) {
+      if (peer_hash >= this.my_hash && peer_hash >= last) {
+        return true;
+      }
+      else if (peer_hash <= this.my_hash && peer_hash <= last) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public void addPeer(String peer_id, long peer_hash, PacketChannel connection) {
-    TableEntry entry = new TableEntry(peer_id, peer_hash, connection);
-
-    this.f_table.takeOverResponsibility(peer_hash, entry);
+    this.f_table.takeOverResponsibility(peer_id, peer_hash, connection);
   }
 
-  static long hash(byte[] content) {
+  public static long hash(byte[] content) {
     MessageDigest intestine;
 
     System.out.print("Hashing '" + new String(content) + "' --> ");
@@ -107,13 +126,6 @@ public class Node {
     return hash;
   }
 
-  public void sendCode(String code) {
-    int        entry_index = FingerTable.hashToEntry(Node.hash(code.getBytes()));
-    TableEntry entry       = this.f_table.getEntry(entry_index);
-
-    System.out.println("IP = '" + entry.getID() + "'");
-  }
-
   public String getID() {
     return this.my_id;
   }
@@ -127,30 +139,47 @@ public class Node {
   }
 
   public void setPredecessor(String peer_id, long peer_hash, PacketChannel channel) {
-    this.predecessor = new TableEntry(peer_id, peer_hash, channel);
+    this.predecessor.updateInfos(peer_id, peer_hash, channel);
   }
 
-  public void setAlive(long entry_hash) {
-    TableEntry entry = this.f_table.getEntry(entry_hash);
+  public void setPredecessor(PacketChannel channel) {
+    String id   = channel.getID();
+    long   hash = Node.hash(id.getBytes());
 
-    if (entry == null) {
-      if (entry_hash == this.predecessor.getHash()) {
-        this.predecessor.revive();
-      }
-      else {
-        System.err.println("Hash '" + entry_hash + "' NULL?");
-      }
+    this.predecessor.updateInfos(id, hash, channel);
+  }
+
+  public void setAlive(String peer_id, long entry_hash) {
+    Vector<TableEntry> entries = this.f_table.getEntries();
+
+    if (entry_hash == this.predecessor.getResponsibleHash()) {
+      System.out.println("reviving predecessor");
+      this.predecessor.revive();
     }
-    else {
-      entry.revive();
+
+    for (TableEntry entry : entries) {
+      System.out.print("ID = '" + entry.getID() + "' == '" + peer_id + "'");
+      if (entry.getID().equals(peer_id)) {
+        System.out.println("  true");
+        entry.revive();
+      }
     }
   }
 
   public void killAllEntries() {
-    this.predecessor.kill();
-    for (TableEntry entry : this.f_table.getEntries()) {
-      entry.kill();
+    if (this.predecessor != null) {
+      this.predecessor.kill();
     }
+
+    for (TableEntry entry : this.f_table.getEntries()) {
+      if (entry.getResponsibleHash() != this.my_hash) {
+        entry.kill();
+      }
+    }
+  }
+
+  public TableEntry lastEntry() {
+    return this.f_table.getLastEntry();
   }
 
   public long maxHash() {
@@ -159,7 +188,10 @@ public class Node {
 
   public Vector<TableEntry> getAllEntries() {
     Vector<TableEntry> entry_channels = new Vector<TableEntry>(BIT_NUMBER + 1);
-    entry_channels.add(this.predecessor);
+    if (this.predecessor != null) {
+      entry_channels.add(this.predecessor);
+    }
+
     for (TableEntry entry : this.f_table.getEntries()) {
       entry_channels.add(entry);
     }
@@ -170,7 +202,7 @@ public class Node {
   public Vector<TableEntry> getDeadEntries() {
     Vector<TableEntry> entry_channels = new Vector<TableEntry>(BIT_NUMBER + 1);
 
-    if (!this.predecessor.isAlive()) {
+    if (this.predecessor != null&& !this.predecessor.isAlive()) {
       entry_channels.add(this.predecessor);
     }
 
@@ -185,7 +217,14 @@ public class Node {
 
   @Override
   public String toString() {
-    String ret = "FATHER = " + this.predecessor.getID() + "\n";
+    String ret;
+
+    if (this.predecessor != null) {
+      ret = "FATHER = " + this.predecessor.getID() + "\n";
+    }
+    else {
+      ret = "FATHER = MYSELF\n";
+    }
 
     return ret + this.f_table.toString();
   }

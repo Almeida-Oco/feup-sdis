@@ -18,6 +18,8 @@ import network.comms.sockets.SSLSocketChannel;
 import network.comms.sockets.SSLServerSocketChannel;
 
 class Service {
+  private static final int[] sync_time = { 3, 5 };
+
   private static ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(2);
   private static SynchronizeHandler handler;
 
@@ -56,7 +58,7 @@ class Service {
     System.out.println("My hash = " + myself.getHash());
     if (channel != null) {
       System.out.println("Discovered a network!\n - Starting node discovery...");
-
+      SSLSocketListener.waitForRead(channel);
       if (!myself.startNodeDiscovery()) {
         System.out.println("Failed to start node discovery!\n - Aborting...");
         return;
@@ -76,12 +78,12 @@ class Service {
 
   private static void startSynchronizeThread(Node myself) {
     Random rand  = new Random();
-    int    delay = 40 + rand.nextInt(20);
+    int    delay = sync_time[0] + rand.nextInt(sync_time[1] - sync_time[0]);
 
     handler = new SynchronizeHandler(myself);
 
     try {
-      executor.scheduleAtFixedRate(handler, 3, 3, TimeUnit.SECONDS);
+      executor.scheduleAtFixedRate(handler, delay, delay, TimeUnit.SECONDS);
     }
     catch (Exception err) {
       System.err.println("Synchronized thread interrupted! Aborting...");

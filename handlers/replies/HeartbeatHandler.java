@@ -3,24 +3,23 @@ package handlers.replies;
 import handlers.Handler;
 import network.chord.Node;
 import network.comms.Packet;
+import network.chord.TableEntry;
 import handlers.PacketDispatcher;
 import network.comms.PacketChannel;
 import network.comms.SSLSocketListener;
 
 public class HeartbeatHandler extends Handler {
-  public HeartbeatHandler(Node node) {
+  TableEntry entry;
+
+  public HeartbeatHandler(Node node, TableEntry entry) {
     super(node);
+    this.entry = entry;
   }
 
   @Override
-  public void run(Packet packet, PacketChannel buffer) {
-    SSLSocketListener.unregisterChannel(buffer);
+  public void run(Packet packet, PacketChannel reply_channel) {
+    SSLSocketListener.unregisterChannel(reply_channel);
     PacketDispatcher.unregisterHandler(packet.getType(), packet.getHash());
-    System.out.println("HEARTBEAT 1");
-  }
-
-  @Override
-  public void run() {
-    System.out.println("HEARTBEAT 2");
+    this.entry.revive();
   }
 }

@@ -118,7 +118,6 @@ public class SSLSocketListener {
   }
 
   private boolean readKey(PacketChannel builder) {
-    System.out.println("Reading");
     if (builder.isConnected()) {
       SSLSocketListener.tasks.execute((Runnable)builder);
       return true;
@@ -132,9 +131,7 @@ public class SSLSocketListener {
     try {
       socket.configureBlocking(false);
       selector.wakeup();
-      System.out.println("Waiting to register?");
       SelectionKey key = socket.register(selector, ops);
-      System.out.println("Registered");
       return key;
     }
     catch (ClosedChannelException err) {

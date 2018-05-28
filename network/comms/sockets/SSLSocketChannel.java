@@ -81,7 +81,7 @@ public class SSLSocketChannel extends SSLChannel {
     return false;
   }
 
-  public boolean sendMsg(String msg) {
+  public synchronized boolean sendMsg(String msg) {
     String err_msg;
 
     try {
@@ -89,8 +89,8 @@ public class SSLSocketChannel extends SSLChannel {
       this.my_app_data.put(msg.getBytes());
       this.my_app_data.flip();
       boolean ret = this.sendData();
+      System.out.println("Sent '" + msg + "' ? " + ret);
       this.my_net_data.clear();
-      this.my_app_data.clear();
       return ret;
     }
     catch (SSLException err) {
@@ -107,7 +107,7 @@ public class SSLSocketChannel extends SSLChannel {
     return false;
   }
 
-  private boolean sendData() throws IOException, SSLException {
+  private synchronized boolean sendData() throws IOException, SSLException {
     while (this.my_app_data.hasRemaining()) {
       this.my_net_data.clear();
       SSLEngineResult res = this.engine.wrap(this.my_app_data, this.my_net_data);
@@ -115,7 +115,11 @@ public class SSLSocketChannel extends SSLChannel {
       if (res.getStatus() == Status.OK) {
         this.my_net_data.flip();
         while (this.my_net_data.hasRemaining()) {
-          this.socket.write(this.my_net_data);
+          System.out.println("  Sending...");
+          if (this.socket.write(this.my_net_data) == -1) {
+            System.err.println("Socket closed!");
+            return false;
+          }
         }
         return true;
       }
@@ -168,6 +172,7 @@ public class SSLSocketChannel extends SSLChannel {
       String ret = new String(this.peer_app_data.array(), 0, this.peer_app_data.position());
       this.peer_app_data.clear();
       this.peer_net_data.clear();
+      System.out.println("Received '" + ret + "'");
       return ret;
     }
     catch (SSLException err) {

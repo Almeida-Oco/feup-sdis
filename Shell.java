@@ -9,6 +9,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
+import handlers.replies.*;
 import network.chord.Node;
 import handlers.PacketDispatcher;
 import network.comms.PacketChannel;
@@ -21,7 +22,6 @@ import network.comms.sockets.SSLServerSocketChannel;
 import worker.*;
 
 class Shell {
-
   public static void main(String[] args) {
     if (!Shell.validArgs(args)) {
       return;
@@ -35,16 +35,26 @@ class Shell {
     Shell.start(local_port, ip, port, command);
   }
 
-private static void start(int local_port, String remote_ip, int remote_port, String command) {
-    SSLSocketChannel       remote_channel = SSLSocketChannel.newChannel(remote_ip, remote_port, true);
-    SSLServerSocketChannel serv_channel   = SSLServerSocketChannel.newChannel(local_port);
-    PacketChannel pack_channel = new PacketChannel(remote_channel);
-    //Node myself = new Node(remote_channel, local_port);
-    //SSLSocketListener listener = new SSLSocketListener(myself);
+  private static void start(int local_port, String remote_ip, int remote_port, String command) {
+    PacketChannel          channel      = PacketChannel.newChannel(remote_ip, remote_port);
+    SSLServerSocketChannel serv_channel = SSLServerSocketChannel.newChannel(local_port);
+    Node myself = new Node(channel, local_port);
+    SSLSocketListener listener = new SSLSocketListener(myself);
+
+    PacketDispatcher.initQueryHandlers(myself);
     String hellocode = "public class HelloWorld { public static void main(String[] args) { System.out.println(\"Hello world from example program \"); } }";
-    PacketChannel comms_channel = new PacketChannel(remote_channel);
-    comms_channel.sendPacket(Packet.newCodePacket(Worker.hash(hellocode), hellocode));
-}
+
+    long hash = Node.hash(hellocode.getBytes());
+
+    PacketDispatcher.registerHandler(Packet.RESULT, hash, new CodeResultHandler(null));
+
+    channel.sendPacket(Packet.newCodePacket(Long.toString(Node.hash(hellocode.getBytes())), hellocode));
+    SSLSocketListener.waitForRead(channel);
+    try {
+      listener.listen();
+    }
+    catch (Exception e) {}
+  }
 
   private static boolean validArgs(String[] args) {
     if (args.length < 3) {
