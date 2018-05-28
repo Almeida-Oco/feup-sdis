@@ -87,7 +87,7 @@ public class Node {
     this.f_table.takeOverResponsibility(peer_hash, entry);
   }
 
-  static long hash(byte[] content) {
+ public static long hash(byte[] content) {
     MessageDigest intestine;
 
     System.out.print("Hashing '" + new String(content) + "' --> ");

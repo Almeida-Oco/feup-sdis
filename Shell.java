@@ -52,11 +52,11 @@ private static void start(int local_port, String remote_ip, int remote_port, Str
     String protocol = args[2];
 
     if (protocol.equals(MULCODE)) {
-      String[] programs_name = Arrays.copyOfRange(args, 3, args.length);
+      String[] programs_name = Arrays.copyOfRange(args, 2, args.length);
       String[] programs_code = Worker.programsToStrings(programs_name);
       
       for (String program_code : programs_code) {
-          comms_channel.sendPacket(Packet.newCodePacket(Worker.hash(program_code), program_code));
+          comms_channel.sendPacket(Packet.newCodePacket(String.valueOf(Node.hash(program_code.getBytes())), program_code));
       }
 
     }  else if(protocol.equals(SINGLECODE)){

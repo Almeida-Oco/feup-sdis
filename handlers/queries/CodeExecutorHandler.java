@@ -26,10 +26,17 @@ public class CodeExecutorHandler extends Handler {
     TableEntry    responsible         = this.node.getResponsiblePeer(file_hash);
     PacketChannel responsible_channel = responsible.getChannel();
 
-    if (file_hash >= this.max_hash || responsible_channel != null) {
+    if (file_hash >= this.max_hash && responsible_channel != null) {
       Handler handler = new PeerHandler(this.node, file_hash, file_content);
       PacketDispatcher.registerHandler(Packet.PEER, file_hash, handler);
+      System.out.println("TOSTRING");
+      if(responsible_channel == null){
+        System.out.println("channel is null");
+      } else {
+        System.out.println("channennenne is not not null");
+      }
       responsible_channel.sendPacket(Packet.newGetPeerPacket(Long.toString(file_hash)));
+      //System.out.println("AFTERSTRING");
     }
     else { // I shall be executing the code
       System.out.println("Running code executer handler");
