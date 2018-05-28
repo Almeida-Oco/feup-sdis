@@ -49,6 +49,8 @@ class Shell {
     SSLSocketListener listener = new SSLSocketListener(myself);
 
     PacketDispatcher.initQueryHandlers(myself);
+    
+
     String hellocode = "public class HelloWorld { public static void main(String[] args) { System.out.println(\"Hello world from example program \"); } }";
 
 
@@ -116,6 +118,5 @@ class Shell {
   private static void printUsage() {
     System.err.println("  java Shell <remote_ip>:<remote_port> <local_port> <PROTOCOL>");
     System.err.println("Avaiable protocols: CODEONE [file_name file_name2 ...] Compile and run multiple Programs witho no args");
-    System.err.println("Avaiable protocols: CODEMUL file_name [ARGS] Compile and run a single Program with arguments");
   }
 }
