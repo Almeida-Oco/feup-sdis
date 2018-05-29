@@ -18,7 +18,7 @@ import network.comms.sockets.SSLSocketChannel;
 import network.comms.sockets.SSLServerSocketChannel;
 
 class Service {
-  private static final int[] sync_time = { 3, 5 };
+  private static final int[] sync_time = { 4, 6 };
 
   private static ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(2);
   private static SynchronizeHandler handler;
@@ -36,8 +36,9 @@ class Service {
   }
 
   private static void setupNetwork(int local_port, String remote_ip, int remote_port) {
-    PacketChannel          remote_channel = PacketChannel.newChannel(remote_ip, remote_port);
-    SSLServerSocketChannel serv_channel   = SSLServerSocketChannel.newChannel(local_port);
+    PacketChannel remote_channel = PacketChannel.newChannel(remote_ip, remote_port);
+
+    SSLServerSocketChannel serv_channel = SSLServerSocketChannel.newChannel(local_port);
     Node myself = new Node(remote_channel, local_port);
     SSLSocketListener listener = new SSLSocketListener(myself);
 

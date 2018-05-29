@@ -10,6 +10,7 @@ import network.comms.PacketChannel;
 class FingerTable {
   private static final int BIT_NUMBER = Node.BIT_NUMBER;
   public static final long MAX_ID     = (long)Math.pow(2, BIT_NUMBER);
+  public static final long MID_ID     = (long)Math.pow(2, BIT_NUMBER - 1);
   long my_hash;
   long max_finger_hash;
 
@@ -22,6 +23,13 @@ class FingerTable {
     else {
       return (int)Math.floor(Math.log(id - base_id) / Math.log(2)) % BIT_NUMBER;
     }
+  }
+
+  public static boolean inRange(long hash, long start, long end) {
+    long half = (long)Math.pow(2, BIT_NUMBER - 1);
+
+    return (hash >= start && hash <= end) ||
+           (start > half && (hash >= start && hash <= end || hash <= start && hash <= end));
   }
 
   FingerTable(String my_id, long my_hash) {
@@ -47,33 +55,42 @@ class FingerTable {
   }
 
   void takeOverResponsibility(String new_id, long new_hash, PacketChannel new_channel) {
-    int  index = FingerTable.hashToEntry(new_hash, this.my_hash);
-    long curr_hash;
+    TableEntry curr  = this.getClosestNode(new_hash);
+    int        index = hashToEntry(curr.getEntryHash(), this.my_hash);
 
+    long curr_hash = curr.getResponsibleHash();
+
+    System.out.println("'" + new_id + "' taking over from '" + index + "'");
     synchronized (this.fingers) {
-      curr_hash = this.fingers.get(index).getResponsibleHash();
-
-      System.out.println("'" + new_id + "' taking over from '" + index + "'");
       for (int i = index; i < BIT_NUMBER; i++) {
         TableEntry entry = this.fingers.get(i);
         if (entry.getResponsibleHash() != curr_hash) {
           break;
         }
+
         System.out.println("    " + i + " -> " + new_id);
         entry.updateInfos(new_id, new_hash, new_channel);
       }
     }
   }
 
-  TableEntry getEntry(long peer_hash) {
-    int entry_index = FingerTable.hashToEntry(peer_hash, this.my_hash);
-
+  TableEntry getEntry(int index) {
     synchronized (this.fingers) {
-      if (peer_hash >= this.max_finger_hash) {
-        return this.fingers.lastElement();
-      }
+      return this.fingers.get(index);
+    }
+  }
 
-      return this.fingers.get(entry_index);
+  TableEntry getClosestNode(long hash) {
+    synchronized (this.fingers) {
+      for (int i = 0; i < BIT_NUMBER - 1; i++) {
+        TableEntry entry_0 = this.fingers.get(i);
+        TableEntry entry_1 = this.fingers.get(i + 1);
+
+        if ((hash - entry_0.getEntryHash()) < (hash - entry_1.getEntryHash())) {
+          return entry_0;
+        }
+      }
+      return this.fingers.lastElement();
     }
   }
 

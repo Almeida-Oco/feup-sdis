@@ -34,19 +34,20 @@ public class PeerHandler extends Handler {
   public void run(Packet packet, PacketChannel reply_channel) {
     System.out.println("Got a peer '" + packet.getHash() + "'");
     long sender_hash = packet.getHash();
-
     PacketDispatcher.unregisterHandler(Packet.PEER, sender_hash);
-    if (this.peer_hash == sender_hash && this.code_executor) {
+
+
+    if (this.redirect_buffer != null) { // Redirect packet
+      System.out.println("  Redirecting!!!");
+      this.redirect_buffer.sendPacket(packet);
+      return;
+    }
+    else if (this.peer_hash == sender_hash && this.code_executor) { // Got the peer to execute the code
       String[] ip_port = packet.getIP_Port().split(":");
       this.handleCodeExecutor(ip_port[0], Integer.parseInt(ip_port[1]));
     }
-    else {
-      if (redirect_buffer == null) {
-        this.handleRegularPeerMsg(packet.getIP_Port(), sender_hash, reply_channel);
-      }
-      else {
-        redirect_buffer.sendPacket(packet);
-      }
+    else { //Just a regular peer message
+      this.handleRegularPeerMsg(packet.getIP_Port(), sender_hash, reply_channel);
     }
   }
 
@@ -63,30 +64,30 @@ public class PeerHandler extends Handler {
   }
 
   private void handleRegularPeerMsg(String sender_id, long sender_hash, PacketChannel reply_channel) {
-    if (sender_hash == this.peer_hash) { // Some update regarding my sucessor/predecessor
+    if (sender_hash == this.peer_hash) { // Some update regarding my successor/predecessor
       if (sender_id.equals(this.node.getID())) {
         this.node.setPredecessor(reply_channel);
       }
       else {
         String[]      ips = sender_id.split(":");
-        PacketChannel sucessor_channel = PacketChannel.newChannel(ips[0], Integer.parseInt(ips[1]));
-        if (sucessor_channel != null) {
-          this.node.addPeer(sender_id, Node.hash(sender_id.getBytes()), sucessor_channel);
+        PacketChannel successor_channel = PacketChannel.newChannel(ips[0], Integer.parseInt(ips[1]));
+        if (successor_channel != null) {
+          this.node.addPeer(sender_id, Node.hash(sender_id.getBytes()), successor_channel);
         }
         else {
-          System.out.println("Failed to connect to sucessor given by '" + sender_hash + "'");
+          System.out.println("Failed to connect to successor given by '" + sender_hash + "'");
         }
       }
     }
-    else { //Updates regarding my sucessors
+    else { //Updates regarding my successors
       String[]      ips = sender_id.split(":");
-      PacketChannel sucessor_channel = PacketChannel.newChannel(ips[0], Integer.parseInt(ips[1]));
-      if (sucessor_channel != null) {
+      PacketChannel successor_channel = PacketChannel.newChannel(ips[0], Integer.parseInt(ips[1]));
+      if (successor_channel != null) {
         System.out.println("HASH = '" + sender_hash + "'");
-        this.node.addPeer(sender_id, sender_hash, sucessor_channel);
+        this.node.addPeer(sender_id, sender_hash, successor_channel);
       }
       else {
-        System.out.println("Failed to connect to sucessor given by '" + sender_hash + "'");
+        System.out.println("Failed to connect to successor given by '" + sender_hash + "'");
       }
     }
   }

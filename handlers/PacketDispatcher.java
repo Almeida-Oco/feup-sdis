@@ -69,10 +69,7 @@ public class PacketDispatcher {
       hash_handler.put(hash, handler);
       return true;
     }
-    else {
-      System.err.println("(" + type + ", " + hash + ") is already registered!");
-      return false;
-    }
+    return false;
   }
 
   public static void unregisterHandler(String type, long hash) {

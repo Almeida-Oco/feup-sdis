@@ -57,4 +57,13 @@ public class TableEntry {
   public String toString() {
     return "(" + entry_hash + ", " + entry_id + ", " + alive + ")";
   }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj instanceof TableEntry) {
+      TableEntry other = (TableEntry)obj;
+      return other.responsible_hash == this.responsible_hash;
+    }
+    return false;
+  }
 }

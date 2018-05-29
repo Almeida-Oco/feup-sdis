@@ -54,11 +54,11 @@ public class Node {
     Vector<String> params = new Vector<String>(2);
     params.add(Long.toString(this.my_hash));
     params.add(this.my_id);
-    Vector<String> peers = new Vector<String>(32);
+    String[] peers = new String[32];
 
     for (int i = 0; i < BIT_NUMBER; i++) { //Need to discover who 'owns' my hash
       long peer_hash = (long)((my_hash + Math.pow(2, i)) % FingerTable.MAX_ID);
-      peers.add(Long.toString(peer_hash));
+      peers[i] = Long.toString(peer_hash);
 
       Handler handler = new PeerHandler(this, null, peer_hash);
       if (!PacketDispatcher.registerHandler(Packet.PEER, peer_hash, handler)) {
@@ -72,10 +72,10 @@ public class Node {
 
   public TableEntry getResponsiblePeer(long hash) {
     if (this.inMyRange(hash)) {
-      return this.f_table.getEntry(hash);
+      return this.f_table.getClosestNode(hash);
     }
     else {
-      return null;
+      return this.lastEntry();
     }
   }
 
@@ -85,21 +85,9 @@ public class Node {
    * @return           Whether it is in range or not
    */
   public boolean inMyRange(long peer_hash) {
-    long half = (long)Math.pow(2, BIT_NUMBER - 1);
-    long last = (this.my_hash + half) % (long)Math.pow(2, BIT_NUMBER);
+    long last = (this.my_hash + FingerTable.MID_ID) % (long)Math.pow(2, BIT_NUMBER);
 
-    if (peer_hash >= this.my_hash && peer_hash <= last) {
-      return true;
-    }
-    else if (this.my_hash > half) {
-      if (peer_hash >= this.my_hash && peer_hash >= last) {
-        return true;
-      }
-      else if (peer_hash <= this.my_hash && peer_hash <= last) {
-        return true;
-      }
-    }
-    return false;
+    return FingerTable.inRange(peer_hash, this.my_hash, last);
   }
 
   public void addPeer(String peer_id, long peer_hash, PacketChannel connection) {
@@ -149,31 +137,33 @@ public class Node {
     this.predecessor.updateInfos(id, hash, channel);
   }
 
-  public void setAlive(String peer_id, long entry_hash) {
+  public void setAlive(String peer_id) {
     Vector<TableEntry> entries = this.f_table.getEntries();
 
-    if (entry_hash == this.predecessor.getResponsibleHash()) {
+    if (peer_id == this.predecessor.getID()) {
       System.out.println("reviving predecessor");
       this.predecessor.revive();
     }
 
-    for (TableEntry entry : entries) {
-      System.out.print("ID = '" + entry.getID() + "' == '" + peer_id + "'");
-      if (entry.getID().equals(peer_id)) {
-        System.out.println("  true");
-        entry.revive();
+    synchronized (this.f_table) {
+      for (TableEntry entry : entries) {
+        if (entry.getID().equals(peer_id)) {
+          entry.revive();
+        }
       }
     }
   }
 
-  public void killAllEntries() {
+  public void killAllSuccessors() {
     if (this.predecessor != null) {
       this.predecessor.kill();
     }
 
-    for (TableEntry entry : this.f_table.getEntries()) {
-      if (entry.getResponsibleHash() != this.my_hash) {
-        entry.kill();
+    synchronized (this.f_table) {
+      for (TableEntry entry : this.f_table.getEntries()) {
+        if (entry.getResponsibleHash() != this.my_hash) {
+          entry.kill();
+        }
       }
     }
   }
@@ -186,17 +176,22 @@ public class Node {
     return this.f_table.maxHash();
   }
 
-  public Vector<TableEntry> getAllEntries() {
-    Vector<TableEntry> entry_channels = new Vector<TableEntry>(BIT_NUMBER + 1);
+  public Vector<TableEntry> getAllSucessors() {
+    Vector<TableEntry> successors = new Vector<TableEntry>(BIT_NUMBER + 1);
+
     if (this.predecessor != null) {
-      entry_channels.add(this.predecessor);
+      successors.add(this.predecessor);
     }
 
-    for (TableEntry entry : this.f_table.getEntries()) {
-      entry_channels.add(entry);
+    synchronized (this.f_table) {
+      for (TableEntry entry : this.f_table.getEntries()) {
+        if (entry.getResponsibleHash() != this.my_hash && !successors.contains(entry)) {
+          successors.add(entry);
+        }
+      }
     }
 
-    return entry_channels;
+    return successors;
   }
 
   public Vector<TableEntry> getDeadEntries() {
@@ -207,7 +202,7 @@ public class Node {
     }
 
     for (TableEntry entry : this.f_table.getEntries()) {
-      if (!entry.isAlive()) {
+      if (!entry.isAlive() && !entry_channels.contains(entry)) {
         entry_channels.add(entry);
       }
     }

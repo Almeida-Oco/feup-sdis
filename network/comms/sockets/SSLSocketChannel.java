@@ -138,7 +138,6 @@ public class SSLSocketChannel extends SSLChannel {
         return ret;
       }
       else if (bytes_read < 0) {
-        System.err.println("Socket closed while receiving message!");
         return null;
       }
     }

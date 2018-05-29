@@ -21,14 +21,14 @@ public class SynchronizeHandler extends Handler {
   @Override
   public void run() {
     Vector<TableEntry> dead_entries = this.node.getDeadEntries();
-
+    System.out.println(this.node.toString());
     if (dead_entries.size() > 0) {
       System.out.println("  There are faults in network!");
       //TODO handle network failures
     }
 
-    this.node.killAllEntries();
-    Vector<TableEntry> entries = this.node.getAllEntries();
+    this.node.killAllSuccessors();
+    Vector<TableEntry> entries = this.node.getAllSucessors();
     Packet             packet  = Packet.newAlivePacket();
 
     for (TableEntry entry : entries) {

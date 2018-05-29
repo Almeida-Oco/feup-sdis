@@ -66,7 +66,7 @@ public class Packet {
     return packet;
   }
 
-  public static Packet newNewPeerPacket(String hash, String ip_port, Vector<String> peers) {
+  public static Packet newNewPeerPacket(String hash, String ip_port, String[] peers) {
     Packet packet = new Packet();
 
     packet.type = NEW_PEER;
