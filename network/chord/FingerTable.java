@@ -29,7 +29,7 @@ class FingerTable {
     long half = (long)Math.pow(2, BIT_NUMBER - 1);
 
     return (hash >= start && hash <= end) ||
-           (start > half && (hash >= start && hash <= end || hash <= start && hash <= end));
+           (start > half && end < half && (hash >= start && hash >= end || hash <= start && hash <= end));
   }
 
   FingerTable(String my_id, long my_hash) {
@@ -39,7 +39,7 @@ class FingerTable {
 
     for (int i = 0; i < BIT_NUMBER; i++) {
       long entry_hash = Math.abs((my_hash + (long)Math.pow(2, i)) % MAX_ID);
-      this.fingers.add(new TableEntry(my_id, entry_hash, this.my_hash, null));
+      this.fingers.add(new TableEntry(i, my_id, entry_hash, this.my_hash, null));
     }
   }
 
@@ -55,14 +55,12 @@ class FingerTable {
   }
 
   void takeOverResponsibility(String new_id, long new_hash, PacketChannel new_channel) {
-    TableEntry curr  = this.getClosestNode(new_hash);
-    int        index = hashToEntry(curr.getEntryHash(), this.my_hash);
+    TableEntry curr      = this.getClosestNode(new_hash);
+    long       curr_hash = curr.getResponsibleHash();
 
-    long curr_hash = curr.getResponsibleHash();
-
-    System.out.println("'" + new_id + "' taking over from '" + index + "'");
+    System.out.println("'" + new_id + "' taking over from '" + curr.getIndex() + "'");
     synchronized (this.fingers) {
-      for (int i = index; i < BIT_NUMBER; i++) {
+      for (int i = curr.getIndex(); i < BIT_NUMBER; i++) {
         TableEntry entry = this.fingers.get(i);
         if (entry.getResponsibleHash() != curr_hash) {
           break;
@@ -83,10 +81,11 @@ class FingerTable {
   TableEntry getClosestNode(long hash) {
     synchronized (this.fingers) {
       for (int i = 0; i < BIT_NUMBER - 1; i++) {
-        TableEntry entry_0 = this.fingers.get(i);
-        TableEntry entry_1 = this.fingers.get(i + 1);
+        TableEntry entry_0  = this.fingers.get(i);
+        TableEntry entry_1  = this.fingers.get(i + 1);
+        boolean    in_range = inRange(hash, entry_0.getEntryHash(), entry_1.getEntryHash());
 
-        if ((hash - entry_0.getEntryHash()) < (hash - entry_1.getEntryHash())) {
+        if (inRange(hash, entry_0.getEntryHash(), entry_1.getEntryHash())) {
           return entry_0;
         }
       }
@@ -98,10 +97,6 @@ class FingerTable {
     synchronized (this.fingers) {
       return this.fingers.lastElement();
     }
-  }
-
-  long maxHash() {
-    return this.max_finger_hash;
   }
 
   Vector<TableEntry> getEntries() {

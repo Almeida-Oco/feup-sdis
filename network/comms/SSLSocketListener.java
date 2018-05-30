@@ -52,7 +52,7 @@ public class SSLSocketListener {
     String line;
 
     while (true) {
-      if (selector.select(100) > 0) {
+      if (selector.select(50) > 0) {
         Iterator<SelectionKey> keys_it = selector.selectedKeys().iterator();
         while (keys_it.hasNext()) {
           SelectionKey key = keys_it.next();
@@ -62,10 +62,6 @@ public class SSLSocketListener {
           keys_it.remove();
         }
       }
-      try { //Someone called selector.wakeup(), give him some time to use the selector
-        Thread.sleep(100, 0);
-      }
-      catch (Exception e) {}
     }
   }
 
@@ -117,6 +113,7 @@ public class SSLSocketListener {
       return this.acceptKey((ServerSocketChannel)key.channel());
     }
     else if (key.isReadable()) {
+      System.out.println("GOT A READABLE KEY!");
       boolean ret = this.readKey((PacketChannel)key.attachment());
       return ret;
     }
@@ -132,6 +129,7 @@ public class SSLSocketListener {
 
   private boolean acceptKey(ServerSocketChannel server_channel) {
     try {
+      System.out.println("Accepting");
       SocketChannel s_channel = server_channel.accept();
       if (s_channel != null) {
         SSLSocketChannel socket = SSLSocketChannel.newChannel(s_channel, false);
@@ -213,5 +211,15 @@ public class SSLSocketListener {
       }
     }
     return type;
+  }
+
+  public static void shutdown() {
+    try {
+      selector.close();
+      tasks.shutdown();
+    }
+    catch (Exception err) {
+      System.err.println("Failed to shutdown SSLSocketListener!\n - " + err.getMessage());
+    }
   }
 }

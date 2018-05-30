@@ -16,7 +16,7 @@ public class PeerJoinHandler extends Handler {
 
   public PeerJoinHandler(Node node) {
     super(node);
-    this.max_hash = node.maxHash();
+    this.max_hash = Node.MAX_ID;
   }
 
   @Override
@@ -24,9 +24,8 @@ public class PeerJoinHandler extends Handler {
     String new_peer_id   = packet.getIP_Port();
     long   new_peer_hash = packet.getHash();
 
-    System.out.println("NEW_PEER '" + new_peer_hash + "'");
-
     if (!this.handleSenderPeer(new_peer_id, new_peer_hash, reply_channel)) { // Peer is not my sucessor
+      System.out.println("----------------->Not my successor!!!");
       String peers_raw = packet.getCode();
       if (peers_raw != null) {
         String[] peers = peers_raw.split(" ");
@@ -43,10 +42,18 @@ public class PeerJoinHandler extends Handler {
       PacketChannel channel = responsible.getChannel();
 
       if (channel == null) {
+        System.out.println("  My resposibility");
         PacketChannel peer_channel = this.chooseChannel(sender_id, reply_channel);
-        this.node.addPeer(sender_id, sender_hash, peer_channel);
-        peer_channel.sendPacket(Packet.newPeerPacket(Long.toString(sender_hash), this.node.getID()));
-        return true;
+        if (peer_channel != null) {
+          this.node.addPeer(sender_id, sender_hash, peer_channel);
+          String id = this.node.getID();
+          if (this.node.getPredecessor() == null) {
+            this.node.setPredecessor((id = sender_id), sender_hash, peer_channel);
+          }
+          peer_channel.sendPacket(Packet.newPeerPacket(Long.toString(sender_hash), id));
+          return true;
+        }
+        System.out.println("PeerJoinHandler == null ???");
       }
       else {
         long          curr_hash    = responsible.getResponsibleHash();
@@ -92,13 +99,5 @@ public class PeerJoinHandler extends Handler {
         }
       }
     }
-  }
-
-  private PacketChannel chooseChannel(String sender_id, PacketChannel channel) {
-    if (!sender_id.equals(channel.getID())) {
-      String[] ip_port = sender_id.split(":");
-      return PacketChannel.newChannel(ip_port[0], Integer.parseInt(ip_port[1]));
-    }
-    return channel;
   }
 }

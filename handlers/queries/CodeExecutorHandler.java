@@ -16,36 +16,21 @@ public class CodeExecutorHandler extends Handler {
 
   public CodeExecutorHandler(Node node) {
     super(node);
-    this.max_hash = node.getHash();
   }
 
   @Override
   public void run(Packet packet, PacketChannel reply_channel) {
-    long       file_hash    = packet.getHash();
-    String     file_content = packet.getCode();
-    TableEntry responsible  = this.node.getResponsiblePeer(file_hash);
+    long          file_hash   = packet.getHash();
+    TableEntry    responsible = this.node.getResponsiblePeer(file_hash);
+    PacketChannel channel     = responsible.getChannel();
 
-    if (responsible != null) {
-      PacketChannel responsible_channel = responsible.getChannel();
-      if (responsible_channel != null) {
-        Handler handler = new PeerHandler(this.node, file_hash, file_content);
-        PacketDispatcher.registerHandler(Packet.PEER, file_hash, handler);
-        responsible_channel.sendPacket(Packet.newGetPeerPacket(Long.toString(file_hash)));
-      }
-      else {
-        this.executeCode(file_content, file_hash, reply_channel);
-      }
+    if (channel == null) { //I should execute it
+      System.out.println("Loading content!");
+      String file_content = packet.getCode();
+      this.executeCode(file_content, file_hash, reply_channel);
     }
     else {
-      TableEntry last_entry = this.node.lastEntry();
-      if (last_entry.getResponsibleHash() != this.node.getHash()) { //Last entry might know
-        Handler handler = new PeerHandler(this.node, file_hash, file_content);
-        PacketDispatcher.registerHandler(Packet.PEER, file_hash, handler);
-        last_entry.getChannel().sendPacket(Packet.newGetPeerPacket(Long.toString(file_hash)));
-      }
-      else {
-        this.executeCode(file_content, file_hash, reply_channel);
-      }
+      channel.sendPacket(packet);
     }
   }
 

@@ -46,15 +46,19 @@ public class PacketChannel implements Runnable {
    */
   public boolean sendPacket(Packet packet) {
     SSLSocketListener.waitForWrite(this);
-    this.packet_buffer.add(packet);
+    synchronized (this.packet_buffer) {
+      this.packet_buffer.add(packet);
+    }
     return true;
   }
 
   void send() {
-    if (this.packet_buffer.peek() != null) {
-      String packet = this.packet_buffer.remove().toString();
-      System.out.println("Sending '" + packet + "'");
-      this.channel.sendMsg(packet);
+    synchronized (this.packet_buffer) {
+      if (this.packet_buffer.peek() != null) {
+        String packet = this.packet_buffer.remove().toString();
+        System.out.println("Sending '" + packet + "' --> " + this.getID());
+        this.channel.sendMsg(packet);
+      }
     }
   }
 

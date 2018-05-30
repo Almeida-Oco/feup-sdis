@@ -22,6 +22,8 @@ import network.comms.SSLSocketListener;
 
 public class Node {
   public static final int BIT_NUMBER = 32;
+  public static final long MAX_ID    = (long)Math.pow(2, BIT_NUMBER);
+  public static final long MID_ID    = (long)Math.pow(2, BIT_NUMBER - 1);
 
   String my_id;
   long my_hash;
@@ -31,6 +33,7 @@ public class Node {
   public Node(PacketChannel channel, int my_port) {
     try {
       this.my_id = InetAddress.getLocalHost().getHostAddress() + ":" + my_port;
+      System.out.println("ID = '" + this.my_id + "'");
     }
     catch (UnknownHostException err) {
       System.err.println("Host not known!\n - " + err.getMessage());
@@ -42,7 +45,7 @@ public class Node {
 
     this.predecessor = null;
     if (channel != null) {
-      this.predecessor = new TableEntry(channel.getID(), 0, Node.hash(channel.getID().getBytes()), channel);
+      this.predecessor = new TableEntry(0, channel.getID(), 0, Node.hash(channel.getID().getBytes()), channel);
     }
   }
 
@@ -127,14 +130,24 @@ public class Node {
   }
 
   public void setPredecessor(String peer_id, long peer_hash, PacketChannel channel) {
-    this.predecessor.updateInfos(peer_id, peer_hash, channel);
+    if (this.predecessor != null) {
+      this.predecessor.updateInfos(peer_id, peer_hash, channel);
+    }
+    else {
+      this.predecessor = new TableEntry(0, peer_id, 0, peer_hash, channel);
+    }
   }
 
   public void setPredecessor(PacketChannel channel) {
     String id   = channel.getID();
     long   hash = Node.hash(id.getBytes());
 
-    this.predecessor.updateInfos(id, hash, channel);
+    if (this.predecessor != null) {
+      this.predecessor.updateInfos(id, hash, channel);
+    }
+    else {
+      this.predecessor = new TableEntry(0, id, 0, hash, channel);
+    }
   }
 
   public void setAlive(String peer_id) {
@@ -170,10 +183,6 @@ public class Node {
 
   public TableEntry lastEntry() {
     return this.f_table.getLastEntry();
-  }
-
-  public long maxHash() {
-    return this.f_table.maxHash();
   }
 
   public Vector<TableEntry> getAllSucessors() {

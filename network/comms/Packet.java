@@ -83,11 +83,12 @@ public class Packet {
     return packet;
   }
 
-  public static Packet newCodePacket(String hash, String code) {
+  public static Packet newCodePacket(String hash, String ip_port, String code) {
     Packet packet = new Packet();
 
     packet.type = CODE;
     packet.params.add(hash);
+    packet.params.add(ip_port);
     packet.code = code;
 
     return packet;
@@ -134,11 +135,12 @@ public class Packet {
     return packet;
   }
 
-  public static Packet newGetPeerPacket(String hash) {
+  public static Packet newGetPeerPacket(String hash, String ip_port) {
     Packet packet = new Packet();
 
     packet.type = GET_PEER;
     packet.params.add(hash);
+    packet.params.add(ip_port);
     return packet;
   }
 

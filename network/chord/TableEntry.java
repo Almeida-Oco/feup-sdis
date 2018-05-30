@@ -3,13 +3,15 @@ package network.chord;
 import network.comms.PacketChannel;
 
 public class TableEntry {
+  int index;
   long entry_hash;
   long responsible_hash;
   String entry_id;
   PacketChannel node_channel;
   boolean alive;
 
-  TableEntry(String entry_id, long entry_hash, long resp_hash, PacketChannel connection) {
+  TableEntry(int index, String entry_id, long entry_hash, long resp_hash, PacketChannel connection) {
+    this.index            = index;
     this.entry_hash       = entry_hash;
     this.responsible_hash = resp_hash;
     this.entry_id         = entry_id;
@@ -31,6 +33,10 @@ public class TableEntry {
 
   public synchronized PacketChannel getChannel() {
     return this.node_channel;
+  }
+
+  public int getIndex() {
+    return this.index;
   }
 
   synchronized boolean isAlive() {

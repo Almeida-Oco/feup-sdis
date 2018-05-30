@@ -53,7 +53,6 @@ public class SSLChannel extends SocketChannel {
     HandshakeStatus shake_status;
 
     this.engine.beginHandshake();
-    System.out.println("Starting handshake...");
     while (!this.handshakeFinished((shake_status = this.engine.getHandshakeStatus()))) {
       if (shake_status == HandshakeStatus.NEED_UNWRAP) {
         int bytes;
@@ -147,7 +146,6 @@ public class SSLChannel extends SocketChannel {
       }
     }
 
-    System.err.println("Handshake done!");;
     return this.handshakeFinished(shake_status);
   }
 

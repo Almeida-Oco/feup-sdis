@@ -21,7 +21,7 @@ public class SynchronizeHandler extends Handler {
   @Override
   public void run() {
     Vector<TableEntry> dead_entries = this.node.getDeadEntries();
-    System.out.println(this.node.toString());
+    // System.out.println(this.node.toString());
     if (dead_entries.size() > 0) {
       System.out.println("  There are faults in network!");
       //TODO handle network failures

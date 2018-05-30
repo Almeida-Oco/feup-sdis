@@ -5,6 +5,7 @@ import network.chord.Node;
 import network.comms.Packet;
 import handlers.PacketDispatcher;
 import network.comms.PacketChannel;
+import network.comms.SSLSocketListener;
 
 public class PeerHandler extends Handler {
   long peer_hash;
@@ -37,12 +38,7 @@ public class PeerHandler extends Handler {
     PacketDispatcher.unregisterHandler(Packet.PEER, sender_hash);
 
 
-    if (this.redirect_buffer != null) { // Redirect packet
-      System.out.println("  Redirecting!!!");
-      this.redirect_buffer.sendPacket(packet);
-      return;
-    }
-    else if (this.peer_hash == sender_hash && this.code_executor) { // Got the peer to execute the code
+    if (this.peer_hash == sender_hash && this.code_executor) { // Got the peer to execute the code
       String[] ip_port = packet.getIP_Port().split(":");
       this.handleCodeExecutor(ip_port[0], Integer.parseInt(ip_port[1]));
     }
@@ -56,7 +52,8 @@ public class PeerHandler extends Handler {
 
     if (channel != null) {
       PacketDispatcher.registerHandler(Packet.RESULT, this.peer_hash, new CodeResultHandler(this.node));
-      channel.sendPacket(Packet.newCodePacket(Long.toString(this.peer_hash), this.file_content));
+      SSLSocketListener.waitForRead(channel);
+      channel.sendPacket(Packet.newCodePacket(Long.toString(this.peer_hash), this.node.getID(), this.file_content));
     }
     else {
       System.err.println("Supplied '" + addr + ":" + port + "', but could not find peer!");
