@@ -1,68 +1,32 @@
 #  FEUP - SDIS 
 
 ## Compiling the project
-The project comes with a makefile that assumes the following folder structure:
-
-    | -- makefile
-    | -- cli
-         | -- User_IO.java
-      -- controller
-         | -- ApplicationInfo.java
-         | -- ChannelListener.java
-         | -- Client.java
-         | -- DispatcherInterface.java
-         | -- Handler.java
-         | -- Pair.java
-         | -- Server.java
-         | -- SignalHandler.java
-           -- client
-              | -- BackupHandler.java
-              | -- CheckHandler.java
-              | -- DeleteHandler.java
-              | -- Dispatcher.java
-              | -- ReclaimHander.java
-              | -- RestoreHandler.java
-              | -- StateHandler.java
-           -- server
-              | -- ChkchunkHandler.java
-              | -- DeleteHandler.java
-              | -- GetchunkHandler.java
-              | -- PutchunkHandler.java
-              | -- RemovedHandler.java
-    | -- files
-         | -- Chunk.java
-         | -- ChunkStorer.java
-         | -- File_IO.java
-         | -- FileHandler.java
-         | -- FileInfo.java
-         | -- LocalChunk.java
-         | -- NetworkChunk.java
-         | -- StringToHex.java
-    | -- network
-         | -- Net_IO.java
-         | -- PacketInfo.java
-    | -- parser
-         | -- ClientParser.java
-         | -- ServerParser.java
-       
+The project comes with a makefile.
 Simply run 'make' and the program should compile.
 (It may take a few seconds)
 
-## Running the Peer
-The main function to initiate a new program is located in 'controller.Server', so running is as follow
+## Creating or Joining a server
+Run the command:
     
-    java controller.Server <version> <server_id> <access_point> <MC> <MDR> <MDB>
+    java Service <remote_ip>:<remote_port> <local_port>
     
     Example:
-        java controller.Server 1.0 1 8000 224.0.0.1:8001 224.0.0.2:8002 224.0.0.3:8003
+        java Service 120.0.1:4440 4442
+
+If the server finds a network that the remote_ip and remote_port belong it will join that one, if not a network will be created.
 
 ## Running the Client
-The main function to initiate client protocol is located in 'controller.Client'
+The main function to request code to be compiled and ran is:
 
-    java controller.Client  <peer_ap> <sub_protocol> <operand1> <operand2>
+    java Shell <remote_ip>:<remote_port> <local_port> <PROTOCOL>
     
     Example:
-        java controller.Client 1 BACKUP example.txt 1
+        java Shell 127.0.0.1:4440 4445 CODEONE example/Fibonacci.java
+
+A folder called gen_code will be created with the stdout and stderr of the program that was ran.
         
 ## Note
+
+We provide a the folder examples with two common programming algorithms to test the program.
+
 For further information about how to run the protocol run either of the main entries without arguments (or with wrong arguments), that a usage information of the program will be printed.
